@@ -12,7 +12,7 @@
 typedef struct Arena Arena;
 struct Arena
 {
-	void *base;
+	U8 *base;
 	U64 reserved, committed, pos;
 	B8 large_pages;
 };
