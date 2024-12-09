@@ -11,19 +11,40 @@ union Vec2F32
 typedef union Vec3F32 Vec3F32;
 union Vec3F32
 {
+	// xyz
 	struct { F32 x, y, z; };
 	struct { Vec2F32 xy; F32 _z0; };
 	struct { F32 _x0; Vec2F32 yz; };
+
+	// rgb
+	struct { F32 r, g, b; };
+	struct { Vec2F32 rg; F32 _b0; };
+	struct { F32 _r0; Vec2F32 gb; };
 	F32 v[3];
 };
 
 typedef union Vec4F32 Vec4F32;
 union Vec4F32
 {
+	// xyzw
 	struct { F32 x, y, z, w; };
 	struct { Vec2F32 xy; Vec2F32 zw; };
 	struct { Vec3F32 xyz; F32 _w0; };
 	struct { F32 _x0; Vec3F32 yzw; };
+	struct { F32 x, y, z, w; };
+	struct { Vec2F32 xy; Vec2F32 zw; };
+	struct { Vec3F32 xyz; F32 _w0; };
+	struct { F32 _x0; Vec3F32 yzw; };
+
+	// rgba
+	struct { F32 r, g, b, a; };
+	struct { Vec2F32 rg; Vec2F32 ba; };
+	struct { Vec3F32 rgb; F32 _a0; };
+	struct { F32 _r0; Vec3F32 gba; };
+	struct { F32 r, g, b, a; };
+	struct { Vec2F32 rg; Vec2F32 ba; };
+	struct { Vec3F32 rgb; F32 _a0; };
+	struct { F32 _r0; Vec3F32 gba; };
 	F32 v[4];
 };
 
