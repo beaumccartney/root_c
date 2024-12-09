@@ -16,6 +16,9 @@
 // read_only
 #if OS_MAC && COMPILER_CLANG
 	#define read_only __attribute__((section("__DATA,__const")))
+#elif COMPILER_MSVC || (COMPILER_CLANG && OS_WINDOWS)
+	#pragma section(".rdata$", read)
+	#define read_only __declspec(allocate(".rdata$"))
 #else
 	#define read_only
 #endif
@@ -23,13 +26,15 @@
 // thread local
 #if COMPILER_CLANG || COMPILER_GCC
 	#define thread_local __thread
-#else
-	#define thread_local
+#elif COMPILER_MSVC
+	#define thread_local __declspec(thread)
 #endif
 
 // force inline
 #if COMPILER_CLANG || COMPILER_GCC
-	#define force_inline __attribte((always_inline))
+	#define force_inline __attribute__((always_inline))
+#elif COMPILER_MSVC
+	#define force_inline __forceinline
 #endif
 
 #if COMPILER_CLANG
@@ -41,7 +46,7 @@
 #define Likely(expr)  Expect(expr,1)
 #define Unikely(expr) Expect(expr,0)
 
-#if COMPILER_CLANG
+#if COMPILER_CLANG || COMPILER_MSVC
 	#define AlignOf(T) __alignof(T)
 #else
 	#error AlignOf not yet defined for this compiler
@@ -96,6 +101,8 @@
 // TODO: platform_specific
 #if COMPILER_CLANG || COMPILER_GCC
 	#define Trap() __builtin_trap()
+#elif COMPILER_MSVC
+	#define Trap() __debugbreak()
 #else
 	#error Trap intrinsic not defined for this compiler
 #endif
@@ -166,7 +173,14 @@ CheckNil(nil,p) ? \
 		#endif
 	#endif
 	#define NO_ASAN __attribute__((no_sanitize("address")))
-#else
+// #elif COMPILER_MSVC
+// 	#if defined(__SANITIZE_ADDRESS__)
+// 		#define ASAN_ENABLED 1
+// 		#define NO_ASAN __declspec(no_sanitize_address)
+// 	#else
+// 		#define NO_ASAN
+// 	#endif
+// #else
 	#define NO_ASAN
 #endif
 
