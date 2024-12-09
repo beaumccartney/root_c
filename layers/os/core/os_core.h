@@ -7,6 +7,7 @@ struct OS_SystemInfo
 	U64 page_size, large_page_size;
 };
 
+// TODO(beau): initialize in the platform entry point and either return a pointer to that here or just define a global exposed by each header here
 function OS_SystemInfo os_get_system_info(void);
 
 function void *os_reserve(U64 size);

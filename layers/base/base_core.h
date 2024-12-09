@@ -173,6 +173,7 @@ CheckNil(nil,p) ? \
 		#endif
 	#endif
 	#define NO_ASAN __attribute__((no_sanitize("address")))
+// TODO(beau): msvc and asan
 // #elif COMPILER_MSVC
 // 	#if defined(__SANITIZE_ADDRESS__)
 // 		#define ASAN_ENABLED 1
