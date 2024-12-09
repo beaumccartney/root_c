@@ -1,0 +1,8 @@
+- [x] context cracking
+- [x] arena
+    - [x] vm grow strategy
+    - [ ] from given byte slice
+- [ ] math lib
+- [ ] ring
+    - [ ] vm backend
+- [ ] thread context
