@@ -5,7 +5,6 @@
 #include "os/os_inc.c"
 
 #include <stdio.h>
-#include <stdlib.h>
 
 typedef struct Node Node;
 struct Node
