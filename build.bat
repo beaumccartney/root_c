@@ -25,5 +25,6 @@ del *.pdb
 
 @echo on
 cl %flags% ..\apps\test\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
+@echo off
 
 popd
