@@ -22,6 +22,6 @@ if not exist scratch mkdir scratch
 pushd build
 
 del *.pdb
-cl %cl_common% %build_kind_flags% %auto_compile_flags% ..\scratch\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
+cl %cl_common% %build_kind_flags% %auto_compile_flags% ..\apps\test\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
 
 popd
