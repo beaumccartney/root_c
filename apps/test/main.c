@@ -10,31 +10,31 @@
 typedef struct Node Node;
 struct Node
 {
-    U64 datum;
-    Node *next, *prev;
+	U64 datum;
+	Node *next, *prev;
 };
 
 int main(void)
 {
-    Arena * arena = arena_default;
+	Arena * arena = arena_default;
 
-    Node * base = 0;
+	Node * base = 0;
 
-    for (U64 i = 0; i < KB(1); i++)
-    {
-        Node * new = push_array(arena, Node, 1);
+	for (U64 i = 0; i < KB(1); i++)
+	{
+		Node * new = push_array(arena, Node, 1);
 
-        new->datum = i;
+		new->datum = i;
 
-        SLLStackPush(base, new);
-    }
+		SLLStackPush(base, new);
+	}
 
-    for (Node * n = base; n != 0; n = n->next)
-    {
-        printf("datum: %llu\n", n->datum);
-    }
+	for (Node * n = base; n != 0; n = n->next)
+	{
+		printf("datum: %llu\n", n->datum);
+	}
 
-    arena_release(arena);
+	arena_release(arena);
 
-    return 0;
+	return 0;
 }

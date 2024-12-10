@@ -9,6 +9,8 @@
     - [x] options by passing arguments (for each argument set a var with that
           args name then later check the var to toggle its associated
           functionality)
-    - [ ] build.sh for mac
-    - [ ] good cl flags
+    - [x] build.sh for mac
+    - [ ] good msvc flags
+    - [ ] good clang flags
 - [ ] ctags setup
+- [ ] asan in windows - msvc and in build
