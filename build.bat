@@ -1,6 +1,5 @@
-REM TODO(beau):
-REM  single flags accumulator
-REM  CL flags from https://nullprogram.com/blog/2023/04/29/
+:: TODO(beau):
+:: single flags accumulator
 
 @echo off
 setlocal enabledelayedexpansion
@@ -12,10 +11,10 @@ if "%debug%"=="1"   set release=0 && echo [debug mode]
 if "%release%"=="1" set debug=0 && echo [release mode]
 
 set auto_compile_flags=
-if "%asan%"=="1" set auto_compile_flags=%auto_compile_flags% -fsanitize=address && echo [asan enabled]
+if "%asan%"=="1" set auto_compile_flags=%auto_compile_flags% -fsanitize=address && (echo [asan enabled]) else set auto_compile_flags=%auto_compile_flags% /RTCc
 
-set cl_common= /I..\layers\ /I..\scratch\ /nologo /Z7 /FC
-set cl_debug= /Od /Ob1 /DBUILD_DEBUG=1 %cl_common%
+set cl_common= /I..\layers\ /I..\scratch\ /nologo /Z7 /FC /W4 /wd4100 /RTCsu
+set cl_debug= /Od /Ob1 /DBUILD_DEBUG=1
 
 set build_kind_flags=
 if "%debug%"=="1" set build_kind_flags=%cl_debug%
