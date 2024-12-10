@@ -1,0 +1,26 @@
+#!/usr/bin/env zsh
+
+set -eu
+cd "$(dirname "$0")"
+
+for arg in "$@"; do declare $arg='1'; done
+if [ ! -v release ]; then debug=1; fi
+
+# common flags
+flags=("-I../layers/" "-I../scratch/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
+
+# debug/release flags
+if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug mode]"; fi
+if [ -v release ]; then flags+=("-O2" "-DBUILD_DEBUG=0")      && echo "[release mode]"; fi
+
+# sanitizer flags
+# TODO(beau): -fsanitize-trap toggle?
+if [ -v sanitize ]; then asan=1 && ubsan=1; fi
+if [ -v asan  ];    then flags+=("-fsanitize=address")   && echo "[asan enabled]"; fi
+if [ -v ubsan ];    then flags+=("-fsanitize=undefined") && echo "[ubsan enabled]"; fi
+
+mkdir -p build scratch
+
+cd build
+set -x
+cc $flags ../apps/test/main.c
