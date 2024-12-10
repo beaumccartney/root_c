@@ -1,3 +1,7 @@
+REM TODO(beau):
+REM  single flags accumulator
+REM  CL flags from https://nullprogram.com/blog/2023/04/29/
+
 @echo off
 setlocal enabledelayedexpansion
 cd /D "%~dp0"
