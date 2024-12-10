@@ -15,7 +15,13 @@ struct Node
 
 int main(void)
 {
-	Arena * arena = arena_default;
+	TCTX tctx;
+	tctx_init_and_equip(&tctx);
+
+	Arena * scratch1 = tctx_get_scratch(0, 0);
+	Arena * scratch2 = tctx_get_scratch(&scratch1, 1);
+
+	Arena * arena = scratch2;
 
 	Node * base = 0;
 
