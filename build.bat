@@ -14,7 +14,7 @@ if "%release%"=="1" set debug=0 && echo [release mode]
 set auto_compile_flags=
 if "%asan%"=="1" set auto_compile_flags=%auto_compile_flags% -fsanitize=address && echo [asan enabled]
 
-set cl_common= /I..\layers\ /I..\scratch\ /nologo /Z7
+set cl_common= /I..\layers\ /I..\scratch\ /nologo /Z7 /FC
 set cl_debug= /Od /Ob1 /DBUILD_DEBUG=1 %cl_common%
 
 set build_kind_flags=
