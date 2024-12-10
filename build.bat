@@ -12,7 +12,9 @@ set flags=/I..\layers\ /I..\scratch\ /nologo /Z7 /FC /W4 /wd4100
 
 if "%debug%"=="1" set flags=%flags% /Od /Ob1 /DBUILD_DEBUG=1
 if "%asan%"=="1"  set flags=%flags% -fsanitize=address && (echo [asan enabled])
-if "%RTC%"=="1"   (if "%asan%"=="1" set flags=%flags% /RTCsu && (echo [RTC enabled]) else (set flags=%flags% /RTCcsu)) :: RTCu will trip on asan itself if its on, so only turn it on if no asan
+
+:: RTCu will trip on asan itself if its on, so only turn it on if no asan
+if "%RTC%"=="1"   (if "%asan%"=="1" set flags=%flags% /RTCsu && (echo [RTC enabled]) else (set flags=%flags% /RTCcsu))
 
 if not exist build mkdir build
 if not exist scratch mkdir scratch
