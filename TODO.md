@@ -2,6 +2,7 @@
 - [x] arena
     - [x] vm grow strategy
 - [ ] math lib
+- [ ] string lib
 - [ ] ring
     - [ ] vm backend
 - [ ] thread context
@@ -14,3 +15,6 @@
     - [ ] good clang flags
 - [ ] ctags setup
 - [ ] asan in windows - msvc and in build
+- [ ] fuzzer? https://nullprogram.com/blog/2019/01/25/
+    - [ ] afl++ on *nix
+    - [ ] windows?
