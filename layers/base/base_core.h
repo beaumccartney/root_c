@@ -173,22 +173,19 @@ CheckNil(nil,p) ? \
 		#endif
 	#endif
 	#define NO_ASAN __attribute__((no_sanitize("address")))
-// TODO(beau): msvc and asan
-// #elif COMPILER_MSVC
-// 	#if defined(__SANITIZE_ADDRESS__)
-// 		#define ASAN_ENABLED 1
-// 		#define NO_ASAN __declspec(no_sanitize_address)
-// 	#else
-// 		#define NO_ASAN
-// 	#endif
+#elif COMPILER_MSVC
+	#if defined(__SANITIZE_ADDRESS__)
+		#define ASAN_ENABLED 1
+		#define NO_ASAN __declspec(no_sanitize_address)
+	#else
+		#define NO_ASAN
+	#endif
 #else
 	#define NO_ASAN
 #endif
 
 #if ASAN_ENABLED
-	#if OS_MAC
-		#include <sanitizer/asan_interface.h>
-	#endif
+	#include <sanitizer/asan_interface.h>
 
 	#define AsanPoisonMemoryRegion(addr, size) __asan_poison_memory_region((addr), (size))
 	#define AsanUnpoisonMemoryRegion(addr, size) __asan_unpoison_memory_region((addr), (size))
