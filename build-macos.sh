@@ -23,4 +23,4 @@ mkdir -p build scratch
 
 cd build
 set -x
-cc $flags ../apps/test/main.c
+cc $flags -o test ../apps/test/main.c
