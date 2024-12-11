@@ -235,4 +235,6 @@ typedef double   F64;
 
 typedef U8 Byte;
 
+#define Unused(name) (void)(name)
+
 #endif // BASE_CORE_H
