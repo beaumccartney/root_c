@@ -1,6 +1,6 @@
 // TODO(beau): large pages
 function Arena *
-arena_alloc(U64 min_reserve_size, U64 min_commit_size, B8 large_pages)
+arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 {
 	OS_SystemInfo info = os_get_system_info();
 

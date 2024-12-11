@@ -14,7 +14,7 @@ struct Arena
 {
 	U8 *base;
 	U64 reserved, committed, pos;
-	B8 large_pages;
+	B32 large_pages;
 };
 
 StaticAssert(sizeof(Arena) <= ARENA_HEADER_SIZE, arena_header_size_check);
@@ -29,7 +29,7 @@ struct Temp
 global U64 arena_default_reserve_size = MB(64);
 global U64 arena_default_commit_size  = KB(64);
 
-function Arena *arena_alloc(U64 min_reserve, U64 min_commit, B8 large_pages);
+function Arena *arena_alloc(U64 min_reserve, U64 min_commit, B32 large_pages);
 #define arena_default arena_alloc(arena_default_reserve_size, arena_default_commit_size, 0);
 function void arena_release(Arena * arena);
 

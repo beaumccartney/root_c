@@ -33,7 +33,7 @@ function Arena* tctx_get_scratch(Arena **conflicts, U64 count)
 	Arena **ctx_ptr = tctx->arenas;
 	for (U64 ctx_ix = 0; ctx_ix < ArrayCount(tctx->arenas); ctx_ix++, ctx_ptr++)
 	{
-		B8 has_conflict = 0;
+		B32 has_conflict = 0;
 		Arena **conflict_ptr = conflicts;
 		for (U64 conflict_ix = 0; conflict_ix < count; conflict_ix++, conflict_ptr++)
 		{
