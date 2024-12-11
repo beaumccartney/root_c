@@ -8,7 +8,7 @@ if "%debug%"=="1"   set release=0 && echo [debug mode]
 if "%release%"=="1" set debug=0 && echo [release mode]
 
 :: common cl flags
-set flags=/I..\layers\ /I..\scratch\ /nologo /Z7 /FC /W4 /wd4100 -Gm-
+set flags=/I..\layers\ /I..\scratch\ /nologo /Z7 /FC -Gm- /W4 /wd4100 /wd4201
 
 if "%debug%"=="1" set flags=%flags% /Od /Ob1 /DBUILD_DEBUG=1
 if "%asan%"=="1"  set flags=%flags% -fsanitize=address && (echo [asan enabled])
