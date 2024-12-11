@@ -52,6 +52,17 @@ struct Mat4x4F32
 	F32 v[4][4];
 };
 
+typedef union QuatF32 QuatF32;
+union QuatF32
+{
+	Vec4F32 xyzw;
+	struct { Vec2F32 xy, zw;     };
+	struct { Vec3F32 xyz; F32 w; };
+	struct { F32 x; Vec3F32 yzw; };
+	struct { F32 _x, y, z, _w;   };
+	F32 v[4];
+};
+
 typedef union Rng1F32 Rng1F32;
 union Rng1F32
 {
@@ -62,12 +73,276 @@ union Rng1F32
 typedef union Rng2F32 Rng2F32;
 union Rng2F32
 {
-	struct { Vec2F32 min, max };
-	struct { Vec2F32 p0, p1 };
-	struct { F32 x0, y0, x1, y1 };
+	struct { Vec2F32 min, max;   };
+	struct { Vec2F32 p0, p1;     };
+	struct { F32 x0, y0, x1, y1; };
 	Vec2F32 v[2];
 };
 
-llabs()
+typedef union Rng3F32 Rng3F32;
+union Rng3F32
+{
+	struct { Vec3F32 min, max;           };
+	struct { Vec3F32 p0, p1;             };
+	struct { F32 x0, y0, z0, x1, y1, z1; };
+	Vec3F32 v[2];
+};
+
+#define abs_s64(v) (S64)llabs(v)
+
+#define sqrt_f32(v)   sqrtf(v)
+#define mod_f32(a, b) fmodf((a), (b))
+#define pow_f32(b, e) powf((b), (e))
+#define ceil_f32(v)   ceilf(v)
+#define floor_f32(v)  floorf(v)
+#define round_f32(v)  roundf(v)
+#define abs_f32(v)    fabsf(v)
+#define radians_from_turns_f32(v) ((v)*2*3.1415926535897f)
+#define turns_from_radians_f32(v) ((v)/2*3.1415926535897f)
+#define degrees_from_turns_f32(v) ((v)*360.f)
+#define turns_from_degrees_f32(v) ((v)/360.f)
+#define degrees_from_radians_f32(v) (degrees_from_turns_f32(turns_from_radians_f32(v)))
+#define radians_from_degrees_f32(v) (radians_from_turns_f32(turns_from_degrees_f32(v)))
+#define sin_f32(v)    sinf(radians_from_turns_f32(v))
+#define cos_f32(v)    cosf(radians_from_turns_f32(v))
+#define tan_f32(v)    tanf(radians_from_turns_f32(v))
+
+#define sqrt_f64(v)   sqrt(v)
+#define mod_f64(a, b) fmod((a), (b))
+#define pow_f64(b, e) pow((b), (e))
+#define ceil_f64(v)   ceil(v)
+#define floor_f64(v)  floor(v)
+#define round_f64(v)  round(v)
+#define abs_f64(v)    fabs(v)
+#define radians_from_turns_f64(v) ((v)*2*3.1415926535897)
+#define turns_from_radians_f64(v) ((v)/2*3.1415926535897)
+#define degrees_from_turns_f64(v) ((v)*360.0)
+#define turns_from_degrees_f64(v) ((v)/360.0)
+#define degrees_from_radians_f64(v) (degrees_from_turns_f64(turns_from_radians_f64(v)))
+#define radians_from_degrees_f64(v) (radians_from_turns_f64(turns_from_degrees_f64(v)))
+#define sin_f64(v)    sin(radians_from_turns_f64(v))
+#define cos_f64(v)    cos(radians_from_turns_f64(v))
+#define tan_f64(v)    tan(radians_from_turns_f64(v))
+
+function F32 mix_1f32(F32 a, F32 b, F32 t);
+function F64 mix_1f64(F64 a, F64 b, F64 t);
+
+#define v2f32(x, y) vec_2f32((x), (y))
+function Vec2F32 vec_2f32(F32 x, F32 y);
+function Vec2F32 splat_2f32(F32 e);
+function Vec2F32 add_2f32(Vec2F32 a, Vec2F32 b);
+function Vec2F32 sub_2f32(Vec2F32 a, Vec2F32 b);
+function Vec2F32 mul_2f32(Vec2F32 a, Vec2F32 b);
+function Vec2F32 div_2f32(Vec2F32 a, Vec2F32 b);
+function Vec2F32 scale_2f32(Vec2F32 v, F32 s);
+function F32 dot_2f32(Vec2F32 a, Vec2F32 b);
+function F32 length_squared_2f32(Vec2F32 v);
+function F32 length_2f32(Vec2F32 v);
+function Vec2F32 normalize_2f32(Vec2F32 v);
+function Vec2F32 mix_2f32(Vec2F32 a, Vec2F32 b, F32 t);
+
+#define v3f32(x, y, z) vec_3f32((x), (y), (z))
+function Vec3F32 vec_3f32(F32 x, F32 y, F32 z);
+function Vec3F32 splat_3f32(F32 e);
+function Vec3F32 add_3f32(Vec3F32 a, Vec3F32 b);
+function Vec3F32 sub_3f32(Vec3F32 a, Vec3F32 b);
+function Vec3F32 mul_3f32(Vec3F32 a, Vec3F32 b);
+function Vec3F32 div_3f32(Vec3F32 a, Vec3F32 b);
+function Vec3F32 scale_3f32(Vec3F32 v, F32 s);
+function F32 dot_3f32(Vec3F32 a, Vec3F32 b);
+function F32 length_squared_3f32(Vec3F32 v);
+function F32 length_3f32(Vec3F32 v);
+function Vec3F32 normalize_3f32(Vec3F32 v);
+function Vec3F32 mix_3f32(Vec3F32 a, Vec3F32 b, F32 t);
+function Vec3F32 cross_3f32(Vec3F32 a, Vec3F32 b);
+function Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m);
+
+#define v4f32(x, y, z, w) vec_4f32((x), (y), (z), (w))
+function Vec4F32 vec_4f32(F32 x, F32 y, F32 z, F32 w);
+function Vec4F32 splat_4f32(F32 e);
+function Vec4F32 add_4f32(Vec4F32 a, Vec4F32 b);
+function Vec4F32 sub_4f32(Vec4F32 a, Vec4F32 b);
+function Vec4F32 mul_4f32(Vec4F32 a, Vec4F32 b);
+function Vec4F32 div_4f32(Vec4F32 a, Vec4F32 b);
+function Vec4F32 scale_4f32(Vec4F32 v, F32 s);
+function F32 dot_4f32(Vec4F32 a, Vec4F32 b);
+function F32 length_squared_4f32(Vec4F32 v);
+function F32 length_4f32(Vec4F32 v);
+function Vec4F32 normalize_4f32(Vec4F32 v);
+function Vec4F32 mix_4f32(Vec4F32 a, Vec4F32 b, F32 t);
+function Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m);
+
+function Mat3x3F32 mat_3x3f32(F32 diagonal);
+function Mat3x3F32 make_translate_3x3f32(Vec2F32 delta);
+function Mat3x3F32 make_scale_3x3f32(Vec2F32 scale);
+function Mat3x3F32 mul_3x3f32(Mat3x3F32 a, Mat3x3F32 b);
+function Mat3x3F32 scale_3x3f32(Mat3x3F32 m, F32 scale);
+function Mat3x3F32 inverse_3x3f32(Mat3x3F32 m);
+
+function Mat4x4F32 mat_4x4f32(F32 diagonal);
+function Mat4x4F32 make_translate_4x4f32(Vec3F32 delta);
+function Mat4x4F32 make_scale_4x4f32(Vec3F32 scale);
+function Mat4x4F32 make_perspective_4x4f32(F32 fov, F32 aspect_ratio, F32 near_z, F32 far_z);
+function Mat4x4F32 make_orthographic_4x4f32(F32 left, F32 right, F32 bottom, F32 top, F32 near_z, F32 far_z);
+function Mat4x4F32 make_look_at_4x4f32(Vec3F32 eye, Vec3F32 center, Vec3F32 up);
+function Mat4x4F32 make_rotate_4x4f32(Vec3F32 axis, F32 turns);
+function Mat4x4F32 mul_4x4f32(Mat4x4F32 a, Mat4x4F32 b);
+function Mat4x4F32 scale_4x4f32(Mat4x4F32 m, F32 scale);
+function Mat4x4F32 inverse_4x4f32(Mat4x4F32 m);
+function Mat4x4F32 derotate_4x4f32(Mat4x4F32 mat);
+
+function QuatF32 make_quat_f32(F32 x, F32 y, F32 z, F32 w);
+function QuatF32 quat_from_axis_angle_f32(Vec3F32 axis, F32 turns);
+
+function QuatF32 add_quatf32(QuatF32 a, QuatF32 b);
+function QuatF32 sub_quatf32(QuatF32 a, QuatF32 b);
+function QuatF32 mul_quatf32(QuatF32 a, QuatF32 b);
+function QuatF32 scale_quatf32(QuatF32 a, F32 scale);
+function QuatF32 normalize_quatf32(QuatF32 q);
+function QuatF32 mix_quatf32(QuatF32 a, QuatF32 b, F32 t);
+function F32 dot_quatf32(QuatF32 a, QuatF32 b);
+function Mat4x4F32 mat4x4_from_quatf32(QuatF32 q);
+
+#define r1f32(min, max) rng_1f32((min), (max))
+function Rng1F32 rng_1f32(F32 min, F32 max);
+function Rng1F32 shift_1f32(Rng1F32 r, F32 x);
+function Rng1F32 pad_1f32(Rng1F32 r, F32 x);
+function F32 center_1f32(Rng1F32 r);
+function B32 contains_1f32(Rng1F32 r, F32 x);
+function F32 dim_1f32(Rng1F32 r);
+function Rng1F32 union_1f32(Rng1F32 a, Rng1F32 b);
+function Rng1F32 intersect_1f32(Rng1F32 a, Rng1F32 b);
+function F32 clamp_1f32(Rng1F32 r, F32 v);
+
+#define r2f32(min, max) rng_2f32((min), (max))
+#define r2f32p(x, y, z, w) r2f32(v2f32((x), (y)), v2f32((z), (w)))
+function Rng2F32 rng_2f32(Vec2F32 min, Vec2F32 max);
+function Rng2F32 shift_2f32(Rng2F32 r, Vec2F32 x);
+function Rng2F32 pad_2f32(Rng2F32 r, F32 x);
+function Vec2F32 center_2f32(Rng2F32 r);
+function B32 contains_2f32(Rng2F32 r, Vec2F32 x);
+function Vec2F32 dim_2f32(Rng2F32 r);
+function Rng2F32 union_2f32(Rng2F32 a, Rng2F32 b);
+function Rng2F32 intersect_2f32(Rng2F32 a, Rng2F32 b);
+function Vec2F32 clamp_2f32(Rng2F32 r, Vec2F32 v);
+
+#define r3f32(min, max) rng_3f32((min), (max))
+#define r3f32p(x0, y0, z0, x1, y1, z1) r3f32(v3f32((x0), (y0), (z0)), v3f32((x0), (y0), (z0)))
+function Rng3F32 rng_3f32(Vec3F32 min, Vec3F32 max);
+function Rng3F32 shift_3f32(Rng3F32 r, Vec3F32 x);
+function Rng3F32 pad_3f32(Rng3F32 r, F32 x);
+function Vec3F32 center_3f32(Rng3F32 r);
+function B32 contains_3f32(Rng3F32 r, Vec3F32 x);
+function Vec3F32 dim_3f32(Rng3F32 r);
+function Rng3F32 union_3f32(Rng3F32 a, Rng3F32 b);
+function Rng3F32 intersect_3f32(Rng3F32 a, Rng3F32 b);
+function Vec3F32 clamp_3f32(Rng3F32 r, Vec3F32 v);
+
+#if !BASE_DISABLE_OMITTED_BASE_TYPES
+	typedef Vec2F32   Vec2;
+	typedef Vec3F32   Vec3;
+	typedef Vec4F32   Vec4;
+	typedef Rng1F32   Rng1;
+	typedef Rng2F32   Rng2;
+	typedef Rng3F32   Rng3;
+	typedef Mat3x3F32 Mat3;
+	typedef Mat4x4F32 Mat4;
+
+	#define mix1(a, b, t) mix_1f32((a), (b), (t))
+
+	#define v2(x, y) v2f32((x), (y))
+	#define splat2(e) splat_2f32((e))
+	#define add2(a, b) add_2f32((a), (b))
+	#define sub2(a, b) sub_2f32((a), (b))
+	#define mul2(a, b) mul_2f32((a), (b))
+	#define div2(a, b) div_2f32((a), (b))
+	#define scale2(a, b) scale_2f32((a), (b))
+	#define dot2(a, b) dot_2f32((a), (b))
+	#define length_squared2(v) length_squared_2f32((v))
+	#define length2(v) length_2f32((v))
+	#define normalize2(v) normalize_2f32((v))
+	#define mix2(a, b, t) mix_2f32((a), (b), (t))
+
+	#define v3(x, y, z) v3f32((x), (y), (z))
+	#define splat3(e) splat_3f32((e))
+	#define add3(a, b) add_3f32((a), (b))
+	#define sub3(a, b) sub_3f32((a), (b))
+	#define mul3(a, b) mul_3f32((a), (b))
+	#define div3(a, b) div_3f32((a), (b))
+	#define scale3(a, b) scale_3f32((a), (b))
+	#define dot3(a, b) dot_3f32((a), (b))
+	#define length_squared3(v) length_squared_2f32((v))
+	#define length3(v) length_3f32((v))
+	#define normalize3(v) normalize_3f32((v))
+	#define mix3(a, b, t) mix_3f32((a), (b), (t))
+	#define cross3(a, b) cross_3f32((a), (b))
+	#define transform3(v, mat3x3) transform_3f32((v), (mat3x3))
+
+	#define v4(x, y, z, w) v4f32((x), (y), (z), (w))
+	#define splat4(e) splat_4f32((e))
+	#define add4(a, b) add_4f32((a), (b))
+	#define sub4(a, b) sub_4f32((a), (b))
+	#define mul4(a, b) mul_4f32((a), (b))
+	#define div4(a, b) div_4f32((a), (b))
+	#define scale4(a, b) scale_4f32((a), (b))
+	#define dot4(a, b) dot_4f32((a), (b))
+	#define length_squared4(v) length_squared_4f32((v))
+	#define length4(v) length_4f32((v))
+	#define normalize4(v) normalize_4f32((v))
+	#define mix4(a, b, t) mix_4f32((a), (b), (t))
+	#define transform4(v, mat4x4) transform_4f32((v), (mat4x4))
+
+	#define r1(min, max) r1f32((min), (max))
+	#define shift1(rng, v) shift_1f32((rng), (v))
+	#define pad1(rng, v) pad_1f32((rng), (v))
+	#define center1(rng) center_1f32((rng))
+	#define contains1(rng, v) contains_1f32((rng), (v))
+	#define dim1(rng) dim_1f32((rng))
+	#define union1(a, b) union_1f32((a), (b))
+	#define intersect1(a, b) intersect_1f32((a), (b))
+	#define clamp1(rng, v) clamp_1f32((rng), (v))
+
+	#define r2(min, max) r2f32((min), (max))
+	#define r2p(x, y, z, w) r2f32p((x), (y), (z), (w))
+	#define shift2(rng, v) shift_2f32((rng), (v))
+	#define pad2(rng, v) pad_2f32((rng), (v))
+	#define center2(rng) center_2f32((rng))
+	#define contains2(rng, v) contains_2f32((rng), (v))
+	#define dim2(rng) dim_2f32((rng))
+	#define union2(a, b) union_2f32((a), (b))
+	#define intersect2(a, b) intersect_2f32((a), (b))
+	#define clamp2(rng, v) clamp_2f32((rng), (v))
+
+	#define r3(min, max) r3f32((min), (max))
+	#define r3p(x0, y0, z0, x1, y1, z1)3f32p((x0), (y0), (z0), (x1), (y1), (z1))
+	#define shift3(rng, v) shift_3f32((rng), (v))
+	#define pad3(rng, v) pad_3f32((rng), (v))
+	#define center3(rng) center_3f32((rng))
+	#define contains3(rng, v) contains_3f32((rng), (v))
+	#define dim3(rng) dim_3f32((rng))
+	#define union3(a, b) union_3f32((a), (b))
+	#define intersect3(a, b) intersect_3f32((a), (b))
+	#define clamp3(rng, v) clamp_3f32((rng), (v))
+
+	#define mat3x3(diagonal) mat_3x3f32(diagonal)
+	#define mul3x3(a, b) mul_3x3f32((a), (b))
+	#define scale3x3(m, scalar) scale_3x3f32((m), (scalar))
+	#define inverse3x3(m) inverse_3x3f32((m))
+
+	#define mat4x4(diagonal) mat_3x3f32(diagonal)
+	#define mul4x4(a, b) mul_3x3f32((a), (b))
+	#define scale4x4(m, scalar) scale_3x3f32((m), (scalar))
+	#define inverse4x4(m) inverse_3x3f32((m))
+
+	#define addq(a, b) add_quatf32(QuatF32 a, QuatF32 b)
+	#define subq(a, b) sub_quatf32(QuatF32 a, QuatF32 b)
+	#define mulq(a, b) mul_quatf32(QuatF32 a, QuatF32 b)
+	#define scaleq(a, scale) scale_quatf32(QuatF32 a, F32 scale)
+	#define normalizeq(q) normalize_quatf32(QuatF32 q)
+	#define mixq(a, b, t) mix_quatf32(QuatF32 a, QuatF32 b, F32 t)
+	#define dotq(a, b) dot_quatf32(QuatF32 a, QuatF32 b)
+	#define mat4x4_from_quat(q) mat4x4_from_quatf32(QuatF32 q)
+
+#endif // !BASE_DISABLE_OMITTED_BASE_TYPES
 
 #endif // BASE_MATH_H
