@@ -20,18 +20,11 @@ function void tctx_release(void)
 	}
 }
 
-function TCTX* tctx_get_equipped(void)
-{
-	return tctx_thread_local;
-}
-
 function Arena* tctx_get_scratch(Arena **conflicts, U64 count)
 {
-	TCTX *tctx = tctx_get_equipped();
-
 	Arena *result = 0;
-	Arena **ctx_ptr = tctx->arenas;
-	for (U64 ctx_ix = 0; ctx_ix < ArrayCount(tctx->arenas); ctx_ix++, ctx_ptr++)
+	Arena **ctx_ptr = tctx_thread_local->arenas;
+	for (U64 ctx_ix = 0; ctx_ix < ArrayCount(tctx_thread_local->arenas); ctx_ix++, ctx_ptr++)
 	{
 		B32 has_conflict = 0;
 		Arena **conflict_ptr = conflicts;

@@ -9,7 +9,6 @@ struct TCTX
 
 function void   tctx_init_and_equip(TCTX *tctx);
 function void   tctx_release(void);
-function TCTX*  tctx_get_equipped(void);
 
 function Arena* tctx_get_scratch(Arena **conflicts, U64 count);
 
