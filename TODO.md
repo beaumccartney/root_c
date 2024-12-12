@@ -1,6 +1,12 @@
-- [x] thread context
-- [x] math lib
-- [x] string lib
+- [ ] base layer
+    - [x] thread context
+    - [x] math lib
+    - [ ] string lib
+    - [ ] logging
+    - [ ] profiling
+    - [ ] entry point
+        - [ ] command line parsing on entry - into a global
+- [ ] make each module one header and one c file
 - [ ] ring
     - [ ] vm backend
 - [ ] fuzzer? https://nullprogram.com/blog/2019/01/25/
