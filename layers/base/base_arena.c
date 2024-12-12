@@ -71,7 +71,7 @@ function void *arena_push(Arena *arena, U64 size, U64 alignment)
 function void arena_pop_to(Arena *arena, U64 pos)
 {
 	AssertAlways(pos <= arena->pos);
-	U64 clampedpos = Max(ARENA_HEADER_SIZE, pos); // arena's memory is in the header
+	U64 clampedpos = ClampBot(ARENA_HEADER_SIZE, pos); // arena's memory is in the header
 	AsanPoisonMemoryRegion(arena->base + clampedpos, arena->pos - clampedpos);
 	arena->pos = clampedpos;
 }

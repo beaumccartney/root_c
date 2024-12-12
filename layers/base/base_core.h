@@ -62,6 +62,8 @@
 
 #define Min(A,B) (((A)<(B))?(A):(B))
 #define Max(A,B) (((A)>(B))?(A):(B))
+#define ClampTop(A,B) Min((A),(B))
+#define ClampBot(A,B) Max((A),(B))
 #define Clamp(A,X,B) (((X)<(A))?(A):((X)>(B))?(B):(X))
 
 #define DeferLoop(begin, end)        for(int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
