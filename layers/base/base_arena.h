@@ -1,5 +1,4 @@
 /* TODO(beau):
- *  large pages
  *  make arena from pre-allocated backing buffer
  *  adjustable commit size
  */

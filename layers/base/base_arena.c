@@ -1,4 +1,3 @@
-// TODO(beau): large pages
 function Arena *
 arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 {
@@ -51,7 +50,6 @@ function void *arena_push(Arena *arena, U64 size, U64 alignment)
 	if (endpos > arena->committed) {
 		OS_SystemInfo info = os_get_system_info();
 
-		// REVIEW(beau): defined per-arena?
 		U64 commit_gran = arena->large_pages
 			? info.large_page_size
 			: info.page_size;

@@ -1,5 +1,4 @@
 /* TODO(beau):
- *  msvc stuff
  *  c++ stuff
  */
 
