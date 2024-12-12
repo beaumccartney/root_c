@@ -70,6 +70,13 @@ union Rng1F32
 	F32 v[2];
 };
 
+typedef union Rng1U64 Rng1U64;
+union Rng1U64
+{
+	struct { U64 min, max; };
+	U64 v[2];
+};
+
 typedef union Rng2F32 Rng2F32;
 union Rng2F32
 {
@@ -213,6 +220,17 @@ function F32 dim_1f32(Rng1F32 r);
 function Rng1F32 union_1f32(Rng1F32 a, Rng1F32 b);
 function Rng1F32 intersect_1f32(Rng1F32 a, Rng1F32 b);
 function F32 clamp_1f32(Rng1F32 r, F32 v);
+
+#define r1u64(min, max) rng_1u64((min), (max))
+function Rng1U64 rng_1u64(U64 min, U64 max);
+function Rng1U64 shift_1u64(Rng1U64 r, U64 x);
+function Rng1U64 pad_1u64(Rng1U64 r, U64 x);
+function U64 center_1u64(Rng1U64 r);
+function B32 contains_1u64(Rng1U64 r, U64 x);
+function U64 dim_1u64(Rng1U64 r);
+function Rng1U64 union_1u64(Rng1U64 a, Rng1U64 b);
+function Rng1U64 intersect_1u64(Rng1U64 a, Rng1U64 b);
+function U64 clamp_1u64(Rng1U64 r, U64 v);
 
 #define r2f32(min, max) rng_2f32((min), (max))
 #define r2f32p(x, y, z, w) r2f32(v2f32((x), (y)), v2f32((z), (w)))

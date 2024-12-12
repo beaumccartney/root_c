@@ -65,7 +65,7 @@ function Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m)
 // TODO(beau): matrix and quaternion ops
 //    layout of the matrices? need to consider simd and gfx api layout. perhaps some macro to determine the layout. would be sad
 
-function Rng1F32 rng_1f32(F32 min, F32 max)          {return (Rng1F32){min, max};}
+function Rng1F32 rng_1f32(F32 min, F32 max)          {if (min > max) Swap(F32, min, max); return (Rng1F32){min, max};}
 function Rng1F32 shift_1f32(Rng1F32 r, F32 x)        {return (Rng1F32){r.min+x, r.min+x};}
 function Rng1F32 pad_1f32(Rng1F32 r, F32 x)          {return (Rng1F32){r.min-x, r.min+x};}
 function F32 center_1f32(Rng1F32 r)                  {return (r.min+r.max)/2.f;}
@@ -74,6 +74,16 @@ function F32 dim_1f32(Rng1F32 r)                     {return r.max-r.min;}
 function Rng1F32 union_1f32(Rng1F32 a, Rng1F32 b)    {return (Rng1F32){Min(a.min, b.min), Max(a.max, b.max)};}
 function Rng1F32 intersect_1f32(Rng1F32 a, Rng1F32 b){return (Rng1F32){Max(a.min, b.min), Min(a.max, b.max)};}
 function F32 clamp_1f32(Rng1F32 r, F32 v)            {return Clamp(r.min, v, r.max);}
+
+function Rng1U64 rng_1u64(U64 min, U64 max)          {if (min > max) Swap(U64, min, max); return (Rng1U64){min, max};}
+function Rng1U64 shift_1u64(Rng1U64 r, U64 x)        {return (Rng1U64){r.min+x, r.min+x};}
+function Rng1U64 pad_1u64(Rng1U64 r, U64 x)          {return (Rng1U64){r.min-x, r.min+x};}
+function U64 center_1u64(Rng1U64 r)                  {return (r.min+r.max)/2;}
+function B32 contains_1u64(Rng1U64 r, U64 x)         {return r.min <= x && x <= r.max;}
+function U64 dim_1u64(Rng1U64 r)                     {return r.max-r.min;}
+function Rng1U64 union_1u64(Rng1U64 a, Rng1U64 b)    {return (Rng1U64){Min(a.min, b.min), Max(a.max, b.max)};}
+function Rng1U64 intersect_1u64(Rng1U64 a, Rng1U64 b){return (Rng1U64){Max(a.min, b.min), Min(a.max, b.max)};}
+function U64 clamp_1u64(Rng1U64 r, U64 v)            {return Clamp(r.min, v, r.max);}
 
 function Rng2F32 rng_2f32(Vec2F32 min, Vec2F32 max)  {return (Rng2F32){min, max};}
 function Rng2F32 shift_2f32(Rng2F32 r, Vec2F32 x)    {return (Rng2F32){add_2f32(r.min, x), add_2f32(r.max, x)};}
