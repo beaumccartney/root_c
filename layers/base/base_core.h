@@ -54,8 +54,8 @@
 
 #define KB(n)  (((U64)(n)) << 10)
 #define MB(n)  (((U64)(n)) << 20)
-#define Gigabytes(n)  (((U64)(n)) << 30)
-#define Terabytes(n)  (((U64)(n)) << 40)
+#define GB(n)  (((U64)(n)) << 30)
+#define TB(n)  (((U64)(n)) << 40)
 #define Thousand(n)   ((n)*1000)
 #define Million(n)    ((n)*1000000)
 #define Billion(n)    ((n)*1000000000)
