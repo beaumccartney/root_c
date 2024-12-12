@@ -17,6 +17,7 @@ int main(void)
 {
 	TCTX tctx;
 	tctx_init_and_equip(&tctx);
+	tctx_write_this_srcloc();
 
 	Arena * scratch1 = tctx_get_scratch(0, 0);
 	Arena * scratch2 = tctx_get_scratch(&scratch1, 1);
