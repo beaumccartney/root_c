@@ -22,6 +22,13 @@ struct String32
 	U64 count;
 };
 
+typedef U32 StringMatchFlags;
+enum
+{
+	StringMatchFlag_CaseInsensitive = (1 << 0),
+	StringMatchFlag_RightSideSloppy = (1 << 1),
+};
+
 function B32 char_is_space(U8 c);
 function B32 char_is_upper(U8 c);
 function B32 char_is_lower(U8 c);
@@ -73,5 +80,9 @@ function String8 str8_chop(String8 string, U64 amt);
 
 function String8 upper_from_str8(Arena *arena, String8 string);
 function String8 lower_from_str8(Arena *arena, String8 string);
+
+function B32 str8_match(String8 a, String8 b, StringMatchFlags flags);
+function U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags);
+function B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags);
 
 #endif // BASE_STRINGS_H

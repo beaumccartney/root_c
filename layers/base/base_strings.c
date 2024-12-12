@@ -3,15 +3,72 @@
  * platforms then I'll fix it here.
  */
 
-function B32 char_is_space(U8 c)          {return c == ' '  || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';}
-function B32 char_is_upper(U8 c)          {return 'A' <= c && c <= 'Z';}
-function B32 char_is_lower(U8 c)          {return 'a' <= c && c <= 'z';}
-function B32 char_is_alpha(U8 c)          {return char_is_upper(c) || char_is_lower(c);}
-function B32 char_is_slash(U8 c)          {return c == '/' || c == '\\';}
-// function B32 char_is_digit(U8 c, U32 base){return }
-function U8 char_to_lower(U8 c)           {if (char_is_upper(c)) c+=('a'-'A'); return c;}
-function U8 char_to_upper(U8 c)           {if (char_is_lower(c)) c-=('a'-'A'); return c;}
-function U8 char_to_correct_slash(U8 c)   {if (char_is_slash(c)) c='/'; return c;}
+// NOTE(beau): string-int lookup tables, from https://github.com/EpicGamesExt/raddebugger/blob/274b710329e75db819b41a4de841f4171ba9d74c/src/base/base_strings.c#L13-L50
+
+read_only global U8 integer_symbols[16] = {
+  '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F',
+};
+
+// NOTE(allen): Includes reverses for uppercase and lowercase hex.
+read_only global U8 integer_symbol_reverse[128] = {
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+};
+
+read_only global U8 base64[64] = {
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  '_', '$',
+};
+
+read_only global U8 base64_reverse[128] = {
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,0x3F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,
+  0xFF,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,0x30,0x31,0x32,
+  0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3A,0x3B,0x3C,0x3D,0xFF,0xFF,0xFF,0xFF,0x3E,
+  0xFF,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,
+  0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x20,0x21,0x22,0x23,0xFF,0xFF,0xFF,0xFF,0xFF,
+};
+
+function B32 char_is_space(U8 c)           {return c == ' '  || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';}
+function B32 char_is_upper(U8 c)           {return 'A' <= c && c <= 'Z';}
+function B32 char_is_lower(U8 c)           {return 'a' <= c && c <= 'z';}
+function B32 char_is_alpha(U8 c)           {return char_is_upper(c) || char_is_lower(c);}
+function B32 char_is_slash(U8 c)           {return c == '/' || c == '\\';}
+function B32 char_is_digit(U8 c, U32 base) {return 0 < base && base <= 16 && integer_symbol_reverse[c] < base;}
+function U8 char_to_lower(U8 c)            {if (char_is_upper(c)) c+=('a'-'A'); return c;}
+function U8 char_to_upper(U8 c)            {if (char_is_lower(c)) c-=('a'-'A'); return c;}
+function U8 char_to_correct_slash(U8 c)    {if (char_is_slash(c)) c='/'; return c;}
+
+function U64 cstring8_length(U8 *c)
+{
+	U8 *end = c;
+	for (; *end != 0; end++);
+	return (U64)(end - c);
+}
+function U64 cstring16_length(U16 *c)
+{
+	U16 *end = c;
+	for (; *end != 0; end++);
+	return (U64)(end - c);
+}
+function U64 cstring32_length(U32 *c)
+{
+	U32 *end = c;
+	for (; *end != 0; end++);
+	return (U64)(end - c);
+}
 
 function String8  str8_range(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
 function String16 str16_range(U16 *first, U16 *one_past_last) {return str16(first, (U64)(one_past_last-first));}
@@ -116,4 +173,56 @@ function String8 lower_from_str8(Arena *arena, String8 string)
 	}
 
 	return result;
+}
+
+function B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
+{
+	B32 result = 0;
+	if (a.count == b.count && flags == 0)
+	{
+		result = MemoryMatch(a.str, b.str, a.count);
+	}
+	else if (a.count == b.count || flags & StringMatchFlag_RightSideSloppy)
+	{
+		U64 count = Min(a.count, b.count);
+		result = 1;
+		for (U64 i = 0; i < count; i++)
+		{
+			U8 ac = a.str[i], bc = b.str[i];
+			if (flags & StringMatchFlag_CaseInsensitive)
+			{
+				ac = char_to_lower(ac);
+				bc = char_to_lower(bc);
+			}
+			if (ac != bc)
+			{
+				result = 0;
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+function U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags)
+{
+	U64 result = haystack.count;
+	if (needle.count > 0)
+	{
+		S64 end_ix = haystack.count + 1 - needle.count;
+		for (S64 ix = start_pos; ix < end_ix; ix++)
+		{
+			if (str8_match(str8(haystack.str + ix, needle.count), needle, flags))
+			{
+				result = ix;
+				break;
+			}
+		}
+	}
+	return result;
+}
+function B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
+{
+	String8 postfix = str8_postfix(string, end.count);
+	return str8_match(postfix, end, flags);
 }
