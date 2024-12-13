@@ -63,13 +63,13 @@ function String8 str8_range(U8* first, U8 *one_past_last);
 function String16 str16_range(U16* first, U16 *one_past_last);
 function String32 str32_range(U32* first, U32 *one_past_last);
 
+function String8 push_str8(Arena *arena, U64 count);
+function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte);
 function String8 push_str8_copy(Arena *arena, String8 s);
 function String8 push_str8_cat(Arena *arena, String8 s1, String8 s2);
 
 // NOTE(beau): these add a 0 byte after the end of the string
-function String8 push_str8(Arena *arena, U64 count);
 function String8 push_str8_nt(Arena *arena, U64 count);
-function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte);
 function String8 push_str8_fill_byte_nt(Arena *arena, U64 count, U8 byte);
 
 function String8 str8_substr(String8 string, Rng1U64 range);
