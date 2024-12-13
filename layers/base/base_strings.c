@@ -1,3 +1,9 @@
+#if !BUILD_SUPPLEMENTARY_UNIT
+# define STB_SPRINTF_IMPLEMENTATION
+# define STB_SPRINTF_STATIC
+# include "stb/stb_sprintf.h"
+#endif
+
 /* REVIEW(beau): I believe there's a simple mask check for is_lower or
  * is_upper. If I find good code for them isn't being generated on all
  * platforms then I'll fix it here.
