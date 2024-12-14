@@ -7,7 +7,7 @@ for arg in "$@"; do declare $arg='1'; done
 if [ ! -v release ]; then debug=1; fi
 
 # common flags
-flags=("-I../layers/" "-I../scratch/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-missing-braces" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
+flags=("-I../layers/" "-I../scratch/" "-I../thirdparty/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-missing-braces" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
 
 # debug/release flags
 if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug mode]"; fi
