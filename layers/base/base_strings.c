@@ -89,9 +89,9 @@ function U64 cstring32_length(U32 *c)
 	return (U64)(end - c);
 }
 
-function String8  str8_range(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
-function String16 str16_range(U16 *first, U16 *one_past_last) {return str16(first, (U64)(one_past_last-first));}
-function String32 str32_range(U32 *first, U32 *one_past_last) {return str32(first, (U64)(one_past_last-first));}
+function String8  str8_region(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
+function String16 str16_region(U16 *first, U16 *one_past_last) {return str16(first, (U64)(one_past_last-first));}
+function String32 str32_region(U32 *first, U32 *one_past_last) {return str32(first, (U64)(one_past_last-first));}
 
 function String8 push_str8(Arena *arena, U64 count)
 {
@@ -190,7 +190,7 @@ function String8 str8_trim_whitespace(String8 string)
 	for(; char_is_space(*head); head++);
 	for(; char_is_space(*tail); tail--);
 
-	String8 result = str8_range(head, tail + 1);
+	String8 result = str8_region(head, tail + 1);
 	return result;
 }
 
