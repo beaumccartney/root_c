@@ -218,7 +218,11 @@ CheckNil(nil,p) ? \
 
 #define ExtractBit(word, idx) (((word) >> (idx)) & 1)
 
-#define zero_struct {0}
+#if LANG_CPP
+	#define zero_struct {}
+#else
+	#define zero_struct {0}
+#endif
 
 typedef uint8_t  U8;
 typedef uint16_t U16;

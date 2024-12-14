@@ -39,7 +39,7 @@ function Vec3F32 cross_3f32(Vec3F32 a, Vec3F32 b)      {return (Vec3F32){a.y*b.z
 function Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m)
 {
 	AssertAlways("unimplimented!" == 0);
-	Vec3F32 result = {0};
+	Vec3F32 result = zero_struct;
 	return result;
 }
 
@@ -58,7 +58,7 @@ function Vec4F32 mix_4f32(Vec4F32 a, Vec4F32 b, F32 t) {return (Vec4F32){mix_1f3
 function Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m)
 {
 	AssertAlways("unimplimented!" == 0);
-	Vec4F32 result = {0};
+	Vec4F32 result = zero_struct;
 	return result;
 }
 

@@ -5,7 +5,7 @@
 
 function OS_SystemInfo os_get_system_info(void)
 {
-	SYSTEM_INFO info = {0};
+	SYSTEM_INFO info = zero_struct;
 	GetSystemInfo(&info);
 
 	OS_SystemInfo result = {

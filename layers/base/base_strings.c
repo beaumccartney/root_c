@@ -378,7 +378,7 @@ function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, cha
 }
 function String8List str8_list_copy(Arena *arena, String8List *list)
 {
-	String8List result = {0};
+	String8List result = zero_struct;
 
 	for (String8Node *node = list->first; node != 0; node = node->next)
 	{
