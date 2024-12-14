@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define function      static
 #define global        static
