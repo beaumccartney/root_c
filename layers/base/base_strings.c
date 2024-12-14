@@ -184,7 +184,15 @@ function String8 str8_chop(String8 string, U64 count)
 	count = ClampTop(count, string.count);
 	return (String8){string.str, string.count-count};
 }
+function String8 str8_trim_whitespace(String8 string)
+{
+	U8 *head = string.str, *tail = string.str + string.count - 1;
+	for(; char_is_space(*head); head++);
+	for(; char_is_space(*tail); tail--);
 
+	String8 result = str8_range(head, tail + 1);
+	return result;
+}
 
 
 function String8 upper_from_str8(Arena *arena, String8 string)
