@@ -133,38 +133,38 @@ function String8 push_str8_nt(Arena *arena, U64 count_minus_one)
 		push_array_no_zero(arena, U8, count_minus_one + 1),
 		count_minus_one
 	};
-	result.str[count_minus_one] = 0;
+	result.buffer[count_minus_one] = 0;
 
 	return result;
 }
 function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte)
 {
 	String8 result = push_str8(arena, count);
-	MemorySet(result.str, byte, count);
+	MemorySet(result.buffer, byte, count);
 
 	return result;
 }
 function String8 push_str8_fill_byte_nt(Arena *arena, U64 count_minus_one, U8 byte)
 {
 	String8 result = push_str8_nt(arena, count_minus_one);
-	MemorySet(result.str, byte, count_minus_one);
+	MemorySet(result.buffer, byte, count_minus_one);
 
 	return result;
 }
 function String8 push_str8_copy(Arena *arena, String8 src)
 {
-	String8 result = push_str8_nt(arena, src.count);
-	MemoryCopy(result.str, src.str, src.count);
+	String8 result = push_str8_nt(arena, src.length);
+	MemoryCopy(result.buffer, src.buffer, src.length);
 
 	return result;
 }
 function String8 push_str8_cat(Arena *arena, String8 s1, String8 s2)
 {
-	U64 newcount = s1.count + s2.count;
+	U64 newcount = s1.length + s2.length;
 	String8 result = push_str8_nt(arena, newcount);
-	MemoryCopy(result.str, s1.str, s1.count);
-	MemoryCopy(result.str + s1.count, s2.str, s2.count);
-	result.str[result.count] = 0;
+	MemoryCopy(result.buffer, s1.buffer, s1.length);
+	MemoryCopy(result.buffer + s1.length, s2.buffer, s2.length);
+	result.buffer[result.length] = 0;
 
 	return result;
 }
@@ -174,8 +174,8 @@ function String8 push_str8fv(Arena *arena, char *fmt, va_list args)
 	va_copy(args2, args);
 	U32 needed_bytes = stbsp_vsnprintf(0, 0, fmt, args) + 1;
 	String8 result = push_str8(arena, needed_bytes);
-	result.count = stbsp_vsnprintf((char*)result.str, needed_bytes, fmt, args2);
-	result.str[result.count] = 0;
+	result.length = stbsp_vsnprintf((char*)result.buffer, needed_bytes, fmt, args2);
+	result.buffer[result.length] = 0;
 	va_end(args2);
 	return(result);
 }
@@ -191,32 +191,32 @@ function String8 push_str8f(Arena *arena, char *fmt, ...)
 
 function String8 str8_substr(String8 string, Rng1U64 range)
 {
-	range.min = ClampTop(range.min, string.count);
-	range.max = ClampTop(range.max, string.count);
-	return (String8){string.str+range.min, dim_1u64(range)};
+	range.min = ClampTop(range.min, string.length);
+	range.max = ClampTop(range.max, string.length);
+	return (String8){string.buffer+range.min, dim_1u64(range)};
 }
 function String8 str8_prefix(String8 string, U64 count)
 {
-	return (String8){string.str, ClampTop(count, string.count)};
+	return (String8){string.buffer, ClampTop(count, string.length)};
 }
 function String8 str8_postfix(String8 string, U64 count)
 {
-	count = ClampTop(count, string.count);
-	return (String8){string.str+string.count-count, count};
+	count = ClampTop(count, string.length);
+	return (String8){string.buffer+string.length-count, count};
 }
 function String8 str8_skip(String8 string, U64 count)
 {
-	count = ClampTop(count, string.count);
-	return (String8){string.str+count, string.count-count};
+	count = ClampTop(count, string.length);
+	return (String8){string.buffer+count, string.length-count};
 }
 function String8 str8_chop(String8 string, U64 count)
 {
-	count = ClampTop(count, string.count);
-	return (String8){string.str, string.count-count};
+	count = ClampTop(count, string.length);
+	return (String8){string.buffer, string.length-count};
 }
 function String8 str8_trim_whitespace(String8 string)
 {
-	U8 *head = string.str, *tail = string.str + string.count - 1;
+	U8 *head = string.buffer, *tail = string.buffer + string.length - 1;
 	for(; char_is_space(*head); head++);
 	for(; char_is_space(*tail); tail--);
 
@@ -227,10 +227,10 @@ function String8 str8_trim_whitespace(String8 string)
 
 function String8 upper_from_str8(Arena *arena, String8 string)
 {
-	String8 result = push_str8(arena, string.count);
+	String8 result = push_str8(arena, string.length);
 
-	U8 *dst = result.str, *src = string.str;
-	for (U64 i = 0; i < string.count; i++, dst++, src++)
+	U8 *dst = result.buffer, *src = string.buffer;
+	for (U64 i = 0; i < string.length; i++, dst++, src++)
 	{
 		*dst = char_to_upper(*src);
 	}
@@ -239,10 +239,10 @@ function String8 upper_from_str8(Arena *arena, String8 string)
 }
 function String8 lower_from_str8(Arena *arena, String8 string)
 {
-	String8 result = push_str8(arena, string.count);
+	String8 result = push_str8(arena, string.length);
 
-	U8 *dst = result.str, *src = string.str;
-	for (U64 i = 0; i < string.count; i++, dst++, src++)
+	U8 *dst = result.buffer, *src = string.buffer;
+	for (U64 i = 0; i < string.length; i++, dst++, src++)
 	{
 		*dst = char_to_lower(*src);
 	}
@@ -253,17 +253,17 @@ function String8 lower_from_str8(Arena *arena, String8 string)
 function B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
 {
 	B32 result = 0;
-	if (a.count == b.count && flags == 0)
+	if (a.length == b.length && flags == 0)
 	{
-		result = MemoryMatch(a.str, b.str, a.count);
+		result = MemoryMatch(a.buffer, b.buffer, a.length);
 	}
-	else if (a.count == b.count || flags & StringMatchFlag_RightSideSloppy)
+	else if (a.length == b.length || flags & StringMatchFlag_RightSideSloppy)
 	{
-		U64 count = Min(a.count, b.count);
+		U64 count = Min(a.length, b.length);
 		result = 1;
 		for (U64 i = 0; i < count; i++)
 		{
-			U8 ac = a.str[i], bc = b.str[i];
+			U8 ac = a.buffer[i], bc = b.buffer[i];
 			if (flags & StringMatchFlag_CaseInsensitive)
 			{
 				ac = char_to_lower(ac);
@@ -281,13 +281,13 @@ function B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
 }
 function U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags)
 {
-	U64 result = haystack.count;
-	if (needle.count > 0)
+	U64 result = haystack.length;
+	if (needle.length > 0)
 	{
-		S64 end_ix = haystack.count + 1 - needle.count;
+		S64 end_ix = haystack.length + 1 - needle.length;
 		for (S64 ix = start_pos; ix < end_ix; ix++)
 		{
-			if (str8_match(str8(haystack.str + ix, needle.count), needle, flags))
+			if (str8_match(str8(haystack.buffer + ix, needle.length), needle, flags))
 			{
 				result = ix;
 				break;
@@ -298,6 +298,6 @@ function U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, S
 }
 function B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 {
-	String8 postfix = str8_postfix(string, end.count);
+	String8 postfix = str8_postfix(string, end.length);
 	return str8_match(postfix, end, flags);
 }

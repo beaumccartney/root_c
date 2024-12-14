@@ -623,8 +623,8 @@ cl = lg;                                 \
       case 'S':
       {
         String8 string = va_arg(va, String8);
-        s = (char *)string.str;
-        l = (U32)string.count;
+        s = (char *)string.buffer;
+        l = (U32)string.length;
         lead[0] = 0;
         tail[0] = 0;
         pr = 0;
@@ -1591,7 +1591,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE( vsnprintf )( char * buf, int count, c
     int l;
     
     c.buf = buf;
-    c.count = count;
+    c.length = count;
     c.length = 0;
     
     STB_SPRINTF_DECORATE( vsprintfcb )( stbsp__clamp_callback, &c, stbsp__clamp_callback(0,&c,0), fmt, va );

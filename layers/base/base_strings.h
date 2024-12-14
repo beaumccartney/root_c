@@ -4,22 +4,22 @@
 typedef struct String8 String8;
 struct String8
 {
-	U8 *str;
-	U64 count;
+	U8 *buffer;
+	U64 length;
 };
 
 typedef struct String16 String16;
 struct String16
 {
-	U16 *str;
-	U64 count;
+	U16 *buffer;
+	U64 length;
 };
 
 typedef struct String32 String32;
 struct String32
 {
-	U32 *str;
-	U64 count;
+	U32 *buffer;
+	U64 length;
 };
 
 typedef U32 StringMatchFlags;
