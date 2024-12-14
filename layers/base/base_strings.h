@@ -36,6 +36,13 @@ struct String8List
 	U64 node_count, total_length;
 };
 
+typedef struct String8Array String8Array;
+struct String8Array
+{
+	String8 *v;
+	U64 count;
+};
+
 typedef U32 StringMatchFlags;
 enum
 {
@@ -143,5 +150,7 @@ function String8List str8_split_by_string_chars(Arena *arena, String8 string, St
 function String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, U64 split_char_count, StringSplitFlags flags);
 function String8List str8_list_split_by_string_chars(Arena *arena, String8List list, String8 split_chars, StringSplitFlags flags);
 function String8     str8_list_join(Arena *arena, String8List list, StringJoin *optional_params);
+
+function String8Array str8_array_from_list(Arena *arena, String8List list);
 
 #endif // BASE_STRINGS_H

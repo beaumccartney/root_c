@@ -469,3 +469,18 @@ function String8 str8_list_join(Arena *arena, String8List list, StringJoin *opti
 
 	return result;
 }
+
+function String8Array str8_array_from_list(Arena *arena, String8List list)
+{
+	String8Array result = {
+		push_array_no_zero(arena, String8, list.node_count),
+		list.node_count
+	};
+
+	String8 *copy_target = result.v;
+	for (String8Node *node; node != 0; node = node->next, copy_target++)
+	{
+		*copy_target = node->string;
+	}
+	return result;
+}
