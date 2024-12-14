@@ -217,8 +217,8 @@ function String8 str8_chop(String8 string, U64 length)
 function String8 str8_trim_whitespace(String8 string)
 {
 	U8 *head = string.buffer, *tail = string.buffer + string.length - 1;
-	for(; char_is_space(*head); head++);
-	for(; char_is_space(*tail); tail--);
+	for (; char_is_space(*head); head++);
+	for (; char_is_space(*tail); tail--);
 
 	String8 result = str8_region(head, tail + 1);
 	return result;
