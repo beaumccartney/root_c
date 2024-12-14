@@ -107,9 +107,9 @@ function String32 str32_cstring(U32 *cstr)
 
 function String8 str8_cstring_capped(char *cstr, U64 cap)
 {
-	U64 count = 0;
-	for (U8 *c = (U8*)cstr; *c != 0 && count < cap; count++, c++);
-	String8 result = {(U8*)cstr, count};
+	U64 length = 0;
+	for (U8 *c = (U8*)cstr; *c != 0 && length < cap; length++, c++);
+	String8 result = {(U8*)cstr, length};
 	return result;
 }
 function String16 str16_cstring_capped(U16 *cstr, U64 cap)
@@ -123,31 +123,31 @@ function String8  str8_region(U8 *first, U8 *one_past_last)    {return str8(firs
 function String16 str16_region(U16 *first, U16 *one_past_last) {return str16(first, (U64)(one_past_last-first));}
 function String32 str32_region(U32 *first, U32 *one_past_last) {return str32(first, (U64)(one_past_last-first));}
 
-function String8 push_str8(Arena *arena, U64 count)
+function String8 push_str8(Arena *arena, U64 length)
 {
-	return (String8){push_array_no_zero(arena, U8, count), count};
+	return (String8){push_array_no_zero(arena, U8, length), length};
 }
-function String8 push_str8_nt(Arena *arena, U64 count_minus_one)
+function String8 push_str8_nt(Arena *arena, U64 length_minus_one)
 {
 	String8 result = {
-		push_array_no_zero(arena, U8, count_minus_one + 1),
-		count_minus_one
+		push_array_no_zero(arena, U8, length_minus_one + 1),
+		length_minus_one
 	};
-	result.buffer[count_minus_one] = 0;
+	result.buffer[length_minus_one] = 0;
 
 	return result;
 }
-function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte)
+function String8 push_str8_fill_byte(Arena *arena, U64 length, U8 byte)
 {
-	String8 result = push_str8(arena, count);
-	MemorySet(result.buffer, byte, count);
+	String8 result = push_str8(arena, length);
+	MemorySet(result.buffer, byte, length);
 
 	return result;
 }
-function String8 push_str8_fill_byte_nt(Arena *arena, U64 count_minus_one, U8 byte)
+function String8 push_str8_fill_byte_nt(Arena *arena, U64 length_minus_one, U8 byte)
 {
-	String8 result = push_str8_nt(arena, count_minus_one);
-	MemorySet(result.buffer, byte, count_minus_one);
+	String8 result = push_str8_nt(arena, length_minus_one);
+	MemorySet(result.buffer, byte, length_minus_one);
 
 	return result;
 }
@@ -160,8 +160,8 @@ function String8 push_str8_copy(Arena *arena, String8 src)
 }
 function String8 push_str8_cat(Arena *arena, String8 s1, String8 s2)
 {
-	U64 newcount = s1.length + s2.length;
-	String8 result = push_str8_nt(arena, newcount);
+	U64 newlength = s1.length + s2.length;
+	String8 result = push_str8_nt(arena, newlength);
 	MemoryCopy(result.buffer, s1.buffer, s1.length);
 	MemoryCopy(result.buffer + s1.length, s2.buffer, s2.length);
 	result.buffer[result.length] = 0;
@@ -195,24 +195,24 @@ function String8 str8_substr(String8 string, Rng1U64 range)
 	range.max = ClampTop(range.max, string.length);
 	return (String8){string.buffer+range.min, dim_1u64(range)};
 }
-function String8 str8_prefix(String8 string, U64 count)
+function String8 str8_prefix(String8 string, U64 length)
 {
-	return (String8){string.buffer, ClampTop(count, string.length)};
+	return (String8){string.buffer, ClampTop(length, string.length)};
 }
-function String8 str8_postfix(String8 string, U64 count)
+function String8 str8_postfix(String8 string, U64 length)
 {
-	count = ClampTop(count, string.length);
-	return (String8){string.buffer+string.length-count, count};
+	length = ClampTop(length, string.length);
+	return (String8){string.buffer+string.length-length, length};
 }
-function String8 str8_skip(String8 string, U64 count)
+function String8 str8_skip(String8 string, U64 length)
 {
-	count = ClampTop(count, string.length);
-	return (String8){string.buffer+count, string.length-count};
+	length = ClampTop(length, string.length);
+	return (String8){string.buffer+length, string.length-length};
 }
-function String8 str8_chop(String8 string, U64 count)
+function String8 str8_chop(String8 string, U64 length)
 {
-	count = ClampTop(count, string.length);
-	return (String8){string.buffer, string.length-count};
+	length = ClampTop(length, string.length);
+	return (String8){string.buffer, string.length-length};
 }
 function String8 str8_trim_whitespace(String8 string)
 {
