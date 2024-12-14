@@ -39,7 +39,7 @@ function U8 char_to_lower(U8 c);
 function U8 char_to_upper(U8 c);
 function U8 char_to_correct_slash(U8 c);
 
-function U64 cstring8_length(U8 *c);
+function U64 cstring8_length(char *c);
 function U64 cstring16_length(U16 *c);
 function U64 cstring32_length(U32 *c);
 
@@ -58,6 +58,14 @@ function U64 cstring32_length(U32 *c);
 
 #define str32(str, count) ((String32){(str),(count)})
 #define str32_zero str32(0, 0)
+
+function String8 str8_cstring(char *cstr);
+function String16 str16_cstring(U16 *cstr);
+function String32 str32_cstring(U32 *cstr);
+
+function String8 str8_cstring_capped(char *cstr, U64 cap);
+function String16 str16_cstring_capped(U16 *cstr, U64 cap);
+function String32 str32_cstring_capped(U32 *cstr, U64 cap);
 
 function String8 str8_region(U8* first, U8 *one_past_last);
 function String16 str16_region(U16* first, U16 *one_past_last);

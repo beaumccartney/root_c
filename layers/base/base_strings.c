@@ -70,9 +70,9 @@ function U8 char_to_lower(U8 c)            {if (char_is_upper(c)) c+=('a'-'A'); 
 function U8 char_to_upper(U8 c)            {if (char_is_lower(c)) c-=('a'-'A'); return c;}
 function U8 char_to_correct_slash(U8 c)    {if (char_is_slash(c)) c='/'; return c;}
 
-function U64 cstring8_length(U8 *c)
+function U64 cstring8_length(char *c)
 {
-	U8 *end = c;
+	char *end = c;
 	for (; *end != 0; end++);
 	return (U64)(end - c);
 }
@@ -87,6 +87,36 @@ function U64 cstring32_length(U32 *c)
 	U32 *end = c;
 	for (; *end != 0; end++);
 	return (U64)(end - c);
+}
+
+function String8 str8_cstring(char *cstr)
+{
+	String8 result = {(U8*)cstr, cstring8_length(cstr)};
+	return result;
+}
+function String16 str16_cstring(U16 *cstr)
+{
+	String16 result = {cstr, cstring16_length(cstr)};
+	return result;
+}
+function String32 str32_cstring(U32 *cstr)
+{
+	String32 result = {cstr, cstring32_length(cstr)};
+	return result;
+}
+
+function String8 str8_cstring_capped(char *cstr, U64 cap)
+{
+	U64 count = 0;
+	for (U8 *c = (U8*)cstr; *c != 0 && count < cap; count++, c++);
+	String8 result = {(U8*)cstr, count};
+	return result;
+}
+function String16 str16_cstring_capped(U16 *cstr, U64 cap)
+{
+}
+function String32 str32_cstring_capped(U32 *cstr, U64 cap)
+{
 }
 
 function String8  str8_region(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
