@@ -1,6 +1,8 @@
 #if !BUILD_SUPPLEMENTARY_UNIT
 	#if COMPILER_MSVC
 		#pragma warning (push, 0)
+        #elif COMPILER_CLANG
+		#pragma clang diagnostic ignored "-Weverything"
 	#endif
 
 	#define STB_SPRINTF_IMPLEMENTATION
@@ -9,6 +11,8 @@
 
 	#if COMPILER_MSVC
 		#pragma warning (pop)
+        #elif COMPILER_CLANG
+		#pragma clang diagnostic pop
 	#endif
 
 #endif // !BUILD_SUPPLEMENTARY_UNIT
