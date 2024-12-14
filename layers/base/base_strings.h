@@ -67,6 +67,8 @@ function String8 push_str8(Arena *arena, U64 count);
 function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte);
 function String8 push_str8_copy(Arena *arena, String8 s);
 function String8 push_str8_cat(Arena *arena, String8 s1, String8 s2);
+function String8 push_str8fv(Arena *arena, char *fmt, va_list args);
+function String8 push_str8f(Arena *arena, char *fmt, ...);
 
 // NOTE(beau): these add a 0 byte after the end of the string
 function String8 push_str8_nt(Arena *arena, U64 count);

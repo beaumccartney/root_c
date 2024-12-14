@@ -138,7 +138,25 @@ function String8 push_str8_cat(Arena *arena, String8 s1, String8 s2)
 
 	return result;
 }
-
+function String8 push_str8fv(Arena *arena, char *fmt, va_list args)
+{
+	va_list args2;
+	va_copy(args2, args);
+	U32 needed_bytes = stbsp_vsnprintf(0, 0, fmt, args) + 1;
+	String8 result = push_str8(arena, needed_bytes);
+	result.count = stbsp_vsnprintf((char*)result.str, needed_bytes, fmt, args2);
+	result.str[result.count] = 0;
+	va_end(args2);
+	return(result);
+}
+function String8 push_str8f(Arena *arena, char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	String8 result = push_str8fv(arena, fmt, args);
+	va_end(args);
+	return result;
+}
 
 
 function String8 str8_substr(String8 string, Rng1U64 range)
