@@ -376,11 +376,11 @@ function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, cha
 	va_end(args);
 	return result;
 }
-function String8List str8_list_copy(Arena *arena, String8List *list)
+function String8List str8_list_copy(Arena *arena, String8List list)
 {
 	String8List result = zero_struct;
 
-	for (String8Node *node = list->first; node != 0; node = node->next)
+	for (String8Node *node = list.first; node != 0; node = node->next)
 	{
 		String8 copy = push_str8_copy(arena, node->string);
 		str8_list_push(arena, &result, copy);

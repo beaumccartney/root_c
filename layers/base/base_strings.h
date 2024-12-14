@@ -120,7 +120,7 @@ function void         str8_list_concat_in_place(String8List *list, String8List *
 function String8Node* str8_list_push_aligner(Arena *arena, String8List *list, U64 min, U64 align);
 function String8Node* str8_list_pushf(Arena *arena, String8List *list, char *fmt, ...);
 function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, char *fmt, ...);
-function String8List  str8_list_copy(Arena *arena, String8List *list);
+function String8List  str8_list_copy(Arena *arena, String8List list);
 
 #define str8_list_first(list) ((list)->first ? (list)->first->string : str8_zero())
 #endif // BASE_STRINGS_H
