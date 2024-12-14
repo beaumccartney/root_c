@@ -21,10 +21,8 @@ if not exist scratch mkdir scratch
 
 pushd build
 
-del *.pdb
+if exist *.pdb del *.pdb
 
-@echo on
 cl %flags% ..\apps\test\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
-@echo off
 
 popd
