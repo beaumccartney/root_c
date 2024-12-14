@@ -76,8 +76,8 @@ function String8 push_str8_fill_byte_nt(Arena *arena, U64 count, U8 byte);
 
 function String8 str8_substr(String8 string, Rng1U64 range);
 function String8 str8_prefix(String8 string, U64 count);
-function String8 str8_skip(String8 string, U64 amt);
 function String8 str8_postfix(String8 string, U64 count);
+function String8 str8_skip(String8 string, U64 amt);
 function String8 str8_chop(String8 string, U64 amt);
 
 function String8 upper_from_str8(Arena *arena, String8 string);

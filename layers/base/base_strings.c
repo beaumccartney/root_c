@@ -169,15 +169,15 @@ function String8 str8_prefix(String8 string, U64 count)
 {
 	return (String8){string.str, ClampTop(count, string.count)};
 }
-function String8 str8_skip(String8 string, U64 count)
-{
-	count = ClampTop(count, string.count);
-	return (String8){string.str+count, string.count-count};
-}
 function String8 str8_postfix(String8 string, U64 count)
 {
 	count = ClampTop(count, string.count);
 	return (String8){string.str+string.count-count, count};
+}
+function String8 str8_skip(String8 string, U64 count)
+{
+	count = ClampTop(count, string.count);
+	return (String8){string.str+count, string.count-count};
 }
 function String8 str8_chop(String8 string, U64 count)
 {
