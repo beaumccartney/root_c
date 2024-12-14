@@ -97,13 +97,13 @@ function String8 push_str8(Arena *arena, U64 count)
 {
 	return (String8){push_array_no_zero(arena, U8, count), count};
 }
-function String8 push_str8_nt(Arena *arena, U64 count)
+function String8 push_str8_nt(Arena *arena, U64 count_minus_one)
 {
 	String8 result = {
-		push_array_no_zero(arena, U8, count + 1),
-		count
+		push_array_no_zero(arena, U8, count_minus_one + 1),
+		count_minus_one
 	};
-	result.str[count] = 0;
+	result.str[count_minus_one] = 0;
 
 	return result;
 }
@@ -114,10 +114,10 @@ function String8 push_str8_fill_byte(Arena *arena, U64 count, U8 byte)
 
 	return result;
 }
-function String8 push_str8_fill_byte_nt(Arena *arena, U64 count, U8 byte)
+function String8 push_str8_fill_byte_nt(Arena *arena, U64 count_minus_one, U8 byte)
 {
-	String8 result = push_str8_nt(arena, count);
-	MemorySet(result.str, byte, count);
+	String8 result = push_str8_nt(arena, count_minus_one);
+	MemorySet(result.str, byte, count_minus_one);
 
 	return result;
 }
