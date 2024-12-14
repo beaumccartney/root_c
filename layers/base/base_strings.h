@@ -43,6 +43,20 @@ enum
 	StringMatchFlag_RightSideSloppy = (1 << 1),
 };
 
+typedef U32 StringSplitFlags;
+enum
+{
+	StringSplitFlag_KeepEmpties = (1 << 0),
+};
+
+typedef struct StringJoin StringJoin;
+struct StringJoin
+{
+	String8 pre;
+	String8 sep;
+	String8 post;
+};
+
 function B32 char_is_space(U8 c);
 function B32 char_is_upper(U8 c);
 function B32 char_is_lower(U8 c);
@@ -123,4 +137,11 @@ function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, cha
 function String8List  str8_list_copy(Arena *arena, String8List list);
 
 #define str8_list_first(list) ((list)->first ? (list)->first->string : str8_zero())
+
+function String8List str8_split(Arena *arena, String8 string, U8 *split_chars, U64 split_char_count, StringSplitFlags flags);
+function String8List str8_split_by_string_chars(Arena *arena, String8 string, String8 split_chars, StringSplitFlags flags);
+function String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, U64 split_char_count, StringSplitFlags flags);
+function String8List str8_list_split_by_string_chars(Arena *arena, String8List list, String8 split_chars, StringSplitFlags flags);
+function String8     str8_list_join(Arena *arena, String8List list, StringJoin *optional_params);
+
 #endif // BASE_STRINGS_H

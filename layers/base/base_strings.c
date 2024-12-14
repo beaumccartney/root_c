@@ -388,3 +388,84 @@ function String8List str8_list_copy(Arena *arena, String8List list)
 
 	return result;
 }
+
+function String8List str8_split(Arena *arena, String8 string, U8 *split_chars, U64 split_char_count, StringSplitFlags flags)
+{
+	String8List result = zero_struct;
+
+	B32 keep_empties = flags & StringSplitFlag_KeepEmpties;
+
+	U8 *one_past_last_string = string.buffer + string.length,
+	   *one_past_last_splits = split_chars + split_char_count;
+	for (U8 *c = string.buffer; c < one_past_last_string; c++)
+	{
+		U8 *first = c;
+
+		for (; c < one_past_last_string; c++)
+		{
+			for (U8 *s = split_chars; s < one_past_last_splits; s++)
+				if (*c == *s) goto break_both_inner_loops;
+		}
+		break_both_inner_loops:
+
+		String8 to_push = str8_region(first, c);
+		if (to_push.length > 0 || keep_empties)
+			str8_list_push(arena, &result, to_push);
+	}
+	return result;
+}
+function String8List str8_split_by_string_chars(Arena *arena, String8 string, String8 split_chars, StringSplitFlags flags)
+{
+	String8List result = str8_split(arena, string, split_chars.buffer, split_chars.length, flags);
+	return result;
+}
+function String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, U64 split_char_count, StringSplitFlags flags)
+{
+	String8List result = {0};
+	for (String8Node *node = list.first; node != 0; node = node->next)
+	{
+		String8List this_split = str8_split(arena, node->string, split_chars, split_char_count, flags);
+		str8_list_concat_in_place(&result, &this_split);
+	}
+	return result;
+}
+function String8List str8_list_split_by_string_chars(Arena *arena, String8List list, String8 split_chars, StringSplitFlags flags)
+{
+	String8List result = str8_list_split(arena, list, split_chars.buffer, split_chars.length, flags);
+	return result;
+}
+function String8 str8_list_join(Arena *arena, String8List list, StringJoin *optional_params)
+{
+	StringJoin params = zero_struct;
+	if (optional_params != 0) params = *optional_params;
+
+	U64 sep_count = 0;
+	if (list.node_count > 0) sep_count = list.node_count - 1;
+	U64 total_length = list.total_length
+			   + params.pre.length
+			   + params.post.length
+			   + params.sep.length * sep_count;
+
+	String8 result = push_str8(arena, total_length);
+	U8 *copy_target = result.buffer;
+
+	MemoryCopy(copy_target, params.pre.buffer, params.pre.length);
+	copy_target += params.pre.length;
+
+	for (String8Node *node = list.first; node != 0; node = node->next)
+	{
+		MemoryCopy(copy_target, node->string.buffer, node->string.length);
+		copy_target += node->string.length;
+
+		if (node->next != 0)
+		{
+			MemoryCopy(copy_target, params.sep.buffer, params.sep.length);
+			copy_target += params.sep.length;
+		}
+	}
+
+	MemoryCopy(copy_target, params.post.buffer, params.post.length);
+	copy_target += params.post.length;
+
+	return result;
+}
