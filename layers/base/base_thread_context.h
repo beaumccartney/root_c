@@ -20,7 +20,7 @@ function Arena* tctx_get_scratch(Arena **conflicts, U64 count);
 
 #define tctx_write_this_srcloc() {tctx_thread_local->file_name=str8_lit(__FILE__);tctx_thread_local->line_number=__LINE__;}
 
-#define scratch_begin(conflicts, count) temp_begin(tctx_get_scratch((conflicts)), (count))
+#define scratch_begin(conflicts, count) temp_begin(tctx_get_scratch((conflicts), (count)))
 #define scratch_end(scratch) temp_end(scratch)
 
 #endif // BASE_THREAD_CONTEXT_H
