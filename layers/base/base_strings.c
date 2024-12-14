@@ -301,3 +301,90 @@ function B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 	String8 postfix = str8_postfix(string, end.length);
 	return str8_match(postfix, end, flags);
 }
+
+
+
+function String8Node* str8_list_push_node(String8List *list, String8Node *node)
+{
+	SLLQueuePush(list->first, list->last, node);
+	list->node_count   += 1;
+	list->total_length += node->string.length;
+	return node;
+}
+function String8Node* str8_list_push_node_set_string(String8List *list, String8Node *node, String8 string)
+{
+	node->string = string;
+	str8_list_push_node(list, node);
+	return node;
+}
+function String8Node* str8_list_push_node_front(String8List *list, String8Node *node)
+{
+	SLLQueuePushFront(list->first, list->last, node);
+	list->node_count   += 1;
+	list->total_length += node->string.length;
+	return node;
+}
+function String8Node* str8_list_push_node_front_set_string(String8List *list, String8Node *node, String8 string)
+{
+	node->string = string;
+	str8_list_push_node_front(list, node);
+	return node;
+}
+function String8Node* str8_list_push(Arena *arena, String8List *list, String8 string)
+{
+	String8Node *node = push_array_no_zero(arena, String8Node, 1);
+	str8_list_push_node_set_string(list, node, string);
+	return node;
+}
+function String8Node* str8_list_push_front(Arena *arena, String8List *list, String8 string)
+{
+	String8Node *node = push_array_no_zero(arena, String8Node, 1);
+	node->string = string;
+	str8_list_push_node_front(list, node);
+	return node;
+}
+function void str8_list_concat_in_place(String8List *list, String8List *to_push)
+{
+	if (to_push->total_length > 0)
+	{
+		list->total_length += to_push->total_length;
+		list->node_count   += to_push->node_count;
+		list->last->next   =  to_push->first;
+		list->last         =  to_push->last;
+	}
+	else
+	{
+		*list = *to_push;
+	}
+	MemoryZeroStruct(to_push);
+}
+function String8Node* str8_list_pushf(Arena *arena, String8List *list, char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	String8 string = push_str8fv(arena, fmt, args);
+	String8Node *result = str8_list_push(arena, list, string);
+	va_end(args);
+	return result;
+}
+function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	String8 string = push_str8fv(arena, fmt, args);
+	String8Node *result = str8_list_push_front(arena, list, string);
+	va_end(args);
+	return result;
+}
+function String8List str8_list_copy(Arena *arena, String8List *list)
+{
+	String8List result = {0};
+
+	for (String8Node *node = list->first; node != 0; node = node->next)
+	{
+		String8 copy = push_str8_copy(arena, node->string);
+		str8_list_push(arena, &result, copy);
+	}
+
+	return result;
+}

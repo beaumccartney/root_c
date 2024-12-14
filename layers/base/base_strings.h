@@ -22,6 +22,20 @@ struct String32
 	U64 length;
 };
 
+typedef struct String8Node String8Node;
+struct String8Node
+{
+	String8Node *next;
+	String8 string;
+};
+
+typedef struct String8List String8List;
+struct String8List
+{
+	String8Node *first, *last;
+	U64 node_count, total_length;
+};
+
 typedef U32 StringMatchFlags;
 enum
 {
@@ -96,4 +110,17 @@ function B32 str8_match(String8 a, String8 b, StringMatchFlags flags);
 function U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags);
 function B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags);
 
+function String8Node* str8_list_push_node(String8List *list, String8Node *node);
+function String8Node* str8_list_push_node_set_string(String8List *list, String8Node *node, String8 string);
+function String8Node* str8_list_push_node_front(String8List *list, String8Node *node);
+function String8Node* str8_list_push_node_front_set_string(String8List *list, String8Node *node, String8 string);
+function String8Node* str8_list_push(Arena *arena, String8List *list, String8 string);
+function String8Node* str8_list_push_front(Arena *arena, String8List *list, String8 string);
+function void         str8_list_concat_in_place(String8List *list, String8List *to_push);
+function String8Node* str8_list_push_aligner(Arena *arena, String8List *list, U64 min, U64 align);
+function String8Node* str8_list_pushf(Arena *arena, String8List *list, char *fmt, ...);
+function String8Node* str8_list_push_frontf(Arena *arena, String8List *list, char *fmt, ...);
+function String8List  str8_list_copy(Arena *arena, String8List *list);
+
+#define str8_list_first(list) ((list)->first ? (list)->first->string : str8_zero())
 #endif // BASE_STRINGS_H
