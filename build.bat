@@ -23,6 +23,6 @@ pushd build
 
 if exist *.pdb del *.pdb
 
-cl %flags% ..\apps\test\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
+cl %flags% /Fe:scratch ..\scratch\main.c /link /MANIFEST:EMBED /INCREMENTAL:NO /pdbaltpath:%%%%_PDB%%%%
 
 popd
