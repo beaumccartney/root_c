@@ -238,19 +238,19 @@ typedef U8 Byte;
 
 #define Unused(name) (void)(name)
 
-global U64 max_U64 = 0xffffffffffffffffull;
-global U32 max_U32 = 0xffffffff;
-global U16 max_U16 = 0xffff;
-global U8  max_U8  = 0xff;
+global U64 max_U64 = UINT64_MAX;
+global U32 max_U32 = UINT32_MAX;
+global U16 max_U16 = UINT16_MAX;
+global U8  max_U8  = UINT8_MAX;
 
-global S64 max_S64 = (S64)0x7fffffffffffffffull;
-global S32 max_S32 = (S32)0x7fffffff;
-global S16 max_S16 = (S16)0x7fff;
-global S8  max_S8  =  (S8)0x7f;
+global S64 max_S64 = INT64_MAX;
+global S32 max_S32 = INT32_MAX;
+global S16 max_S16 = INT16_MAX;
+global S8  max_S8  = INT8_MAX;
 
-global S64 min_S64 = (S64)0xffffffffffffffffull;
-global S32 min_S32 = (S32)0xffffffff;
-global S16 min_S16 = (S16)0xffff;
-global S8  min_S8  =  (S8)0xff;
+global S64 min_S64 = INT64_MIN;
+global S32 min_S32 = INT32_MIN;
+global S16 min_S16 = INT16_MIN;
+global S8  min_S8  = INT8_MIN;
 
 #endif // BASE_CORE_H
