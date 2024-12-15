@@ -345,18 +345,21 @@ function String8Node* str8_list_push_front(Arena *arena, String8List *list, Stri
 }
 function void str8_list_concat_in_place(String8List *list, String8List *to_push)
 {
-	if (to_push->total_length > 0)
+	if (to_push->node_count > 0)
 	{
-		list->total_length += to_push->total_length;
-		list->node_count   += to_push->node_count;
-		list->last->next   =  to_push->first;
-		list->last         =  to_push->last;
+		if (list->last != 0)
+		{
+			list->total_length += to_push->total_length;
+			list->node_count   += to_push->node_count;
+			list->last->next    =  to_push->first;
+			list->last          =  to_push->last;
+		}
+		else
+		{
+			*list = *to_push;
+		}
+		MemoryZeroStruct(to_push);
 	}
-	else
-	{
-		*list = *to_push;
-	}
-	MemoryZeroStruct(to_push);
 }
 function String8Node* str8_list_pushf(Arena *arena, String8List *list, char *fmt, ...)
 {
