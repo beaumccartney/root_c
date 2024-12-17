@@ -72,7 +72,8 @@ function B32 char_is_slash(U8 c);
 function B32 char_is_digit(U8 c, U32 base);
 function U8 char_to_lower(U8 c);
 function U8 char_to_upper(U8 c);
-function U8 char_to_correct_slash(U8 c);
+function U8 char_to_forward_slash(U8 c);
+function U8 char_to_back_slash(U8 c);
 
 function U64 cstring8_length(char *c);
 function U64 cstring16_length(U16 *c);

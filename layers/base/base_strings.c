@@ -68,7 +68,8 @@ function B32 char_is_slash(U8 c)           {return c == '/' || c == '\\';}
 function B32 char_is_digit(U8 c, U32 base) {return 0 < base && base <= 16 && integer_symbol_reverse[c] < base;}
 function U8 char_to_lower(U8 c)            {if (char_is_upper(c)) c+=('a'-'A'); return c;}
 function U8 char_to_upper(U8 c)            {if (char_is_lower(c)) c-=('a'-'A'); return c;}
-function U8 char_to_correct_slash(U8 c)    {if (char_is_slash(c)) c='/'; return c;}
+function U8 char_to_forward_slash(U8 c)    {if (char_is_slash(c)) c='/'; return c;}
+function U8 char_to_back_slash(U8 c)       {if (char_is_slash(c)) c='\\'; return c;}
 
 function U64 cstring8_length(char *c)
 {
