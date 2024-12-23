@@ -70,7 +70,7 @@ function Rng1F32 shift_1f32(Rng1F32 r, F32 x)        {return (Rng1F32){r.min+x, 
 function Rng1F32 pad_1f32(Rng1F32 r, F32 x)          {return (Rng1F32){r.min-x, r.min+x};}
 function F32 center_1f32(Rng1F32 r)                  {return (r.min+r.max)/2.f;}
 function B32 contains_1f32(Rng1F32 r, F32 x)         {return r.min <= x && x <= r.max;}
-function F32 dim_1f32(Rng1F32 r)                     {return r.max-r.min;}
+function F32 dim_1f32(Rng1F32 r)                     {return r.max>r.min ? r.max-r.min : 0.f;}
 function Rng1F32 union_1f32(Rng1F32 a, Rng1F32 b)    {return (Rng1F32){Min(a.min, b.min), Max(a.max, b.max)};}
 function Rng1F32 intersect_1f32(Rng1F32 a, Rng1F32 b){return (Rng1F32){Max(a.min, b.min), Min(a.max, b.max)};}
 function F32 clamp_1f32(Rng1F32 r, F32 v)            {return Clamp(r.min, v, r.max);}
@@ -80,7 +80,7 @@ function Rng1U64 shift_1u64(Rng1U64 r, U64 x)        {return (Rng1U64){r.min+x, 
 function Rng1U64 pad_1u64(Rng1U64 r, U64 x)          {return (Rng1U64){r.min-x, r.min+x};}
 function U64 center_1u64(Rng1U64 r)                  {return (r.min+r.max)/2;}
 function B32 contains_1u64(Rng1U64 r, U64 x)         {return r.min <= x && x <= r.max;}
-function U64 dim_1u64(Rng1U64 r)                     {return r.max-r.min;}
+function U64 dim_1u64(Rng1U64 r)                     {return r.max>r.min ? r.max-r.min : 0ull;}
 function Rng1U64 union_1u64(Rng1U64 a, Rng1U64 b)    {return (Rng1U64){Min(a.min, b.min), Max(a.max, b.max)};}
 function Rng1U64 intersect_1u64(Rng1U64 a, Rng1U64 b){return (Rng1U64){Max(a.min, b.min), Min(a.max, b.max)};}
 function U64 clamp_1u64(Rng1U64 r, U64 v)            {return Clamp(r.min, v, r.max);}
@@ -90,7 +90,7 @@ function Rng2F32 shift_2f32(Rng2F32 r, Vec2F32 x)    {return (Rng2F32){add_2f32(
 function Rng2F32 pad_2f32(Rng2F32 r, F32 x)          {Vec2F32 xv = {x, x}; return (Rng2F32){sub_2f32(r.min, xv), add_2f32(r.max, xv)};}
 function Vec2F32 center_2f32(Rng2F32 r)              {return (Vec2F32){(r.x0+r.x1)/2.f, (r.y0+r.y1)/2.f};}
 function B32 contains_2f32(Rng2F32 r, Vec2F32 x)     {return r.min.x <= x.x && x.x <= r.max.x && r.min.y <= x.y && x.y <= r.max.y;}
-function Vec2F32 dim_2f32(Rng2F32 r)                 {return (Vec2F32){r.x1-r.x0, r.y1-r.y0};}
+function Vec2F32 dim_2f32(Rng2F32 r)                 {return (Vec2F32){r.max.x>r.min.x?r.max.x-r.min.x:0.f, r.max.y>r.min.y?r.max.y-r.min.y:0.f};}
 function Rng2F32 union_2f32(Rng2F32 a, Rng2F32 b)    {return (Rng2F32){Min(a.min.x, b.min.x), Min(a.min.y, b.min.y), Max(a.max.x, b.max.x), Max(a.max.y, b.max.y)};}
 function Rng2F32 intersect_2f32(Rng2F32 a, Rng2F32 b){return (Rng2F32){Max(a.max.x, b.max.x), Max(a.max.y, b.max.y), Min(a.min.x, b.min.x), Min(a.min.y, b.min.y)};}
 function Vec2F32 clamp_2f32(Rng2F32 r, Vec2F32 v)    {return (Vec2F32){Clamp(r.min.x, v.x, r.max.x), Clamp(r.min.y, v.y, r.max.y)};}
@@ -100,7 +100,7 @@ function Rng3F32 shift_3f32(Rng3F32 r, Vec3F32 x)    {return (Rng3F32){add_3f32(
 function Rng3F32 pad_3f32(Rng3F32 r, F32 x)          {Vec3F32 xv = {x, x ,x}; return (Rng3F32){sub_3f32(r.min, xv), add_3f32(r.max, xv)};}
 function Vec3F32 center_3f32(Rng3F32 r)              {return (Vec3F32){(r.x0+r.x1)/2.f, (r.y0+r.y1)/2.f, (r.z0+r.z1)/2.f};}
 function B32 contains_3f32(Rng3F32 r, Vec3F32 x)     {return r.min.x <= x.x && x.x <= r.max.x && r.min.y <= x.y && x.y <= r.max.y && r.min.z <= x.z && x.z <= r.max.z ;}
-function Vec3F32 dim_3f32(Rng3F32 r)                 {return (Vec3F32){r.x1-r.x0, r.y1-r.y0, r.z1-r.z0};}
+function Vec3F32 dim_3f32(Rng3F32 r)                 {return (Vec3F32){r.max.x>r.min.x?r.max.x-r.min.x:0.f, r.max.y>r.min.y?r.max.y-r.min.y:0.f, r.max.z>r.min.z?r.max.z-r.min.z:0.f};}
 function Rng3F32 union_3f32(Rng3F32 a, Rng3F32 b)    {return (Rng3F32){Min(a.min.x, b.min.x), Min(a.min.y, b.min.y), Min(a.min.z, b.min.z), Max(a.max.x, b.max.x), Max(a.max.y, b.max.y), Max(a.max.z, b.max.z)};}
 function Rng3F32 intersect_3f32(Rng3F32 a, Rng3F32 b){return (Rng3F32){Max(a.min.x, b.min.x), Max(a.min.y, b.min.y), Max(a.min.z, b.min.z), Min(a.max.x, b.max.x), Min(a.max.y, b.max.y), Min(a.max.z, b.max.z)};}
 function Vec3F32 clamp_3f32(Rng3F32 r, Vec3F32 v)    {return (Vec3F32){Clamp(r.min.x, v.x, r.max.x), Clamp(r.min.y, v.y, r.max.y), Clamp(r.min.z, v.z, r.max.z)};}
