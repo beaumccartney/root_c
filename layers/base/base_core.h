@@ -258,4 +258,48 @@ global S32 min_S32 = INT32_MIN;
 global S16 min_S16 = INT16_MIN;
 global S8  min_S8  = INT8_MIN;
 
+typedef enum Side Side;
+enum Side
+{
+	Side_Min,
+	Side_Left   = Side_Min,
+	Side_Bottom = Side_Min,
+
+	Side_Max,
+	Side_Right  = Side_Max,
+	Side_Top    = Side_Max,
+	Side_COUNT,
+};
+#define side_flip(s) ((Side)(!(s)))
+
+typedef enum Axis2 Axis2;
+enum Axis2
+{
+	Axis2_X,
+	Axis2_Y,
+	Axis2_COUNT,
+};
+#define axis2_flip(s) ((Axis2)(!(s)))
+
+typedef enum Axis3 Axis3;
+enum Axis3
+{
+	Axis3_X,
+	Axis3_Y,
+	Axis3_Z,
+	Axis3_COUNT,
+};
+
+
+typedef enum Axis4 Axis4;
+enum Axis4
+{
+	Axis4_X,
+	Axis4_Y,
+	Axis4_Z,
+	Axis4_W,
+	Axis4_COUNT,
+};
+
+
 #endif // BASE_CORE_H
