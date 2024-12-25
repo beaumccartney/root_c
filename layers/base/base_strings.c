@@ -410,7 +410,7 @@ function String8List str8_split(Arena *arena, String8 string, U8 *split_chars, U
 			for (U8 *s = split_chars; s < one_past_last_splits; s++)
 				if (*c == *s) goto break_both_inner_loops;
 		}
-		break_both_inner_loops:
+		break_both_inner_loops:;
 
 		String8 to_push = str8_region(first, c);
 		if (to_push.length > 0 || keep_empties)
