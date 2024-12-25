@@ -491,7 +491,7 @@ function String8Array str8_array_from_list(Arena *arena, String8List list)
 
 function String8 indented_from_string(Arena *arena, String8 string)
 {
-	Temp scratch = scratch_begin(arena, 1);
+	Temp scratch = scratch_begin(&arena, 1);
 	read_only local_persist U8 indentation_bytes[] = "                                                                                                                                ";
 	String8List indented_strings = zero_struct;
 	S64 depth = 0, next_depth = 0;

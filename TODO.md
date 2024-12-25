@@ -2,7 +2,7 @@
     - [x] thread context
     - [x] math lib
     - [x] string lib
-    - [ ] logging
+    - [x] logging
     - [ ] entry point
         - [ ] command line parsing
     - [ ] command line stuff
