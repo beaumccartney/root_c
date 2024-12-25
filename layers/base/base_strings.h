@@ -154,4 +154,6 @@ function String8     str8_list_join(Arena *arena, String8List list, StringJoin *
 
 function String8Array str8_array_from_list(Arena *arena, String8List list);
 
+function String8 indented_from_string(Arena *arena, String8 string);
+
 #endif // BASE_STRINGS_H

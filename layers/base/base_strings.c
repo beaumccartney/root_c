@@ -488,3 +488,37 @@ function String8Array str8_array_from_list(Arena *arena, String8List list)
 	}
 	return result;
 }
+
+function String8 indented_from_string(Arena *arena, String8 string)
+{
+	Temp scratch = scratch_begin(arena, 1);
+	read_only local_persist U8 indentation_bytes[] = "                                                                                                                                ";
+	String8List indented_strings = zero_struct;
+	S64 depth = 0, next_depth = 0;
+	U64 line_begin_offset = 0;
+	for (U64 offset = 0; offset <= string.length; offset++)
+	{
+		U8 byte = offset < string.length ? string.buffer[offset] : 0;
+		switch (byte)
+		{
+			default:{} break;
+			case '{': case '[': case '(':{next_depth = ClampBot(0, next_depth + 1);} break;
+			case '}': case ']': case ')':{next_depth = ClampBot(0, next_depth - 1); depth = next_depth;} break;
+			case '\n':
+			case 0:
+			{
+				String8 line = str8_trim_whitespace(str8_substr(string, r1u64(line_begin_offset, offset)));
+				if (line.length > 0)
+					str8_list_pushf(scratch.arena, &indented_strings, "%.*s%S\n", (int)depth*2, indentation_bytes, line);
+				if (line.length == 0 && indented_strings.node_count != 0 && offset < string.length)
+					str8_list_pushf(scratch.arena, &indented_strings, "\n");
+
+				line_begin_offset = offset + 1;
+				depth = next_depth;
+			} break;
+		}
+	}
+	scratch_end(scratch);
+	String8 result = str8_list_join(arena, indented_strings, 0);
+	return result;
+}
