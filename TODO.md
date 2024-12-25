@@ -1,12 +1,16 @@
 - [ ] base layer
     - [x] thread context
     - [x] math lib
-    - [ ] string lib
+    - [x] string lib
     - [ ] logging
-    - [ ] profiling
     - [ ] entry point
-        - [ ] command line parsing on entry - into a global
-- [ ] make each module one header and one c file
+        - [ ] command line parsing
+    - [ ] command line stuff
+- [ ] os layer
+    - [ ] core
+        - [ ] os level entry point calling base entry point
+            - [ ] string8 list from argcv
+    - [ ] graphics
 - [ ] ring
     - [ ] vm backend
 - [ ] fuzzer? https://nullprogram.com/blog/2019/01/25/
