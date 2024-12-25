@@ -8,5 +8,7 @@
 #include "base_math.h"
 #include "base_strings.h"
 #include "base_thread_context.h"
+#include "base_command_line.h"
+#include "base_log.h"
 
 #endif // BASE_INC_H
