@@ -1,4 +1,6 @@
-thread_local Log *log_active = 0;
+#if !BUILD_SUPPLEMENTARY_UNIT
+	thread_local Log *log_active = 0;
+#endif
 
 function Log *log_alloc(void)
 {
