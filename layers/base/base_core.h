@@ -241,23 +241,6 @@ typedef double   F64;
 
 typedef U8 Byte;
 
-#define Unused(name) (void)(name)
-
-global U64 max_U64 = UINT64_MAX;
-global U32 max_U32 = UINT32_MAX;
-global U16 max_U16 = UINT16_MAX;
-global U8  max_U8  = UINT8_MAX;
-
-global S64 max_S64 = INT64_MAX;
-global S32 max_S32 = INT32_MAX;
-global S16 max_S16 = INT16_MAX;
-global S8  max_S8  = INT8_MAX;
-
-global S64 min_S64 = INT64_MIN;
-global S32 min_S32 = INT32_MIN;
-global S16 min_S16 = INT16_MIN;
-global S8  min_S8  = INT8_MIN;
-
 typedef enum Side Side;
 enum Side
 {
@@ -300,6 +283,56 @@ enum Axis4
 	Axis4_W,
 	Axis4_COUNT,
 };
+
+typedef enum OperatingSystem
+{
+	OperatingSystem_Null,
+	OperatingSystem_Windows,
+	OperatingSystem_Linux,
+	OperatingSystem_Mac,
+	OperatingSystem_COUNT,
+}
+OperatingSystem;
+
+typedef enum Arch
+{
+	Arch_Null,
+	Arch_x64,
+	Arch_arm64,
+	Arch_COUNT,
+}
+Arch;
+
+typedef enum Compiler
+{
+	Compiler_Null,
+	Compiler_msvc,
+	Compiler_clang,
+	Compiler_gcc,
+	Compiler_COUNT,
+}
+Compiler;
+
+function OperatingSystem operating_system_from_context(void);
+function Arch arch_from_context(void);
+function Compiler compiler_from_context(void);
+
+#define Unused(name) (void)(name)
+
+global U64 max_U64 = UINT64_MAX;
+global U32 max_U32 = UINT32_MAX;
+global U16 max_U16 = UINT16_MAX;
+global U8  max_U8  = UINT8_MAX;
+
+global S64 max_S64 = INT64_MAX;
+global S32 max_S32 = INT32_MAX;
+global S16 max_S16 = INT16_MAX;
+global S8  max_S8  = INT8_MAX;
+
+global S64 min_S64 = INT64_MIN;
+global S32 min_S32 = INT32_MIN;
+global S16 min_S16 = INT16_MIN;
+global S8  min_S8  = INT8_MIN;
 
 
 #endif // BASE_CORE_H
