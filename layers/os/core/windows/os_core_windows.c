@@ -45,3 +45,24 @@ function B32 os_commit_large(void *ptr, U64 size)
 {
 	return 1;
 }
+
+function void windows_entry_point_caller(int args_count, char *args[])
+{
+	local_persist TCTX tctx;
+	tctx_init_and_equip(&tctx);
+	main_thread_base_entry_point(args_count, args);
+	tctx_release();
+}
+
+#if OS_FEATURE_GRAPHICAL
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	windows_entry_point_caller(__argc, __argv);
+	return 0;
+}
+#else
+void main(int argc, char *argv[])
+{
+	windows_entry_point_caller(argc, argv);
+}
+#endif
