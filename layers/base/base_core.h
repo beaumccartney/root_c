@@ -52,6 +52,8 @@
 	#error AlignOf not yet defined for this compiler
 #endif
 
+#define this_function_name __func__
+
 #define KB(n)  (((U64)(n)) << 10)
 #define MB(n)  (((U64)(n)) << 20)
 #define GB(n)  (((U64)(n)) << 30)
