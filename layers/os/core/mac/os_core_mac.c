@@ -56,3 +56,12 @@ function B32 os_commit_large(void *ptr, U64 size)
 {
 	return 1;
 }
+
+int main(int argc, char *argv[])
+{
+	local_persist TCTX tctx;
+	tctx_init_and_equip(&tctx);
+	main_thread_base_entry_point(argc, argv);
+	tctx_release();
+	return 0;
+}
