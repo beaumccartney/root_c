@@ -7,7 +7,7 @@ for arg in "$@"; do declare $arg='1'; done
 if [ ! -v release ]; then debug=1; fi
 
 # common flags
-flags=("-I../layers/" "-I../scratch/" "-I../thirdparty/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-missing-braces" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
+flags=("-I../layers/" "-I../local/" "-I../thirdparty/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-missing-braces" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
 
 # debug/release flags
 if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug mode]"; fi
@@ -19,8 +19,8 @@ if [ -v sanitize ]; then asan=1 && ubsan=1; fi
 if [ -v asan  ];    then flags+=("-fsanitize=address")   && echo "[asan enabled]"; fi
 if [ -v ubsan ];    then flags+=("-fsanitize=undefined") && echo "[ubsan enabled]"; fi
 
-mkdir -p build scratch
+mkdir -p build local
 
 cd build
 set -x
-cc $flags -o test ../scratch/main.c
+cc $flags -o test ../local/main.c
