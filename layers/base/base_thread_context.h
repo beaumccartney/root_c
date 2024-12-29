@@ -1,13 +1,12 @@
 #ifndef BASE_THREAD_CONTEXT_H
 #define BASE_THREAD_CONTEXT_H
 
-// REVIEW(beau): raddbg uses c strings and lengths for string members, is there a reason?
 typedef struct TCTX TCTX;
 struct TCTX
 {
 	Arena * arenas[2];
 
-	U8 *file_name[32];
+	char *file_name;
 	U64 line_number;
 
 	U8 thread_name[32];
