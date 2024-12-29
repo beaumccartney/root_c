@@ -64,6 +64,13 @@ struct StringJoin
 	String8 post;
 };
 
+typedef struct UnicodeDecode UnicodeDecode;
+struct UnicodeDecode
+{
+	U32 inc;
+	U32 codepoint;
+};
+
 function B32 char_is_space(U8 c);
 function B32 char_is_upper(U8 c);
 function B32 char_is_lower(U8 c);
@@ -155,5 +162,13 @@ function String8     str8_list_join(Arena *arena, String8List list, StringJoin *
 function String8Array str8_array_from_list(Arena *arena, String8List list);
 
 function String8 indented_from_string(Arena *arena, String8 string);
+
+function UnicodeDecode utf8_decode(U8 *str, U64 max);
+function UnicodeDecode utf16_decode(U16 *str, U64 max);
+function U32           utf8_encode(U8 *str, U32 codepoint);
+function U32           utf16_encode(U16 *str, U32 codepoint);
+
+function String8  str8_from_16(Arena *arena, String16 string);
+function String16 str16_from_8(Arena *arena, String8 string);
 
 #endif // BASE_STRINGS_H

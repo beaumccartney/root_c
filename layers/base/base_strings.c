@@ -522,3 +522,193 @@ function String8 indented_from_string(Arena *arena, String8 string)
 	String8 result = str8_list_join(arena, indented_strings, 0);
 	return result;
 }
+
+// utf 8-bit and 16-bit stuff
+// from https://github.com/EpicGamesExt/raddebugger/blob/aa42d12d0fe58409d52cbc950cb5e44f3a668e29/src/base/base_strings.c#L1388-L1615
+
+read_only global U8 utf8_class[32] = {
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,2,2,2,2,3,3,4,5,
+};
+
+function UnicodeDecode
+utf8_decode(U8 *str, U64 max)
+{
+	UnicodeDecode result = {1, max_U32};
+	U8 byte = str[0];
+	U8 byte_class = utf8_class[byte >> 3];
+	switch (byte_class)
+	{
+		case 1:
+		{
+			result.codepoint = byte;
+		}break;
+		case 2:
+		{
+			if (2 < max)
+			{
+				U8 cont_byte = str[1];
+				if (utf8_class[cont_byte >> 3] == 0)
+				{
+					result.codepoint = (byte & bitmask5) << 6;
+					result.codepoint |=  (cont_byte & bitmask6);
+					result.inc = 2;
+				}
+			}
+		}break;
+		case 3:
+		{
+			if (2 < max)
+			{
+				U8 cont_byte[2] = {str[1], str[2]};
+				if (utf8_class[cont_byte[0] >> 3] == 0 &&
+					utf8_class[cont_byte[1] >> 3] == 0)
+				{
+					result.codepoint = (byte & bitmask4) << 12;
+					result.codepoint |= ((cont_byte[0] & bitmask6) << 6);
+					result.codepoint |=  (cont_byte[1] & bitmask6);
+					result.inc = 3;
+				}
+			}
+		}break;
+		case 4:
+		{
+			if (3 < max)
+			{
+				U8 cont_byte[3] = {str[1], str[2], str[3]};
+				if (utf8_class[cont_byte[0] >> 3] == 0 &&
+					utf8_class[cont_byte[1] >> 3] == 0 &&
+					utf8_class[cont_byte[2] >> 3] == 0)
+				{
+					result.codepoint = (byte & bitmask3) << 18;
+					result.codepoint |= ((cont_byte[0] & bitmask6) << 12);
+					result.codepoint |= ((cont_byte[1] & bitmask6) <<  6);
+					result.codepoint |=  (cont_byte[2] & bitmask6);
+					result.inc = 4;
+				}
+			}
+		}
+	}
+	return(result);
+}
+
+function UnicodeDecode
+utf16_decode(U16 *str, U64 max)
+{
+	UnicodeDecode result = {1, max_U32};
+	result.codepoint = str[0];
+	result.inc = 1;
+	if (max > 1 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000)
+	{
+		result.codepoint = ((str[0] - 0xD800) << 10) | ((str[1] - 0xDC00) + 0x10000);
+		result.inc = 2;
+	}
+	return(result);
+}
+
+function U32
+utf8_encode(U8 *str, U32 codepoint)
+{
+	U32 inc = 0;
+	if (codepoint <= 0x7F)
+	{
+		str[0] = (U8)codepoint;
+		inc = 1;
+	}
+	else if (codepoint <= 0x7FF)
+	{
+		str[0] = ((U8)bitmask2 << 6) | ((codepoint >> 6) & (U8)bitmask5);
+		str[1] = bit8 | (codepoint & bitmask6);
+		inc = 2;
+	}
+	else if (codepoint <= 0xFFFF)
+	{
+		str[0] = (bitmask3 << 5) | ((codepoint >> 12) & (U8)bitmask4);
+		str[1] = bit8 | ((codepoint >> 6) & bitmask6);
+		str[2] = bit8 | ( codepoint       & bitmask6);
+		inc = 3;
+	}
+	else if (codepoint <= 0x10FFFF)
+	{
+		str[0] = (bitmask4 << 4) | ((codepoint >> 18) & bitmask3);
+		str[1] = bit8 | ((codepoint >> 12) & bitmask6);
+		str[2] = bit8 | ((codepoint >>  6) & bitmask6);
+		str[3] = bit8 | ( codepoint        & bitmask6);
+		inc = 4;
+	}
+	else
+	{
+		str[0] = '?';
+		inc = 1;
+	}
+	return(inc);
+}
+
+function U32
+utf16_encode(U16 *str, U32 codepoint)
+{
+	U32 inc = 1;
+	if (codepoint == max_U32)
+	{
+		str[0] = (U16)'?';
+	}
+	else if (codepoint < 0x10000)
+	{
+		str[0] = (U16)codepoint;
+	}
+	else
+	{
+		U32 v = codepoint - 0x10000;
+		str[0] = safe_cast_u16(0xD800 + (v >> 10));
+		str[1] = safe_cast_u16(0xDC00 + (v & bitmask10));
+		inc = 2;
+	}
+	return(inc);
+}
+
+function String8
+str8_from_16(Arena *arena, String16 in)
+{
+	String8 result = str8_zero;
+	if(in.length > 0)
+	{
+		U64 cap = in.length*3;
+		U8 *str = push_array_no_zero(arena, U8, cap + 1);
+		U16 *ptr = in.buffer;
+		U16 *one_past_last = ptr + in.length;
+		U64 size = 0;
+		UnicodeDecode consume;
+		for(;ptr < one_past_last; ptr += consume.inc)
+		{
+			consume = utf16_decode(ptr, one_past_last - ptr);
+			size += utf8_encode(str + size, consume.codepoint);
+		}
+		str[size] = 0;
+		arena_pop(arena, (cap - size));
+		result = str8(str, size);
+	}
+	return result;
+}
+
+function String16
+str16_from_8(Arena *arena, String8 in)
+{
+	String16 result = str16_zero;
+	if(in.length)
+	{
+		U64 cap = in.length*2;
+		U16 *str = push_array_no_zero(arena, U16, cap + 1);
+		U8 *ptr = in.buffer;
+		U8 *one_past_last = ptr + in.length;
+		U64 size = 0;
+		UnicodeDecode consume;
+		for(;ptr < one_past_last; ptr += consume.inc)
+		{
+			consume = utf8_decode(ptr, one_past_last - ptr);
+			size += utf16_encode(str + size, consume.codepoint);
+		}
+		str[size] = 0;
+		arena_pop(arena, (cap - size)*2);
+		result = str16(str, size);
+	}
+	return result;
+}
