@@ -1,6 +1,7 @@
 #if BUILD_ENTRY_DEFINING_UNIT
 function void main_thread_base_entry_point(int argc, char *argv[])
 {
+	set_thread_name(str8_lit("[main thread]"));
 	Temp scratch = scratch_begin(0, 0);
 
 	cmdline_global = cmd_line_from_argcv(scratch.arena, argc, argv);

@@ -11,6 +11,7 @@
 #include "base_hash.h"
 #include "base_thread_context.h"
 #include "base_command_line.h"
+#include "base_markup.h"
 #include "base_log.h"
 #include "base_entry_point.h"
 
