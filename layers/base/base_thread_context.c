@@ -20,6 +20,18 @@ function void tctx_release(void)
 	}
 }
 
+function void tctx_set_thread_name(String8 name)
+{
+	U8 thread_name_length = (U8)ClampTop(ArrayCount(tctx_thread_local->thread_name), name.length);
+	tctx_thread_local->thread_name_length = thread_name_length;
+	MemoryCopy(tctx_thread_local->thread_name, name.buffer, thread_name_length);
+}
+function String8 tctx_get_thread_name(void)
+{
+	String8 result = str8(tctx_thread_local->thread_name, tctx_thread_local->thread_name_length);
+	return result;
+}
+
 function Arena* tctx_get_scratch(Arena **conflicts, U64 count)
 {
 	Arena *result = 0;
