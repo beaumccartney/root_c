@@ -1,5 +1,6 @@
 #ifndef CHIBIHASH64__HGUARD
 #define CHIBIHASH64__HGUARD
+#include <stddef.h>
 // NOTE(beau): Attribution below. I factored this into separate header and
 // c files to not have everything inlined.
 
