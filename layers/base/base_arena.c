@@ -1,3 +1,5 @@
+// TODO, XXX(beau): panic on allocation failure
+
 function Arena *
 arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 {
