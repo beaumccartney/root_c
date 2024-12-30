@@ -19,9 +19,8 @@ cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 		CmdLineOpt *opt = &cmd_line->option_table[table_idx];
 		if (opt->string.length == 0) // empty slot found
 		{
-			if (cmd_line->opt_count >= CMD_LINE_OPT_COUNT * CMD_LINE_LOAD_FACTOR)
-				// look up failed and out of memory for insert
-				break;
+			// look up failed and out of memory for insert
+			AssertAlways(cmd_line->opt_count < CMD_LINE_OPT_COUNT * CMD_LINE_LOAD_FACTOR);
 
 			if (arena != 0)
 			{
@@ -29,8 +28,8 @@ cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 				result->string = push_str8_copy(arena, string);
 				cmd_line->options[cmd_line->opt_count] = table_idx;
 				cmd_line->opt_count++;
-				break;
 			}
+			break;
 		}
 		else if (str8_match(string, opt->string, 0))
 		{
