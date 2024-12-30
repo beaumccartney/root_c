@@ -13,6 +13,9 @@ flags=("-I../layers/" "-I../local/" "-I../thirdparty/" "-fdiagnostics-absolute-p
 if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug mode]"; fi
 if [ -v release ]; then flags+=("-O2" "-DBUILD_DEBUG=0")      && echo "[release mode]"; fi
 
+if [ -v profile ]; then tracy=1; fi
+if [ -v tracy ];   then flags+=("-lc++" "-DPROFILE_TRACY" "../thirdparty/tracy/build/libTracyClient.a") && echo "[tracy profiling enabled]"; fi
+
 # sanitizer flags
 # TODO(beau): -fsanitize-trap toggle?
 if [ -v sanitize ]; then asan=1 && ubsan=1; fi

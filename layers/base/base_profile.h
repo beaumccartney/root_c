@@ -21,6 +21,18 @@
 	#define ProfThreadName(name_cstr) PerformanceAPI_SetCurrentThreadName((name_cstr))
 #endif // PROFILE_SUPERLUMINAL
 
+#if PROFILE_TRACY
+	#if OS_WINDOWS
+		#error TODO(beau): windows tracy client lib
+	#endif
+	#define TRACY_ENABLE
+
+	#pragma push_macro("function")
+	#undef function
+	#include "tracy/public/tracy/TracyC.h" // REVIEW(beau): include always and rely on TRACY_ENABLE?
+	#pragma pop_macro("function")
+#endif
+
 #ifndef ProfBegin
 	#define ProfBegin(name_cstr_lit)  (0)
 	#define ProfEnd()                 (0)
