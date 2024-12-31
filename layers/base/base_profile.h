@@ -9,6 +9,10 @@
 	#define PROFILE_TRACY 0
 #endif
 
+#ifndef PROFILE_SPALL
+	#define PROFILE_SPALL 0
+#endif
+
 #if PROFILE_SUPERLUMINAL
 	#if !OS_WINDOWS
 		#error Superluminal profiling only supported on windows
@@ -19,9 +23,7 @@
 	#define ProfBegin(name_cstr_lit)  PerformanceAPI_BeginEvent((name_cstr_lit), 0, PERFORMANCEAPI_DEFAULT_COLOR)
 	#define ProfEnd()                 PerformanceAPI_EndEvent()
 	#define ProfThreadName(name_cstr) PerformanceAPI_SetCurrentThreadName((name_cstr))
-#endif // PROFILE_SUPERLUMINAL
-
-#if PROFILE_TRACY
+#elif PROFILE_TRACY
 	#if OS_WINDOWS
 	#pragma comment(lib, "..\\thirdparty\\tracy\\windows\\TracyClient.lib")
 	#endif
@@ -31,7 +33,20 @@
 	#undef function
 	#include "tracy/TracyC.h" // REVIEW(beau): include always and rely on TRACY_ENABLE?
 	#pragma pop_macro("function")
-#endif
+
+#elif PROFILE_SPALL
+	#if COMPILER_MSVC
+		#pragma warning (push, 0)
+        #elif COMPILER_CLANG
+		#pragma clang diagnostic ignored "-Weverything"
+	#endif
+	#include "spall/spall.h"
+	#if COMPILER_MSVC
+		#pragma warning (pop)
+        #elif COMPILER_CLANG
+		#pragma clang diagnostic pop
+	#endif
+#endif // PROFILE_SUPERLUMINAL
 
 #ifndef ProfBegin
 	#define ProfBegin(name_cstr_lit)  (0)

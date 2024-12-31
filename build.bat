@@ -14,6 +14,7 @@ if "%debug%"=="1"        set flags=%flags% /Od /Ob1 /DBUILD_DEBUG=1
 if "%profile%"=="1"      set superluminal=1
 if "%superluminal%"=="1" set flags=%flags% -DPROFILE_SUPERLUMINAL=1 && (echo [superluminal profiling enabled])
 if "%tracy%"=="1"        set flags=%flags% -DPROFILE_TRACY=1 /MD    && (echo [tracy profiling enabled])
+if "%spall%"=="1"        set flags=%flags% -DPROFILE_SPALL=1        && (echo [spall profiling enabled])
 if "%asan%"=="1"         set flags=%flags% -fsanitize=address       && (echo [asan enabled])
 
 :: RTCu will trip on asan itself if its on, so only turn it on if no asan
