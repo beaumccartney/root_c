@@ -23,13 +23,13 @@
 
 #if PROFILE_TRACY
 	#if OS_WINDOWS
-	#pragma comment(lib, "..\\thirdparty\\tracy\\build\\Release\\TracyClient.lib")
+	#pragma comment(lib, "..\\thirdparty\\tracy\\windows\\TracyClient.lib")
 	#endif
 	#define TRACY_ENABLE
 
 	#pragma push_macro("function")
 	#undef function
-	#include "tracy/public/tracy/TracyC.h" // REVIEW(beau): include always and rely on TRACY_ENABLE?
+	#include "tracy/TracyC.h" // REVIEW(beau): include always and rely on TRACY_ENABLE?
 	#pragma pop_macro("function")
 #endif
 
