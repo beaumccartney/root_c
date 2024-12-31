@@ -23,7 +23,7 @@
 
 #if PROFILE_TRACY
 	#if OS_WINDOWS
-		#error TODO(beau): windows tracy client lib
+	#pragma comment(lib, "..\\thirdparty\\tracy\\build\\Release\\TracyClient.lib")
 	#endif
 	#define TRACY_ENABLE
 
