@@ -9,9 +9,9 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define global        static
-#define local_persist static
 #define internal      static // internal linking for functions
+#define global        static // internal linking for global vars
+#define local_persist static // compile-time allocated and permanent memory for vars in local functions
 
 // read_only
 #if OS_MAC && COMPILER_CLANG
