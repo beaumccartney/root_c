@@ -57,6 +57,11 @@ function B32 os_commit_large(void *ptr, U64 size)
 	return 1;
 }
 
+function void os_set_thread_name(String8 name)
+{
+	// TODO(beau)
+}
+
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;
