@@ -1,4 +1,4 @@
-function OperatingSystem operating_system_from_context(void)
+internal OperatingSystem operating_system_from_context(void)
 {
 	OperatingSystem os = OperatingSystem_Null;
 	#if OS_WINDOWS
@@ -10,7 +10,7 @@ function OperatingSystem operating_system_from_context(void)
 	#endif
 	return os;
 }
-function Arch arch_from_context(void)
+internal Arch arch_from_context(void)
 {
 	Arch arch = Arch_Null;
 	#if ARCH_X64
@@ -20,7 +20,7 @@ function Arch arch_from_context(void)
 	#endif
 	return arch;
 }
-function Compiler compiler_from_context(void)
+internal Compiler compiler_from_context(void)
 {
 	Compiler compiler = Compiler_Null;
 	#if COMPILER_MSVC
@@ -32,7 +32,7 @@ function Compiler compiler_from_context(void)
 	#endif
 	return compiler;
 }
-function U16
+internal U16
 safe_cast_u16(U32 x)
 {
   AssertAlways(x <= max_U16);
@@ -40,7 +40,7 @@ safe_cast_u16(U32 x)
   return result;
 }
 
-function U32
+internal U32
 safe_cast_u32(U64 x)
 {
   AssertAlways(x <= max_U32);
@@ -48,7 +48,7 @@ safe_cast_u32(U64 x)
   return result;
 }
 
-function S32
+internal S32
 safe_cast_s32(S64 x)
 {
   AssertAlways(x <= max_S32);

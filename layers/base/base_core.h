@@ -9,9 +9,9 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define function      static
 #define global        static
 #define local_persist static
+#define internal      static // internal linking for functions
 
 // read_only
 #if OS_MAC && COMPILER_CLANG
@@ -315,9 +315,9 @@ typedef enum Compiler
 }
 Compiler;
 
-function OperatingSystem operating_system_from_context(void);
-function Arch arch_from_context(void);
-function Compiler compiler_from_context(void);
+internal OperatingSystem operating_system_from_context(void);
+internal Arch arch_from_context(void);
+internal Compiler compiler_from_context(void);
 
 #define Unused(name) (void)(name)
 
@@ -468,8 +468,8 @@ global S8  min_S8  = INT8_MIN;
 #define bit63 (1ull<<62ull)
 #define bit64 (1ull<<63ull)
 
-function U16 safe_cast_u16(U32 x);
-function U32 safe_cast_u32(U64 x);
-function S32 safe_cast_s32(S64 x);
+internal U16 safe_cast_u16(U32 x);
+internal U32 safe_cast_u32(U64 x);
+internal S32 safe_cast_s32(S64 x);
 
 #endif // BASE_CORE_H

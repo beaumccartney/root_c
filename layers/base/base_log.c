@@ -2,23 +2,23 @@
 	thread_local Log *log_active = 0;
 #endif
 
-function Log *log_alloc(void)
+internal Log *log_alloc(void)
 {
 	Arena * arena = arena_default;
 	Log *log = push_array(arena, Log, 1);
 	log->arena = arena;
 	return log;
 }
-function void log_release(Log *log)
+internal void log_release(Log *log)
 {
 	arena_release(log->arena);
 }
-function void log_select(Log *log)
+internal void log_select(Log *log)
 {
 	log_active = log;
 }
 
-function void log_msg(LogMsgKind kind, String8 string)
+internal void log_msg(LogMsgKind kind, String8 string)
 {
 	if (log_active != 0 && log_active->top_scope != 0)
 	{
@@ -26,7 +26,7 @@ function void log_msg(LogMsgKind kind, String8 string)
 		str8_list_push(log_active->arena, &log_active->top_scope->strings[kind], copy);
 	}
 }
-function void log_msgf(LogMsgKind kind, char *fmt, ...)
+internal void log_msgf(LogMsgKind kind, char *fmt, ...)
 {
 	if (log_active != 0 && log_active->top_scope != 0)
 	{
@@ -40,7 +40,7 @@ function void log_msgf(LogMsgKind kind, char *fmt, ...)
 	}
 }
 
-function void log_scope_begin(void)
+internal void log_scope_begin(void)
 {
 	if (log_active != 0)
 	{
@@ -49,7 +49,7 @@ function void log_scope_begin(void)
 		SLLStackPush(log_active->top_scope, scope);
 	}
 }
-function LogScopeResult log_scope_end(Arena *arena)
+internal LogScopeResult log_scope_end(Arena *arena)
 {
 	LogScopeResult result = zero_struct;
 	if (log_active != 0)

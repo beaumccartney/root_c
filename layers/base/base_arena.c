@@ -1,6 +1,6 @@
 // TODO, XXX(beau): panic on allocation failure
 
-function Arena *
+internal Arena *
 arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 {
 	OS_SystemInfo info = os_get_system_info();
@@ -35,13 +35,13 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 	return base;
 }
 
-function void arena_release(Arena * arena)
+internal void arena_release(Arena * arena)
 {
 	os_release(arena->base, arena->reserved);
 }
 
 // REVIEW(beau): off-by-one bugs?
-function void *arena_push(Arena *arena, U64 size, U64 alignment)
+internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 {
 	AssertAlways(size <= arena->reserved);
 	U64 basepos = AlignPow2(arena->pos, alignment);
@@ -68,7 +68,7 @@ function void *arena_push(Arena *arena, U64 size, U64 alignment)
 	return result;
 }
 
-function void arena_pop_to(Arena *arena, U64 pos)
+internal void arena_pop_to(Arena *arena, U64 pos)
 {
 	AssertAlways(pos <= arena->pos);
 	U64 clampedpos = ClampBot(ARENA_HEADER_SIZE, pos); // arena's memory is in the header
@@ -76,24 +76,24 @@ function void arena_pop_to(Arena *arena, U64 pos)
 	arena->pos = clampedpos;
 }
 
-function void arena_clear(Arena *arena)
+internal void arena_clear(Arena *arena)
 {
 	arena_pop_to(arena, 0);
 }
 
-function void arena_pop(Arena *arena, U64 amount)
+internal void arena_pop(Arena *arena, U64 amount)
 {
 	if (amount > arena->pos) amount = arena->pos;
 	arena_pop_to(arena, arena->pos - amount);
 }
 
-function Temp temp_begin(Arena *arena)
+internal Temp temp_begin(Arena *arena)
 {
 	Temp temp = {arena, arena->pos};
 	return temp;
 }
 
-function void temp_end(Temp temp)
+internal void temp_end(Temp temp)
 {
 	arena_pop_to(temp.arena, temp.pos);
 }

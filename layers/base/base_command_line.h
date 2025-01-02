@@ -26,12 +26,12 @@ struct CmdLine
 };
 StaticAssert(CMD_LINE_LOG2_OPT_COUNT < 16, cmd_line_keep_16_ix_size);
 
-function U64         cmd_line_hash_from_string(String8 string);
-function CmdLineOpt* cmd_line_opt_from_string(Arena *arena, CmdLine *cmd, String8 string);
-function String8List cmd_line_strings(CmdLine *cmd_line, String8 name);
-function String8     cmd_line_string(CmdLine *cmd_line, String8 name);
-function B32         cmd_line_has_flag(CmdLine *cmd_line, String8 name);
-function B32         cmd_line_has_argument(CmdLine *cmd_line, String8 name);
-function CmdLine*    cmd_line_from_argcv(Arena *arena, int argc, char *argv[]);
+internal U64         cmd_line_hash_from_string(String8 string);
+internal CmdLineOpt* cmd_line_opt_from_string(Arena *arena, CmdLine *cmd, String8 string);
+internal String8List cmd_line_strings(CmdLine *cmd_line, String8 name);
+internal String8     cmd_line_string(CmdLine *cmd_line, String8 name);
+internal B32         cmd_line_has_flag(CmdLine *cmd_line, String8 name);
+internal B32         cmd_line_has_argument(CmdLine *cmd_line, String8 name);
+internal CmdLine*    cmd_line_from_argcv(Arena *arena, int argc, char *argv[]);
 
 #endif // BASE_COMMAND_LINE_H

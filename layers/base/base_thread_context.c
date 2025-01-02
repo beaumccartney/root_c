@@ -2,7 +2,7 @@
 thread_local TCTX* tctx_thread_local = 0;
 #endif
 
-function void tctx_init_and_equip(TCTX *tctx)
+internal void tctx_init_and_equip(TCTX *tctx)
 {
 	MemoryZeroStruct(tctx);
 	for (U64 i = 0; i < ArrayCount(tctx->arenas); i++)
@@ -12,7 +12,7 @@ function void tctx_init_and_equip(TCTX *tctx)
 	tctx_thread_local = tctx;
 }
 
-function void tctx_release(void)
+internal void tctx_release(void)
 {
 	for (U64 i = 0; i < ArrayCount(tctx_thread_local->arenas); i++)
 	{
@@ -20,19 +20,19 @@ function void tctx_release(void)
 	}
 }
 
-function void tctx_set_thread_name(String8 name)
+internal void tctx_set_thread_name(String8 name)
 {
 	U8 thread_name_length = (U8)ClampTop(ArrayCount(tctx_thread_local->thread_name), name.length);
 	tctx_thread_local->thread_name_length = thread_name_length;
 	MemoryCopy(tctx_thread_local->thread_name, name.buffer, thread_name_length);
 }
-function String8 tctx_get_thread_name(void)
+internal String8 tctx_get_thread_name(void)
 {
 	String8 result = str8(tctx_thread_local->thread_name, tctx_thread_local->thread_name_length);
 	return result;
 }
 
-function Arena* tctx_get_scratch(Arena **conflicts, U64 count)
+internal Arena* tctx_get_scratch(Arena **conflicts, U64 count)
 {
 	Arena *result = 0;
 	Arena **ctx_ptr = tctx_thread_local->arenas;

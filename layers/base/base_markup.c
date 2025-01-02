@@ -1,4 +1,4 @@
-function void set_thread_name(String8 name)
+internal void set_thread_name(String8 name)
 {
 	Temp scratch = scratch_begin(0, 0);
 	String8 copy = push_str8_copy(scratch.arena, name); // for guaranteed null terminator
@@ -7,7 +7,7 @@ function void set_thread_name(String8 name)
 	os_set_thread_name(copy);
 	scratch_end(scratch);
 }
-function void set_thread_namef(char *fmt, ...)
+internal void set_thread_namef(char *fmt, ...)
 {
 	Temp scratch = scratch_begin(0, 0);
 	va_list args;

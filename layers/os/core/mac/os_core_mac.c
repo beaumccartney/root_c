@@ -1,11 +1,14 @@
+#pragma push_macro("internal")
+#undef internal
 #include <mach/mach.h>
+#pragma pop_macro("internal")
 
-function OS_SystemInfo os_get_system_info(void)
+internal OS_SystemInfo os_get_system_info(void)
 {
 	return (OS_SystemInfo){vm_page_size, MB(2)};
 }
 
-function void *os_reserve(U64 size)
+internal void *os_reserve(U64 size)
 {
 	void * result = 0;
 
@@ -19,17 +22,17 @@ function void *os_reserve(U64 size)
 	return result;
 }
 
-function B32 os_commit(void *ptr, U64 size)
+internal B32 os_commit(void *ptr, U64 size)
 {
 	return 1;
 }
 
-function void os_decommit(void *ptr, U64 size)
+internal void os_decommit(void *ptr, U64 size)
 {
 	// no-op
 }
 
-function void os_release(void *ptr, U64 size)
+internal void os_release(void *ptr, U64 size)
 {
 	AssertAlways(vm_deallocate(
 		mach_task_self(),
@@ -38,7 +41,7 @@ function void os_release(void *ptr, U64 size)
 	) == KERN_SUCCESS);
 }
 
-function void *os_reserve_large(U64 size)
+internal void *os_reserve_large(U64 size)
 {
 	void * result = 0;
 
@@ -52,12 +55,12 @@ function void *os_reserve_large(U64 size)
 	return result;
 }
 
-function B32 os_commit_large(void *ptr, U64 size)
+internal B32 os_commit_large(void *ptr, U64 size)
 {
 	return 1;
 }
 
-function void os_set_thread_name(String8 name)
+internal void os_set_thread_name(String8 name)
 {
 	// TODO(beau)
 }

@@ -2,13 +2,13 @@
 	global CmdLine *cmdline_global = 0;
 #endif
 
-function U64
+internal U64
 cmd_line_hash_from_string(String8 string)
 {
 	U64 result = chibihash64(string.buffer, string.length, 0);
 	return result;
 }
-function CmdLineOpt*
+internal CmdLineOpt*
 cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 {
 	U64 hash = cmd_line_hash_from_string(string);
@@ -39,7 +39,7 @@ cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 	}
 	return result;
 }
-function String8List
+internal String8List
 cmd_line_strings(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
@@ -47,7 +47,7 @@ cmd_line_strings(CmdLine *cmd_line, String8 name)
 	if (opt != 0) result = opt->value_strings;
 	return result;
 }
-function String8
+internal String8
 cmd_line_string(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
@@ -55,21 +55,21 @@ cmd_line_string(CmdLine *cmd_line, String8 name)
 	if (opt != 0) result = opt->value_string;
 	return result;
 }
-function B32
+internal B32
 cmd_line_has_flag(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
 	B32 result = opt != 0;
 	return result;
 }
-function B32
+internal B32
 cmd_line_has_argument(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
 	B32 result = opt != 0 && opt->value_strings.node_count != 0;
 	return result;
 }
-function CmdLine* cmd_line_from_argcv(Arena *arena, int argc, char *argv[])
+internal CmdLine* cmd_line_from_argcv(Arena *arena, int argc, char *argv[])
 {
 	CmdLine *result = push_array(arena, CmdLine, 1);
 

@@ -14,18 +14,18 @@ struct OS_Handle
 };
 
 // TODO(beau): initialize in the platform entry point and either return a pointer to that here or just define a global exposed by each header here
-function OS_SystemInfo os_get_system_info(void);
+internal OS_SystemInfo os_get_system_info(void);
 
-function void *os_reserve(U64 size);
-function B32   os_commit(void *ptr, U64 size);
-function void  os_decommit(void *ptr, U64 size);
-function void  os_release(void *ptr, U64 size);
+internal void *os_reserve(U64 size);
+internal B32   os_commit(void *ptr, U64 size);
+internal void  os_decommit(void *ptr, U64 size);
+internal void  os_release(void *ptr, U64 size);
 
-function void *os_reserve_large(U64 size);
-function B32   os_commit_large(void *ptr, U64 size);
+internal void *os_reserve_large(U64 size);
+internal B32   os_commit_large(void *ptr, U64 size);
 
-function B32 os_handle_match(OS_Handle a, OS_Handle b);
+internal B32 os_handle_match(OS_Handle a, OS_Handle b);
 
-function void os_set_thread_name(String8 name);
+internal void os_set_thread_name(String8 name);
 
 #endif // OS_CORE_H
