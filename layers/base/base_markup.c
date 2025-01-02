@@ -4,6 +4,7 @@ function void set_thread_name(String8 name)
 	String8 copy = push_str8_copy(scratch.arena, name); // for guaranteed null terminator
 	ProfThreadName((char*)copy.buffer);
 	tctx_set_thread_name(copy);
+	os_set_thread_name(copy);
 	scratch_end(scratch);
 }
 function void set_thread_namef(char *fmt, ...)
@@ -14,6 +15,7 @@ function void set_thread_namef(char *fmt, ...)
 	String8 name = push_str8fv(scratch.arena, fmt, args);
 	ProfThreadName((char*)name.buffer);
 	tctx_set_thread_name(name);
+	os_set_thread_name(name);
 	va_end(args);
 	scratch_end(scratch);
 }

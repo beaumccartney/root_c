@@ -26,4 +26,6 @@ function B32   os_commit_large(void *ptr, U64 size);
 
 function B32 os_handle_match(OS_Handle a, OS_Handle b);
 
+function void os_set_thread_name(String8 name);
+
 #endif // OS_CORE_H

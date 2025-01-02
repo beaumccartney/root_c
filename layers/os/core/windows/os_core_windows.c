@@ -46,6 +46,14 @@ function B32 os_commit_large(void *ptr, U64 size)
 	return 1;
 }
 
+function void os_set_thread_name(String8 name)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String16 name16 = str16_from_8(scratch.arena, name);
+	SetThreadDescription(GetCurrentThread(), name16.buffer);
+	scratch_end(scratch);
+}
+
 function void windows_entry_point_caller(int args_count, char *args[])
 {
 	local_persist TCTX tctx;
