@@ -534,75 +534,81 @@ internal UnicodeDecode
 utf8_decode(U8 *str, U64 max)
 {
 	UnicodeDecode result = {1, max_U32};
-	U8 byte = str[0];
-	U8 byte_class = utf8_class[byte >> 3];
-	switch (byte_class)
+	if (max > 0)
 	{
-		case 1:
+		U8 byte = str[0];
+		U8 byte_class = utf8_class[byte >> 3];
+		switch (byte_class)
 		{
-			result.codepoint = byte;
-		}break;
-		case 2:
-		{
-			if (1 < max)
+			case 1:
 			{
-				U8 cont_byte = str[1];
-				if (utf8_class[cont_byte >> 3] == 0)
+				result.codepoint = byte;
+			}break;
+			case 2:
+			{
+				if (max >= 2)
 				{
-					result.codepoint = (byte & bitmask5) << 6;
-					result.codepoint |=  (cont_byte & bitmask6);
-					result.num_code_units = 2;
+					U8 cont_byte = str[1];
+					if (utf8_class[cont_byte >> 3] == 0)
+					{
+						result.codepoint = (byte & bitmask5) << 6;
+						result.codepoint |=  (cont_byte & bitmask6);
+						result.num_code_units = 2;
+					}
 				}
-			}
-		}break;
-		case 3:
-		{
-			if (2 < max)
+			}break;
+			case 3:
 			{
-				U8 cont_byte[2] = {str[1], str[2]};
-				if (utf8_class[cont_byte[0] >> 3] == 0 &&
-					utf8_class[cont_byte[1] >> 3] == 0)
+				if (max >= 3)
 				{
-					result.codepoint = (byte & bitmask4) << 12;
-					result.codepoint |= ((cont_byte[0] & bitmask6) << 6);
-					result.codepoint |=  (cont_byte[1] & bitmask6);
-					result.num_code_units = 3;
+					U8 cont_byte[2] = {str[1], str[2]};
+					if (utf8_class[cont_byte[0] >> 3] == 0 &&
+						utf8_class[cont_byte[1] >> 3] == 0)
+					{
+						result.codepoint = (byte & bitmask4) << 12;
+						result.codepoint |= ((cont_byte[0] & bitmask6) << 6);
+						result.codepoint |=  (cont_byte[1] & bitmask6);
+						result.num_code_units = 3;
+					}
 				}
-			}
-		}break;
-		case 4:
-		{
-			if (3 < max)
+			}break;
+			case 4:
 			{
-				U8 cont_byte[3] = {str[1], str[2], str[3]};
-				if (utf8_class[cont_byte[0] >> 3] == 0 &&
-					utf8_class[cont_byte[1] >> 3] == 0 &&
-					utf8_class[cont_byte[2] >> 3] == 0)
+				if (max >= 4)
 				{
-					result.codepoint = (byte & bitmask3) << 18;
-					result.codepoint |= ((cont_byte[0] & bitmask6) << 12);
-					result.codepoint |= ((cont_byte[1] & bitmask6) <<  6);
-					result.codepoint |=  (cont_byte[2] & bitmask6);
-					result.num_code_units = 4;
+					U8 cont_byte[3] = {str[1], str[2], str[3]};
+					if (utf8_class[cont_byte[0] >> 3] == 0 &&
+						utf8_class[cont_byte[1] >> 3] == 0 &&
+						utf8_class[cont_byte[2] >> 3] == 0)
+					{
+						result.codepoint = (byte & bitmask3) << 18;
+						result.codepoint |= ((cont_byte[0] & bitmask6) << 12);
+						result.codepoint |= ((cont_byte[1] & bitmask6) <<  6);
+						result.codepoint |=  (cont_byte[2] & bitmask6);
+						result.num_code_units = 4;
+					}
 				}
 			}
 		}
 	}
-	return(result);
+	return result;
 }
 
 internal UnicodeDecode
 utf16_decode(U16 *str, U64 max)
 {
 	UnicodeDecode result = {1, max_U32};
-	result.codepoint = str[0];
-	result.num_code_units = 1;
-	if (max > 1 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000)
+	if (max >= 2 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000)
 	{
 		result.codepoint = ((str[0] - 0xD800) << 10) | ((str[1] - 0xDC00) + 0x10000);
 		result.num_code_units = 2;
 	}
-	return(result);
+	else if (max > 0)
+	{
+		result.codepoint = str[0];
+		result.num_code_units = 1;
+	}
+	return result;
 }
 
 internal U32
