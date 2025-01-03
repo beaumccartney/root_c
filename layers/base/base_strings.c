@@ -551,7 +551,7 @@ utf8_decode(U8 *str, U64 max)
 				{
 					result.codepoint = (byte & bitmask5) << 6;
 					result.codepoint |=  (cont_byte & bitmask6);
-					result.inc = 2;
+					result.num_code_units = 2;
 				}
 			}
 		}break;
@@ -566,7 +566,7 @@ utf8_decode(U8 *str, U64 max)
 					result.codepoint = (byte & bitmask4) << 12;
 					result.codepoint |= ((cont_byte[0] & bitmask6) << 6);
 					result.codepoint |=  (cont_byte[1] & bitmask6);
-					result.inc = 3;
+					result.num_code_units = 3;
 				}
 			}
 		}break;
@@ -583,7 +583,7 @@ utf8_decode(U8 *str, U64 max)
 					result.codepoint |= ((cont_byte[0] & bitmask6) << 12);
 					result.codepoint |= ((cont_byte[1] & bitmask6) <<  6);
 					result.codepoint |=  (cont_byte[2] & bitmask6);
-					result.inc = 4;
+					result.num_code_units = 4;
 				}
 			}
 		}
@@ -596,11 +596,11 @@ utf16_decode(U16 *str, U64 max)
 {
 	UnicodeDecode result = {1, max_U32};
 	result.codepoint = str[0];
-	result.inc = 1;
+	result.num_code_units = 1;
 	if (max > 1 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000)
 	{
 		result.codepoint = ((str[0] - 0xD800) << 10) | ((str[1] - 0xDC00) + 0x10000);
-		result.inc = 2;
+		result.num_code_units = 2;
 	}
 	return(result);
 }
@@ -677,7 +677,7 @@ str8_from_16(Arena *arena, String16 in)
 		U16 *one_past_last = ptr + in.length;
 		U64 size = 0;
 		UnicodeDecode consume;
-		for(;ptr < one_past_last; ptr += consume.inc)
+		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{
 			consume = utf16_decode(ptr, one_past_last - ptr);
 			size += utf8_encode(str + size, consume.codepoint);
@@ -701,7 +701,7 @@ str16_from_8(Arena *arena, String8 in)
 		U8 *one_past_last = ptr + in.length;
 		U64 size = 0;
 		UnicodeDecode consume;
-		for(;ptr < one_past_last; ptr += consume.inc)
+		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{
 			consume = utf8_decode(ptr, one_past_last - ptr);
 			size += utf16_encode(str + size, consume.codepoint);

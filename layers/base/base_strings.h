@@ -67,7 +67,7 @@ struct StringJoin
 typedef struct UnicodeDecode UnicodeDecode;
 struct UnicodeDecode
 {
-	U32 inc;
+	U32 num_code_units;
 	U32 codepoint;
 };
 
