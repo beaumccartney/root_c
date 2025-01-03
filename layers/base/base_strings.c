@@ -531,12 +531,12 @@ read_only global U8 utf8_class[32] = {
 };
 
 internal UnicodeDecode
-utf8_decode(U8 *str, U64 max)
+utf8_decode(String8 string)
 {
 	UnicodeDecode result = {1, max_U32};
-	if (max > 0)
+	if (string.length > 0)
 	{
-		U8 byte = str[0];
+		U8 byte = string.buffer[0];
 		U8 byte_class = utf8_class[byte >> 3];
 		switch (byte_class)
 		{
@@ -546,9 +546,9 @@ utf8_decode(U8 *str, U64 max)
 			}break;
 			case 2:
 			{
-				if (max >= 2)
+				if (string.length >= 2)
 				{
-					U8 cont_byte = str[1];
+					U8 cont_byte = string.buffer[1];
 					if (utf8_class[cont_byte >> 3] == 0)
 					{
 						result.codepoint = (byte & bitmask5) << 6;
@@ -559,9 +559,9 @@ utf8_decode(U8 *str, U64 max)
 			}break;
 			case 3:
 			{
-				if (max >= 3)
+				if (string.length >= 3)
 				{
-					U8 cont_byte[2] = {str[1], str[2]};
+					U8 cont_byte[2] = {string.buffer[1], string.buffer[2]};
 					if (utf8_class[cont_byte[0] >> 3] == 0 &&
 						utf8_class[cont_byte[1] >> 3] == 0)
 					{
@@ -574,9 +574,9 @@ utf8_decode(U8 *str, U64 max)
 			}break;
 			case 4:
 			{
-				if (max >= 4)
+				if (string.length >= 4)
 				{
-					U8 cont_byte[3] = {str[1], str[2], str[3]};
+					U8 cont_byte[3] = {string.buffer[1], string.buffer[2], string.buffer[3]};
 					if (utf8_class[cont_byte[0] >> 3] == 0 &&
 						utf8_class[cont_byte[1] >> 3] == 0 &&
 						utf8_class[cont_byte[2] >> 3] == 0)
@@ -595,17 +595,17 @@ utf8_decode(U8 *str, U64 max)
 }
 
 internal UnicodeDecode
-utf16_decode(U16 *str, U64 max)
+utf16_decode(String16 string)
 {
 	UnicodeDecode result = {1, max_U32};
-	if (max >= 2 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000)
+	if (string.length >= 2 && 0xD800 <= string.buffer[0] && string.buffer[0] < 0xDC00 && 0xDC00 <= string.buffer[1] && string.buffer[1] < 0xE000)
 	{
-		result.codepoint = ((str[0] - 0xD800) << 10) | ((str[1] - 0xDC00) + 0x10000);
+		result.codepoint = ((string.buffer[0] - 0xD800) << 10) | ((string.buffer[1] - 0xDC00) + 0x10000);
 		result.num_code_units = 2;
 	}
-	else if (max > 0)
+	else if (string.length > 0)
 	{
-		result.codepoint = str[0];
+		result.codepoint = string.buffer[0];
 		result.num_code_units = 1;
 	}
 	return result;
@@ -685,7 +685,8 @@ str8_from_16(Arena *arena, String16 in)
 		UnicodeDecode consume;
 		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{
-			consume = utf16_decode(ptr, one_past_last - ptr);
+			String16 substr = str16_region(ptr, one_past_last);
+			consume = utf16_decode(substr);
 			size += utf8_encode(str + size, consume.codepoint);
 		}
 		str[size] = 0;
@@ -709,7 +710,8 @@ str16_from_8(Arena *arena, String8 in)
 		UnicodeDecode consume;
 		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{
-			consume = utf8_decode(ptr, one_past_last - ptr);
+			String8 substr = str8_region(ptr, one_past_last);
+			consume = utf8_decode(substr);
 			size += utf16_encode(str + size, consume.codepoint);
 		}
 		str[size] = 0;

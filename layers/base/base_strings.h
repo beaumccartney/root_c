@@ -163,8 +163,8 @@ internal String8Array str8_array_from_list(Arena *arena, String8List list);
 
 internal String8 indented_from_string(Arena *arena, String8 string);
 
-internal UnicodeDecode utf8_decode(U8 *str, U64 max);
-internal UnicodeDecode utf16_decode(U16 *str, U64 max);
+internal UnicodeDecode utf8_decode(String8 string);
+internal UnicodeDecode utf16_decode(String16 string);
 internal U32           utf8_encode(U8 *str, U32 codepoint);
 internal U32           utf16_encode(U16 *str, U32 codepoint);
 
