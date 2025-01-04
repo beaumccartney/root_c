@@ -136,6 +136,22 @@ internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 	}
 	return written_bytes;
 }
+internal B32 os_delete_file_at_path(String8 path)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	B32 result = unlink(copy.buffer) != -1;
+	scratch_end(scratch);
+	return result;
+}
+internal B32 os_remove_folder_at_path(String8 path)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	B32 result = rmdir(copy.buffer) != -1;
+	scratch_end(scratch);
+	return result;
+}
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;
