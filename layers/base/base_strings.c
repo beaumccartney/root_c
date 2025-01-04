@@ -496,6 +496,7 @@ internal String8Array str8_array_from_list(Arena *arena, String8List list)
 	return result;
 }
 
+// REVIEW(beau): make sure this works on zero string
 internal String8 indented_from_string(Arena *arena, String8 string)
 {
 	Temp scratch = scratch_begin(&arena, 1);
