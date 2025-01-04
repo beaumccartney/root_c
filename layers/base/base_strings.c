@@ -24,12 +24,12 @@
 
 // NOTE(beau): string-int lookup tables, from https://github.com/EpicGamesExt/raddebugger/blob/274b710329e75db819b41a4de841f4171ba9d74c/src/base/base_strings.c#L13-L50
 
-read_only global U8 integer_symbols[16] = {
+const global U8 integer_symbols[16] = {
   '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F',
 };
 
 // NOTE(allen): Includes reverses for uppercase and lowercase hex.
-read_only global U8 integer_symbol_reverse[128] = {
+const global U8 integer_symbol_reverse[128] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
@@ -40,7 +40,7 @@ read_only global U8 integer_symbol_reverse[128] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 };
 
-read_only global U8 base64[64] = {
+const global U8 base64[64] = {
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -49,7 +49,7 @@ read_only global U8 base64[64] = {
   '_', '$',
 };
 
-read_only global U8 base64_reverse[128] = {
+const global U8 base64_reverse[128] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
   0xFF,0xFF,0xFF,0xFF,0x3F,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
@@ -492,7 +492,7 @@ internal String8Array str8_array_from_list(Arena *arena, String8List list)
 internal String8 indented_from_string(Arena *arena, String8 string)
 {
 	Temp scratch = scratch_begin(&arena, 1);
-	read_only local_persist U8 indentation_bytes[] = "                                                                                                                                ";
+	const local_persist U8 indentation_bytes[] = "                                                                                                                                ";
 	String8List indented_strings = zero_struct;
 	S64 depth = 0, next_depth = 0;
 	U64 line_begin_offset = 0;
@@ -526,7 +526,7 @@ internal String8 indented_from_string(Arena *arena, String8 string)
 // utf 8-bit and 16-bit stuff
 // from https://github.com/EpicGamesExt/raddebugger/blob/aa42d12d0fe58409d52cbc950cb5e44f3a668e29/src/base/base_strings.c#L1388-L1615
 
-read_only global U8 utf8_class[32] = {
+const global U8 utf8_class[32] = {
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,2,2,2,2,3,3,4,5,
 };
 
