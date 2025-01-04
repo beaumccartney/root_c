@@ -7,6 +7,14 @@ struct OS_SystemInfo
 	U64 page_size, large_page_size;
 };
 
+typedef U32 OS_AccessFlags;
+enum
+{
+	OS_AccessFlag_Read       = (1<<0),
+	OS_AccessFlag_Write      = (1<<1),
+	OS_AccessFlag_Append     = (1<<2),
+};
+
 typedef struct OS_Handle OS_Handle;
 struct OS_Handle
 {
@@ -24,8 +32,15 @@ internal void  os_release(void *ptr, U64 size);
 internal void *os_reserve_large(U64 size);
 internal B32   os_commit_large(void *ptr, U64 size);
 
+#define os_handle_zero ((OS_Handle) zero_struct)
 internal B32 os_handle_match(OS_Handle a, OS_Handle b);
+
+internal void os_abort(S32 exit_code);
 
 internal void os_set_thread_name(String8 name);
 
+internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path);
+internal void      os_file_close(OS_Handle file);
+internal U64       os_file_read(OS_Handle file, Rng1U64 rng, void *out_data);
+internal U64       os_file_write(OS_Handle file, Rng1U64 rng, void *data);
 #endif // OS_CORE_H
