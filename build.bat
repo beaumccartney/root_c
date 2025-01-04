@@ -11,6 +11,7 @@ if "%release%"=="1"     set debug=0 && echo [release mode]
 set flags=/I..\layers\ /I..\local\ /I..\thirdparty\ /nologo /Z7 /FC -Gm- /W4 /wd4100 /wd4201
 
 if "%debug%"=="1"        set flags=%flags% /Od /Ob1 /DBUILD_DEBUG=1
+if "%release%"=="1"      set flags=%flags% /O2 /DBUILD_DEBUG=0
 if "%profile%"=="1"      set superluminal=1
 if "%superluminal%"=="1" set flags=%flags% -DPROFILE_SUPERLUMINAL=1 && (echo [superluminal profiling enabled])
 if "%tracy%"=="1"        set flags=%flags% -DPROFILE_TRACY=1 /MD    && (echo [tracy profiling enabled])
