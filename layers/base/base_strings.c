@@ -217,11 +217,18 @@ internal String8 str8_chop(String8 string, U64 length)
 }
 internal String8 str8_trim_whitespace(String8 string)
 {
-	U8 *head = string.buffer, *tail = string.buffer + string.length - 1;
-	for (; char_is_space(*head); head++);
-	for (; char_is_space(*tail); tail--);
-
-	String8 result = str8_region(head, tail + 1);
+	U8 *head = string.buffer, *one_past_last = string.buffer + string.length;
+	for (; head < one_past_last && char_is_space(*head); head++);
+	for (; one_past_last > head;)
+	{
+		one_past_last--;
+		if (!char_is_space(*one_past_last))
+		{
+			one_past_last++;
+			break;
+		}
+	}
+	String8 result = str8_region(head, one_past_last);
 	return result;
 }
 
