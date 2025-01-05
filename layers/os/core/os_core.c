@@ -22,6 +22,22 @@ internal B32 os_write_data_to_file_path(String8 path, String8 data)
 	os_file_close(file);
 	return result;
 }
+internal B32 os_write_data_list_to_file_path(String8 path, String8List list)
+{
+	OS_Handle file = os_file_open(OS_AccessFlag_Write, path);
+	B32 result = !os_handle_match(file, os_handle_zero);
+	if (result)
+	{
+		U64 offset = 0;
+		for (String8Node *node = list.first; node != 0; offset += node->string.length, node = node->next)
+		{
+			Rng1U64 range = r1u64(offset, offset + node->string.length);
+			os_file_write(file, range, node->string.buffer);
+		}
+		os_file_close(file);
+	}
+	return result;
+}
 internal B32 os_append_data_to_file_path(String8 path, String8 data)
 {
 	B32 result = 0;
