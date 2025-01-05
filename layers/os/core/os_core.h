@@ -60,6 +60,8 @@ internal void os_abort(S32 exit_code);
 
 internal void os_set_thread_name(String8 name);
 
+internal String8   os_data_from_file_path(Arena *arena, String8 path);
+internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64 range);
 internal OS_Handle      os_file_open(OS_AccessFlags flags, String8 path);
 internal void           os_file_close(OS_Handle file);
 internal U64            os_file_read(OS_Handle file, Rng1U64 rng, void *out_data);
