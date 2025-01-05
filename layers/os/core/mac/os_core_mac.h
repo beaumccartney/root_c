@@ -10,5 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/syslimits.h>
+#include <sys/stat.h>
 
 #endif // OS_CORE_MAC_H

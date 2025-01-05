@@ -47,4 +47,7 @@ internal B32       os_delete_file_at_path(String8 path);
 internal B32       os_remove_folder_at_path(String8 path);
 internal String8   os_full_path_from_path(Arena *arena, String8 path);
 internal B32       os_file_path_exists(String8 path);
+internal B32            os_folder_path_exists(String8 path);
+internal B32 os_create_folder(String8 path);
+
 #endif // OS_CORE_H

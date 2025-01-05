@@ -169,6 +169,26 @@ internal B32 os_file_path_exists(String8 path)
 	B32 result = status != -1 && S_ISREG(s.st_mode);
 	return result;
 }
+internal B32 os_folder_path_exists(String8 path)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	struct stat s = zero_struct;
+	int status = stat((char *)path_copy.buffer, &s);
+	scratch_end(scratch);
+	B32 result = status != -1 && S_ISDIR(s.st_mode);
+	return result;
+}
+internal B32 os_create_folder(String8 path)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	int status = mkdir((char *)path_copy.buffer, 0755);
+	scratch_end(scratch);
+	B32 result = status != -1;
+	return result;
+}
+
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;
