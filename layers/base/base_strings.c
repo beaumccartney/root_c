@@ -444,7 +444,7 @@ internal String8List str8_split_by_string_chars(Arena *arena, String8 string, St
 }
 internal String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, U64 split_char_count, StringSplitFlags flags)
 {
-	String8List result = {0};
+	String8List result = zero_struct;
 	for (String8Node *node = list.first; node != 0; node = node->next)
 	{
 		String8List this_split = str8_split(arena, node->string, split_chars, split_char_count, flags);

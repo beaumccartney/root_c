@@ -84,7 +84,7 @@ internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path)
 		oflag |= O_CREAT;
 
 	int fd = open((char *)path_copy.buffer, oflag, 0644);
-	OS_Handle result = {0};
+	OS_Handle result = zero_struct;
 	if (fd != -1) result.u[0] = (U64)fd;
 	scratch_end(scratch);
 	return result;
