@@ -165,6 +165,27 @@ internal B32 os_remove_folder_at_path(String8 path)
 	scratch_end(scratch);
 	return result;
 }
+internal B32 os_copy_file_path(String8 dst, String8 src)
+{
+	B32 result = 0;
+	Temp scratch = scratch_begin(0, 0);
+	String8 src_copy = push_str8_copy(scratch.arena, src); // guarantee null termination
+	struct stat s = zero_struct;
+	int status = stat((char *)src_copy.buffer, &s);
+	if (status != -1 && S_ISREG(s.st_mode)) // only copy files, not folders
+	{
+		String8 dst_copy = push_str8_copy(scratch.arena, dst);
+		status = copyfile(
+			(char *)src_copy.buffer,
+			(char *)dst_copy.buffer,
+			0,
+			COPYFILE_ALL
+		);
+		result = status == 0;
+	}
+	scratch_end(scratch);
+	return result;
+}
 internal String8 os_full_path_from_path(Arena *arena, String8 path)
 {
 	Temp scratch = scratch_begin(&arena, 1);

@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/syslimits.h>
 #include <sys/stat.h>
+#include <copyfile.h>
 
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s);
 
