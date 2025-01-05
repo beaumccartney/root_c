@@ -83,22 +83,22 @@ internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path)
 	if (flags & (OS_AccessFlag_Write | OS_AccessFlag_Append))
 		oflag |= O_CREAT;
 
-	int fd = open(path_copy.buffer, oflag, 0644);
+	int fd = open((char *)path_copy.buffer, oflag, 0644);
 	OS_Handle result = {0};
-	if (fd != -1) result.u[0] = fd;
+	if (fd != -1) result.u[0] = (U64)fd;
 	scratch_end(scratch);
 	return result;
 }
 internal void os_file_close(OS_Handle file)
 {
 	if (os_handle_match(file, os_handle_zero)) return;
-	int fd = file.u[0];
+	int fd = (int)file.u[0];
 	close(fd);
 }
 internal U64 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 {
 	if (os_handle_match(file, os_handle_zero)) return 0;
-	int fd = file.u[0];
+	int fd = (int)file.u[0];
 	U64 read_bytes = 0,
 	    needed_bytes = dim_1u64(rng);
 	while (read_bytes < needed_bytes)
@@ -106,16 +106,16 @@ internal U64 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 		void *dst           = out_data + read_bytes;
 		U64 start_pos       = rng.min + read_bytes,
 		    remaining_bytes = needed_bytes - read_bytes;
-		int read_this_time  = pread(fd, dst, remaining_bytes, start_pos);
+		ssize_t read_this_time  = pread(fd, dst, remaining_bytes, (off_t)start_pos);
 		if (read_this_time <= 0) break; // REVIEW(beau): errno?
-		read_bytes += read_this_time;
+		read_bytes += (U64)read_this_time;
 	}
 	return read_bytes;
 }
 internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 {
 	if (os_handle_match(file, os_handle_zero)) return 0;
-	int fd = file.u[0];
+	int fd = (int)file.u[0];
 	U64 written_bytes = 0,
 	    goal_write_bytes = dim_1u64(rng);
 	while (written_bytes < goal_write_bytes)
@@ -123,9 +123,9 @@ internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 		void *src           = data + written_bytes;
 		U64 start_pos       = rng.min + written_bytes,
 		    remaining_bytes = goal_write_bytes - written_bytes;
-		int written_this_time  = pwrite(fd, src, remaining_bytes, start_pos);
+		ssize_t written_this_time  = pwrite(fd, src, remaining_bytes, (off_t)start_pos);
 		if (written_this_time <= 0) break; // REVIEW(beau): errno?
-		written_bytes += written_this_time;
+		written_bytes += (U64)written_this_time;
 	}
 	return written_bytes;
 }
@@ -133,7 +133,7 @@ internal B32 os_delete_file_at_path(String8 path)
 {
 	Temp scratch = scratch_begin(0, 0);
 	String8 copy = push_str8_copy(scratch.arena, path); // guarantee null termination
-	B32 result = unlink(copy.buffer) != -1;
+	B32 result = unlink((char *)copy.buffer) != -1;
 	scratch_end(scratch);
 	return result;
 }
@@ -141,17 +141,17 @@ internal B32 os_remove_folder_at_path(String8 path)
 {
 	Temp scratch = scratch_begin(0, 0);
 	String8 copy = push_str8_copy(scratch.arena, path); // guarantee null termination
-	B32 result = rmdir(copy.buffer) != -1;
+	B32 result = rmdir((char *)copy.buffer) != -1;
 	scratch_end(scratch);
 	return result;
 }
 internal String8 os_full_path_from_path(Arena *arena, String8 path)
 {
-	Temp scratch = scratch_begin(arena, 1);
+	Temp scratch = scratch_begin(&arena, 1);
 	char buffer[PATH_MAX] = {0};
 	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
 	String8 result = zero_struct;
-	if (realpath(path_copy.buffer, buffer) != 0)
+	if (realpath((char *)path_copy.buffer, buffer) != 0)
 		result = push_str8_copy(
 			arena,
 			str8_cstring_capped(buffer, ArrayCount(buffer))

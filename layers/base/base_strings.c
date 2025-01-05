@@ -293,12 +293,12 @@ internal U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, S
 	U64 result = haystack.length;
 	if (needle.length > 0)
 	{
-		S64 end_ix = haystack.length + 1 - needle.length;
-		for (S64 ix = start_pos; ix < end_ix; ix++)
+		S64 end_ix = (S64)haystack.length + 1 - (S64)needle.length;
+		for (S64 ix = (S64)start_pos; ix < end_ix; ix++)
 		{
 			if (str8_match(str8(haystack.buffer + ix, needle.length), needle, flags))
 			{
-				result = ix;
+				result = (U64)ix;
 				break;
 			}
 		}
@@ -490,7 +490,7 @@ internal String8Array str8_array_from_list(Arena *arena, String8List list)
 	};
 
 	String8 *copy_target = result.v;
-	for (String8Node *node; node != 0; node = node->next, copy_target++)
+	for (String8Node *node = list.first; node != 0; node = node->next, copy_target++)
 	{
 		*copy_target = node->string;
 	}
@@ -609,7 +609,7 @@ utf16_decode(String16 string)
 	UnicodeDecode result = {1, max_U32};
 	if (string.length >= 2 && 0xD800 <= string.buffer[0] && string.buffer[0] < 0xDC00 && 0xDC00 <= string.buffer[1] && string.buffer[1] < 0xE000)
 	{
-		result.codepoint = ((string.buffer[0] - 0xD800) << 10) | ((string.buffer[1] - 0xDC00) + 0x10000);
+		result.codepoint = ((string.buffer[0] - 0xD800u) << 10u) | ((string.buffer[1] - 0xDC00u) + 0x10000u);
 		result.num_code_units = 2;
 	}
 	else if (string.length > 0)

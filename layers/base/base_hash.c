@@ -19,7 +19,7 @@ msi_lookup32(U64 hash, U32 log2_arr_count, U32 last_index)
 inline internal U16
 msi_lookup16(U64 hash, U16 log2_arr_count, U16 last_index)
 {
-	U16 mask = (1 << log2_arr_count) - 1;
+	U16 mask = (U16)(1 << log2_arr_count) - 1;
 	U16 step = (U16)((hash >> (64 - log2_arr_count)) | 1);
 	U16 result = (last_index + step) & mask;
 	return result;

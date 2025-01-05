@@ -5,7 +5,7 @@
 internal U64
 cmd_line_hash_from_string(String8 string)
 {
-	U64 result = chibihash64(string.buffer, string.length, 0);
+	U64 result = chibihash64(string.buffer, (ptrdiff_t)string.length, 0);
 	return result;
 }
 internal CmdLineOpt*
