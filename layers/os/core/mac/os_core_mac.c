@@ -97,7 +97,7 @@ internal void os_file_close(OS_Handle file)
 }
 internal U64 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 {
-	if (os_handle_match(file, os_handle_zero)) return;
+	if (os_handle_match(file, os_handle_zero)) return 0;
 	int fd = file.u[0];
 	U64 read_bytes = 0,
 	    needed_bytes = dim_1u64(rng);
@@ -114,7 +114,7 @@ internal U64 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 }
 internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 {
-	if (os_handle_match(file, os_handle_zero)) return;
+	if (os_handle_match(file, os_handle_zero)) return 0;
 	int fd = file.u[0];
 	U64 written_bytes = 0,
 	    goal_write_bytes = dim_1u64(rng);
