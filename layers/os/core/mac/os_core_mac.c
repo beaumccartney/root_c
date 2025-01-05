@@ -159,6 +159,16 @@ internal String8 os_full_path_from_path(Arena *arena, String8 path)
 	scratch_end(scratch);
 	return result;
 }
+internal B32 os_file_path_exists(String8 path)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	struct stat s = zero_struct;
+	int status = stat((char *)path_copy.buffer, &s);
+	scratch_end(scratch);
+	B32 result = status != -1 && S_ISREG(s.st_mode);
+	return result;
+}
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;
