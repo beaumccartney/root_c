@@ -145,6 +145,20 @@ internal B32 os_remove_folder_at_path(String8 path)
 	scratch_end(scratch);
 	return result;
 }
+internal String8 os_full_path_from_path(Arena *arena, String8 path)
+{
+	Temp scratch = scratch_begin(arena, 1);
+	char buffer[PATH_MAX] = {0};
+	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	String8 result = zero_struct;
+	if (realpath(path_copy.buffer, buffer) != 0)
+		result = push_str8_copy(
+			arena,
+			str8_cstring_capped(buffer, ArrayCount(buffer))
+		);
+	scratch_end(scratch);
+	return result;
+}
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;
