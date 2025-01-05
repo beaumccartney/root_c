@@ -13,6 +13,29 @@ internal String8 os_data_from_file_path(Arena *arena, String8 path)
 	os_file_close(file);
 	return result;
 }
+internal B32 os_write_data_to_file_path(String8 path, String8 data)
+{
+	OS_Handle file = os_file_open(OS_AccessFlag_Write, path);
+	Rng1U64 range = rng_1u64(0, data.length);
+	os_file_write(file, range, data.buffer);
+	B32 result = !os_handle_match(file, os_handle_zero);
+	os_file_close(file);
+	return result;
+}
+internal B32 os_append_data_to_file_path(String8 path, String8 data)
+{
+	B32 result = 0;
+	if (data.length > 0)
+	{
+		OS_Handle file = os_file_open(OS_AccessFlag_Write|OS_AccessFlag_Append, path);
+		FileProperties props = os_properties_from_file(file);
+		Rng1U64 range = rng_1u64(props.size, props.size + data.length);
+		os_file_write(file, range, data.buffer);
+		result = !os_handle_match(file, os_handle_zero);
+		os_file_close(file);
+	}
+	return result;
+}
 internal String8 os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64 range)
 {
 	String8 result = zero_struct;
