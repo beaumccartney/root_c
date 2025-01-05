@@ -1,10 +1,3 @@
-#pragma push_macro("internal")
-#undef internal
-#include <mach/mach.h>
-#pragma pop_macro("internal")
-
-#include <fcntl.h>
-
 internal OS_SystemInfo os_get_system_info(void)
 {
 	return (OS_SystemInfo){vm_page_size, MB(2)};
