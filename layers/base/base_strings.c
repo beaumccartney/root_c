@@ -2,6 +2,7 @@
 	#if COMPILER_MSVC
 		#pragma warning (push, 0)
         #elif COMPILER_CLANG
+		#pragma clang diagnostic push
 		#pragma clang diagnostic ignored "-Weverything"
 	#endif
 
