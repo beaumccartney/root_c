@@ -1,8 +1,6 @@
 #ifndef OS_CORE_MAC_H
 #define OS_CORE_MAC_H
 
-#define _DARWIN_C_SOURCE
-
 #pragma push_macro("internal")
 #undef internal
 #include <mach/mach.h>
