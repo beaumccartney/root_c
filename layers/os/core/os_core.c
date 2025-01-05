@@ -8,7 +8,7 @@ internal String8 os_data_from_file_path(Arena *arena, String8 path)
 {
 	OS_Handle file = os_file_open(OS_AccessFlag_Read, path);
 	FileProperties props = os_properties_from_file(file);
-	Rng1U64 range = rng_1u64(0, props.size);
+	Rng1U64 range = r1u64(0, props.size);
 	String8 result = os_string_from_file_range(arena, file, range);
 	os_file_close(file);
 	return result;
@@ -16,7 +16,7 @@ internal String8 os_data_from_file_path(Arena *arena, String8 path)
 internal B32 os_write_data_to_file_path(String8 path, String8 data)
 {
 	OS_Handle file = os_file_open(OS_AccessFlag_Write, path);
-	Rng1U64 range = rng_1u64(0, data.length);
+	Rng1U64 range = r1u64(0, data.length);
 	os_file_write(file, range, data.buffer);
 	B32 result = !os_handle_match(file, os_handle_zero);
 	os_file_close(file);
@@ -45,7 +45,7 @@ internal B32 os_append_data_to_file_path(String8 path, String8 data)
 	{
 		OS_Handle file = os_file_open(OS_AccessFlag_Write|OS_AccessFlag_Append, path);
 		FileProperties props = os_properties_from_file(file);
-		Rng1U64 range = rng_1u64(props.size, props.size + data.length);
+		Rng1U64 range = r1u64(props.size, props.size + data.length);
 		os_file_write(file, range, data.buffer);
 		result = !os_handle_match(file, os_handle_zero);
 		os_file_close(file);
