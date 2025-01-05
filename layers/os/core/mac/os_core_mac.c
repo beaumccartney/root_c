@@ -1,3 +1,11 @@
+internal FileProperties os_mac_file_properties_from_stat(struct stat *s)
+{
+	FileProperties result = zero_struct;
+	result.size = (U64)s->st_size;
+	if (S_ISDIR(s->st_mode)) result.flags |= FilePropertyFlag_IsFolder;
+	return result;
+}
+
 internal OS_SystemInfo os_get_system_info(void)
 {
 	return (OS_SystemInfo){vm_page_size, MB(2)};
@@ -129,6 +137,18 @@ internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 	}
 	return written_bytes;
 }
+internal FileProperties os_properties_from_file(OS_Handle file)
+{
+	FileProperties result = zero_struct;
+	if (!os_handle_match(file, os_handle_zero))
+	{
+		int fd = (int)file.u[0];
+		struct stat s = zero_struct;
+		int status = fstat(fd, &s);
+		if (status != -1) result = os_mac_file_properties_from_stat(&s);
+	}
+	return result;
+}
 internal B32 os_delete_file_at_path(String8 path)
 {
 	Temp scratch = scratch_begin(0, 0);
@@ -179,6 +199,18 @@ internal B32 os_folder_path_exists(String8 path)
 	B32 result = status != -1 && S_ISDIR(s.st_mode);
 	return result;
 }
+internal FileProperties os_properties_from_file_path(String8 path)
+{
+	FileProperties result = zero_struct;
+	Temp scratch = scratch_begin(0, 0);
+	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
+	struct stat s = zero_struct;
+	int status = stat((char *)path_copy.buffer, &s);
+	if (status != -1) result = os_mac_file_properties_from_stat(&s);
+	scratch_end(scratch);
+	return result;
+}
+
 internal B32 os_create_folder(String8 path)
 {
 	Temp scratch = scratch_begin(0, 0);

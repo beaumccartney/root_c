@@ -15,6 +15,27 @@ enum
 	OS_AccessFlag_Append     = (1<<2),
 };
 
+typedef U32 FilePropertyFlags;
+enum
+{
+	FilePropertyFlag_IsFolder = (1 << 0),
+};
+
+// TODO(beau): created time, last modified time
+typedef struct FileProperties FileProperties;
+struct FileProperties
+{
+	U64 size;
+	FilePropertyFlags flags;
+};
+
+typedef struct OS_FileInfo OS_FileInfo;
+struct OS_FileInfo
+{
+  String8 name;
+  FileProperties props;
+};
+
 typedef struct OS_Handle OS_Handle;
 struct OS_Handle
 {
@@ -39,15 +60,19 @@ internal void os_abort(S32 exit_code);
 
 internal void os_set_thread_name(String8 name);
 
-internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path);
-internal void      os_file_close(OS_Handle file);
-internal U64       os_file_read(OS_Handle file, Rng1U64 rng, void *out_data);
-internal U64       os_file_write(OS_Handle file, Rng1U64 rng, void *data);
-internal B32       os_delete_file_at_path(String8 path);
-internal B32       os_remove_folder_at_path(String8 path);
-internal String8   os_full_path_from_path(Arena *arena, String8 path);
-internal B32       os_file_path_exists(String8 path);
+internal OS_Handle      os_file_open(OS_AccessFlags flags, String8 path);
+internal void           os_file_close(OS_Handle file);
+internal U64            os_file_read(OS_Handle file, Rng1U64 rng, void *out_data);
+internal U64            os_file_write(OS_Handle file, Rng1U64 rng, void *data);
+internal FileProperties os_properties_from_file(OS_Handle file);
+internal B32            os_delete_file_at_path(String8 path);
+internal B32            os_remove_folder_at_path(String8 path);
+internal B32            os_copy_file_path(String8 dst, String8 src);
+internal String8        os_full_path_from_path(Arena *arena, String8 path);
+internal B32            os_file_path_exists(String8 path);
 internal B32            os_folder_path_exists(String8 path);
+internal FileProperties os_properties_from_file_path(String8 path);
+
 internal B32 os_create_folder(String8 path);
 
 #endif // OS_CORE_H

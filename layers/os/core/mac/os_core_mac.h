@@ -12,4 +12,6 @@
 #include <sys/syslimits.h>
 #include <sys/stat.h>
 
+internal FileProperties os_mac_file_properties_from_stat(struct stat *s);
+
 #endif // OS_CORE_MAC_H
