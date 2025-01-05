@@ -116,9 +116,17 @@ internal String8 str8_cstring_capped(char *cstr, U64 cap)
 }
 internal String16 str16_cstring_capped(U16 *cstr, U64 cap)
 {
+	U64 length = 0;
+	for (U16 *c = (U16*)cstr; *c != 0 && length < cap; length++, c++);
+	String16 result = {(U16*)cstr, length};
+	return result;
 }
 internal String32 str32_cstring_capped(U32 *cstr, U64 cap)
 {
+	U64 length = 0;
+	for (U32 *c = (U32*)cstr; *c != 0 && length < cap; length++, c++);
+	String32 result = {(U32*)cstr, length};
+	return result;
 }
 
 internal String8  str8_region(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
