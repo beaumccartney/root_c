@@ -14,16 +14,17 @@ if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug m
 if [ -v release ]; then flags+=("-O2" "-DBUILD_DEBUG=0")      && echo "[release mode]"; fi
 
 if [ -v profile ]; then tracy=1; fi
-if [ -v tracy ];   then flags+=("-lc++" "-DPROFILE_TRACY" "../thirdparty/tracy/mac/libTracyClient.a") && echo "[tracy profiling enabled]"; fi
+if [ -v tracy   ]; then flags+=("-lc++" "-DPROFILE_TRACY" "../thirdparty/tracy/mac/libTracyClient.a") && echo "[tracy profiling enabled]"; fi
 
 # sanitizer flags
 # TODO(beau): -fsanitize-trap toggle?
 if [ -v sanitize ]; then asan=1 && ubsan=1; fi
-if [ -v asan  ];    then flags+=("-fsanitize=address")   && echo "[asan enabled]"; fi
-if [ -v ubsan ];    then flags+=("-fsanitize=undefined") && echo "[ubsan enabled]"; fi
+if [ -v asan     ]; then flags+=("-fsanitize=address")   && echo "[asan enabled]"; fi
+if [ -v ubsan    ]; then flags+=("-fsanitize=undefined") && echo "[ubsan enabled]"; fi
 
 mkdir -p build local
 
 cd build
-set -x
+
+# set -x # uncomment to print build command
 cc $flags -o test ../local/main.c
