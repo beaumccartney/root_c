@@ -70,7 +70,10 @@ internal void os_abort(S32 exit_code)
 
 internal void os_set_thread_name(String8 name)
 {
-	// TODO(beau)
+	Temp scratch = scratch_begin(0, 0);
+	String8 name_copy = push_str8_copy(scratch.arena, name); // guarantee null terminator
+	pthread_setname_np((char *)name_copy.buffer);
+	scratch_end(scratch);
 }
 
 // REVIEW(beau): file perms based on access flags
