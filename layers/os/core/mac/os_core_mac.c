@@ -46,16 +46,8 @@ internal void os_release(void *ptr, U64 size)
 
 internal void *os_reserve_large(U64 size)
 {
-	void * result = 0;
-
-	AssertAlways(vm_allocate(
-		mach_task_self(),
-		(vm_address_t *)&result,
-		size,
-		VM_FLAGS_ANYWHERE | VM_FLAGS_SUPERPAGE_SIZE_2MB
-	) == KERN_SUCCESS);
-
-	return result;
+	AssertAlways(!(_Bool)"Not implemented!");
+	return 0;
 }
 
 internal B32 os_commit_large(void *ptr, U64 size)
