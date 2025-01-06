@@ -1,13 +1,13 @@
 // TODO, XXX(beau): panic on allocation failure
 
 internal Arena *
-arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
+arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
 {
 	OS_SystemInfo info = os_get_system_info();
 
 	U64 reserve = 0, commit = 0;
 	void *base;
-	if (large_pages)
+	if (flags & ArenaFlag_LargePages)
 	{
 		reserve = AlignPow2(min_reserve_size, info.large_page_size);
 		commit  = AlignPow2(min_commit_size, info.large_page_size);
@@ -22,12 +22,12 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, B32 large_pages)
 		os_commit(base, commit);
 	}
 
-	Arena *arena       = (Arena *)base;
-	arena->base        = base;
-	arena->reserved    = reserve;
-	arena->committed   = commit;
-	arena->pos         = ARENA_HEADER_SIZE;
-	arena->large_pages = large_pages;
+	Arena *arena     = (Arena *)base;
+	arena->base      = base;
+	arena->reserved  = reserve;
+	arena->committed = commit;
+	arena->pos       = ARENA_HEADER_SIZE;
+	arena->flags     = flags;
 
 	AsanPoisonMemoryRegion(base, commit);
 	AsanUnpoisonMemoryRegion(base, ARENA_HEADER_SIZE);
@@ -52,7 +52,7 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 	if (endpos > arena->committed) {
 		OS_SystemInfo info = os_get_system_info();
 
-		U64 commit_gran = arena->large_pages
+		U64 commit_gran = arena->flags & ArenaFlag_LargePages
 			? info.large_page_size
 			: info.page_size;
 		U64 new_commitpos = AlignPow2(endpos, commit_gran);
