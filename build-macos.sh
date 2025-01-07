@@ -7,11 +7,24 @@ for arg in "$@"; do declare $arg='1'; done
 if [ ! -v release ]; then debug=1; fi
 
 # common flags
-flags=("-I../layers/" "-I../local/" "-I../thirdparty/" "-fdiagnostics-absolute-paths" "-Wall" "-Wextra" "-Wimplicit-int-conversion" "-Wno-unused-function" "-Wno-missing-braces" "-Wno-unused-parameter" "-Wconversion" "-Wdouble-promotion")
+flags=(
+	"-I../layers/"
+	"-I../local/"
+	"-I../thirdparty/"
+	"-fdiagnostics-absolute-paths"
+	"-Wall"
+	"-Wextra"
+	"-Wimplicit-int-conversion"
+	"-Wno-unused-function"
+	"-Wno-missing-braces"
+	"-Wno-unused-parameter"
+	"-Wconversion"
+	"-Wdouble-promotion"
+)
 
 # debug/release flags
 if [ -v debug   ]; then flags+=("-g3" "-O0" "-DBUILD_DEBUG=1") && echo "[debug mode]"; fi
-if [ -v release ]; then flags+=("-O2" "-DBUILD_DEBUG=0")      && echo "[release mode]"; fi
+if [ -v release ]; then flags+=("-O2" "-DBUILD_DEBUG=0")       && echo "[release mode]"; fi
 
 if [ -v profile ]; then tracy=1; fi
 if [ -v tracy   ]; then flags+=("-lc++" "-DPROFILE_TRACY" "../thirdparty/tracy/mac/libTracyClient.a") && echo "[tracy profiling enabled]"; fi
