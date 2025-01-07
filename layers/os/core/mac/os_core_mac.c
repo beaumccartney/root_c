@@ -1,9 +1,43 @@
+#if !BUILD_SUPPLEMENTARY_UNIT
+	global OS_MAC_State os_mac_state = zero_struct;
+#endif
+
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s)
 {
 	FileProperties result = zero_struct;
 	result.size = (U64)s->st_size;
 	if (S_ISDIR(s->st_mode)) result.flags |= FilePropertyFlag_IsFolder;
 	return result;
+}
+
+internal void *os_mac_thread_entry_point(void *os_mac_entity)
+{
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)os_mac_entity;
+	TCTX tctx;
+	tctx_init_and_equip(&tctx);
+	entity->thread.func(entity->thread.params);
+	tctx_release();
+	return 0;
+}
+
+internal OS_MAC_Entity *os_mac_entity_alloc(OS_MAC_EntityKind kind)
+{
+	int status = pthread_mutex_lock(&os_mac_state.entity_mutex); Assert(status == 0);
+	OS_MAC_Entity *result = os_mac_state.entity_free;
+	if (result)
+		SLLStackPop(result);
+	else
+		result = push_array_no_zero(os_mac_state.entity_arena, OS_MAC_Entity, 1);
+	MemoryZeroStruct(result);
+	result->kind = kind;
+	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
+	return result;
+}
+internal void os_mac_entity_release(OS_MAC_Entity *entity)
+{
+	int status = pthread_mutex_lock(&os_mac_state.entity_mutex); Assert(status == 0);
+	SLLStackPush(os_mac_state.entity_free, entity);
+	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
 }
 
 internal OS_SystemInfo os_get_system_info(void)
@@ -47,6 +81,7 @@ internal void os_release(void *ptr, U64 size)
 internal void *os_reserve_large(U64 size)
 {
 	AssertAlways(!(_Bool)"Not implemented!");
+	NotImplemented;
 	return 0;
 }
 
@@ -58,14 +93,6 @@ internal B32 os_commit_large(void *ptr, U64 size)
 internal void os_abort(S32 exit_code)
 {
 	exit(exit_code);
-}
-
-internal void os_set_thread_name(String8 name)
-{
-	Temp scratch = scratch_begin(0, 0);
-	String8 name_copy = push_str8_copy(scratch.arena, name); // guarantee null terminator
-	pthread_setname_np((char *)name_copy.buffer);
-	scratch_end(scratch);
 }
 
 // REVIEW(beau): file perms based on access flags
@@ -245,11 +272,155 @@ internal void os_set_thread_name(String8 name)
 	scratch_end(scratch);
 }
 
+internal OS_Handle
+os_thread_launch(OS_ThreadFunctionType *func, void *params)
+{
+	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_Thread);
+	entity->thread.func   = func;
+	entity->thread.params = params;
+	int status = pthread_create(
+		&entity->thread.pthread_handle,
+		0,
+		os_mac_thread_entry_point,
+		entity
+	);
+	if (status != 0)
+	{
+		os_mac_entity_release(entity);
+		entity = 0;
+	}
+	OS_Handle result = {.u[0] = (U64)entity};
+	return result;
+}
+internal B32 os_thread_join(OS_Handle handle, U64 endt_us)
+{
+	B32 result = 0;
+	if (!os_handle_match(handle, os_handle_zero))
+	{
+		OS_MAC_Entity *entity = (OS_MAC_Entity *)handle.u[0];
+		Assert(entity->kind == OS_MAC_EntityKind_Thread);
+		int status = pthread_join(entity->thread.pthread_handle, 0);
+		os_mac_entity_release(entity);
+		result = status == 0;
+	}
+	return result;
+}
+internal void os_thread_detach(OS_Handle handle)
+{
+	if (os_handle_match(handle, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)handle.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_Thread);
+	int status = pthread_detach(entity->thread.pthread_handle);
+	Assert(status == 0);
+	os_mac_entity_release(entity);
+}
+
+internal OS_Handle os_mutex_alloc(void)
+{
+	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_Mutex);
+	int status = pthread_mutex_init(&entity->pthread_mutex_handle, 0);
+	if (status != 0)
+	{
+		os_mac_entity_release(entity);
+		entity = 0;
+	}
+	OS_Handle result = {.u[0] = (U64)entity};
+	return result;
+}
+internal void os_mutex_release(OS_Handle mutex)
+{
+	if (os_handle_match(mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
+	int status = pthread_mutex_destroy(&entity->pthread_mutex_handle);
+	Assert(status == 0);
+	os_mac_entity_release(entity);
+}
+internal void os_mutex_take(OS_Handle mutex)
+{
+	if (os_handle_match(mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
+	int status = pthread_mutex_lock(&entity->pthread_mutex_handle);
+	Assert(status == 0);
+}
+internal void os_mutex_drop(OS_Handle mutex)
+{
+	if (os_handle_match(mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
+	int status = pthread_mutex_unlock(&entity->pthread_mutex_handle);
+	Assert(status == 0);
+}
+
+internal OS_Handle os_rw_mutex_alloc(void)
+{
+	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_RWMutex);
+	int status = pthread_rwlock_init(&entity->pthread_rwlock_handle, 0);
+	if (status != 0)
+	{
+		os_mac_entity_release(entity);
+		entity = 0;
+	}
+	OS_Handle result = {.u[0] = (U64)entity};
+	return result;
+}
+internal void os_rw_mutex_release(OS_Handle rw_mutex)
+{
+	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
+	int status = pthread_rwlock_destroy(&entity->pthread_rwlock_handle);
+	Assert(status == 0);
+	os_mac_entity_release(entity);
+}
+internal void os_rw_mutex_take_r(OS_Handle rw_mutex)
+{
+	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
+	int status = pthread_rwlock_rdlock(&entity->pthread_rwlock_handle);
+	Assert(status == 0);
+}
+internal void os_rw_mutex_drop_r(OS_Handle rw_mutex)
+{
+	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
+	int status = pthread_rwlock_unlock(&entity->pthread_rwlock_handle);
+	Assert(status == 0);
+}
+internal void os_rw_mutex_take_w(OS_Handle rw_mutex)
+{
+	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.u[0];
+	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
+	int status = pthread_rwlock_wrlock(&entity->pthread_rwlock_handle);
+	Assert(status == 0);
+}
+internal void os_rw_mutex_drop_w(OS_Handle rw_mutex)
+{
+	os_rw_mutex_drop_r(rw_mutex); // in pthreads both kinds of locks are dropped the same way
+}
+
 int main(int argc, char *argv[])
 {
+	{
+		os_mac_state.entity_arena = arena_default;
+		int status = pthread_mutex_init(&os_mac_state.entity_mutex, 0);
+		AssertAlways(status == 0);
+	}
+
 	local_persist TCTX tctx;
 	tctx_init_and_equip(&tctx);
 	main_thread_base_entry_point(argc, argv);
 	tctx_release();
+
+	{
+		int status = pthread_mutex_destroy(&os_mac_state.entity_mutex);
+		Assert(status == 0);
+		// XXX(beau): do something with leaked entities?
+		arena_release(os_mac_state.entity_arena);
+	}
 	return 0;
 }
