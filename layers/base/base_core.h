@@ -110,6 +110,7 @@
 #else
 	#error Trap intrinsic not defined for this compiler
 #endif
+#define NotImplemented Assert(!(_Bool)"Not implemented!");
 
 #define AssertAlways(x) do{if(!(x)) {Trap();}}while(0)
 #if BUILD_DEBUG

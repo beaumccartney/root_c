@@ -38,7 +38,7 @@ internal Vec3F32 mix_3f32(Vec3F32 a, Vec3F32 b, F32 t) {return (Vec3F32){mix_1f3
 internal Vec3F32 cross_3f32(Vec3F32 a, Vec3F32 b)      {return (Vec3F32){a.y*b.z - b.y*a.z, a.z*b.x - b.z*a.x, a.x*b.y - b.x*a.y};}
 internal Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m)
 {
-	AssertAlways(0); // unimplemented
+	NotImplemented
 	Vec3F32 result = zero_struct;
 	return result;
 }
@@ -57,7 +57,7 @@ internal Vec4F32 normalize_4f32(Vec4F32 v)             {return scale_4f32(v, 1.f
 internal Vec4F32 mix_4f32(Vec4F32 a, Vec4F32 b, F32 t) {return (Vec4F32){mix_1f32(a.x, b.x, t), mix_1f32(a.y, b.y, t), mix_1f32(a.z, b.z, t), mix_1f32(a.w, b.w, t)};}
 internal Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m)
 {
-	AssertAlways(0); // unimplemented
+	NotImplemented
 	Vec4F32 result = zero_struct;
 	return result;
 }
