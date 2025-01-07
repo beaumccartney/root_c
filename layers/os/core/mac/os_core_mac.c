@@ -237,6 +237,14 @@ internal B32 os_create_folder(String8 path)
 	return result;
 }
 
+internal void os_set_thread_name(String8 name)
+{
+	Temp scratch = scratch_begin(0, 0);
+	String8 name_copy = push_str8_copy(scratch.arena, name); // guarantee null terminator
+	pthread_setname_np((char *)name_copy.buffer);
+	scratch_end(scratch);
+}
+
 int main(int argc, char *argv[])
 {
 	local_persist TCTX tctx;

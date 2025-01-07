@@ -103,6 +103,8 @@ internal void         os_file_iter_end(OS_FileIter *iter);
 
 internal B32 os_create_folder(String8 path);
 
+internal void os_set_thread_name(String8 name);
+
 internal OS_Handle os_thread_launch(OS_ThreadFunctionType *func, void *ptr, void *params);
 internal B32       os_thread_join(OS_Handle handle, U64 endt_us);
 internal void      os_thread_detach(OS_Handle handle);
