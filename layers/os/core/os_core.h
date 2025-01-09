@@ -63,13 +63,13 @@ typedef void OS_ThreadFunctionType(void *ptr);
 // TODO(beau): initialize in the platform entry point and either return a pointer to that here or just define a global exposed by each header here
 internal OS_SystemInfo os_get_system_info(void);
 
-internal void *os_reserve(U64 size);
-internal B32   os_commit(void *ptr, U64 size);
-internal void  os_decommit(void *ptr, U64 size);
-internal void  os_release(void *ptr, U64 size);
+internal void *os_vmem_reserve(U64 size);
+internal B32   os_vmem_commit(void *ptr, U64 size);
+internal void  os_vmem_decommit(void *ptr, U64 size);
+internal void  os_vmem_release(void *ptr, U64 size);
 
-internal void *os_reserve_large(U64 size);
-internal B32   os_commit_large(void *ptr, U64 size);
+internal void *os_vmem_reserve_large(U64 size);
+internal B32   os_vmem_commit_large(void *ptr, U64 size);
 
 #define os_handle_zero ((OS_Handle) zero_struct)
 internal B32 os_handle_match(OS_Handle a, OS_Handle b);

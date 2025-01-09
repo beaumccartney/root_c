@@ -16,32 +16,32 @@ internal OS_SystemInfo os_get_system_info(void)
 	return result;
 }
 
-internal void *os_reserve(U64 size)
+internal void *os_vmem_reserve(U64 size)
 {
 	return VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
 }
 
-internal B32 os_commit(void *ptr, U64 size)
+internal B32 os_vmem_commit(void *ptr, U64 size)
 {
 	return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != 0;
 }
 
-internal void os_decommit(void *ptr, U64 size)
+internal void os_vmem_decommit(void *ptr, U64 size)
 {
 	VirtualFree(ptr, size, MEM_DECOMMIT);
 }
 
-internal void os_release(void *ptr, U64 size)
+internal void os_vmem_release(void *ptr, U64 size)
 {
 	VirtualFree(ptr, size, MEM_RELEASE);
 }
 
-internal void *os_reserve_large(U64 size)
+internal void *os_vmem_reserve_large(U64 size)
 {
 	return VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES, PAGE_READWRITE);
 }
 
-internal B32 os_commit_large(void *ptr, U64 size)
+internal B32 os_vmem_commit_large(void *ptr, U64 size)
 {
 	return 1;
 }

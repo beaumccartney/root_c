@@ -11,15 +11,15 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
 	{
 		reserve = AlignPow2(min_reserve_size, info.large_page_size);
 		commit  = AlignPow2(min_commit_size, info.large_page_size);
-		base    = os_reserve_large(reserve);
-		os_commit_large(base, commit);
+		base    = os_vmem_reserve_large(reserve);
+		os_vmem_commit_large(base, commit);
 	}
 	else
 	{
 		reserve = AlignPow2(min_reserve_size, info.page_size);
 		commit  = AlignPow2(min_commit_size, info.page_size);
-		base    = os_reserve(reserve);
-		os_commit(base, commit);
+		base    = os_vmem_reserve(reserve);
+		os_vmem_commit(base, commit);
 	}
 
 	Arena *arena     = (Arena *)base;
@@ -37,7 +37,7 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
 
 internal void arena_release(Arena * arena)
 {
-	os_release(arena->base, arena->reserved);
+	os_vmem_release(arena->base, arena->reserved);
 }
 
 // REVIEW(beau): off-by-one bugs?
@@ -56,7 +56,7 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 			? info.large_page_size
 			: info.page_size;
 		U64 new_commitpos = AlignPow2(endpos, commit_gran);
-		os_commit(arena->base + arena->committed, new_commitpos - arena->committed);
+		os_vmem_commit(arena->base + arena->committed, new_commitpos - arena->committed);
 		arena->committed = new_commitpos;
 	}
 

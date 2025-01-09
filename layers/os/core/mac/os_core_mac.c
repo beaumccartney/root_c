@@ -45,7 +45,7 @@ internal OS_SystemInfo os_get_system_info(void)
 	return (OS_SystemInfo){vm_page_size, MB(2)};
 }
 
-internal void *os_reserve(U64 size)
+internal void *os_vmem_reserve(U64 size)
 {
 	void * result = 0;
 
@@ -59,17 +59,17 @@ internal void *os_reserve(U64 size)
 	return result;
 }
 
-internal B32 os_commit(void *ptr, U64 size)
+internal B32 os_vmem_commit(void *ptr, U64 size)
 {
 	return 1;
 }
 
-internal void os_decommit(void *ptr, U64 size)
+internal void os_vmem_decommit(void *ptr, U64 size)
 {
 	// no-op
 }
 
-internal void os_release(void *ptr, U64 size)
+internal void os_vmem_release(void *ptr, U64 size)
 {
 	AssertAlways(vm_deallocate(
 		mach_task_self(),
@@ -78,14 +78,14 @@ internal void os_release(void *ptr, U64 size)
 	) == KERN_SUCCESS);
 }
 
-internal void *os_reserve_large(U64 size)
+internal void *os_vmem_reserve_large(U64 size)
 {
 	AssertAlways(!(_Bool)"Not implemented!");
 	NotImplemented;
 	return 0;
 }
 
-internal B32 os_commit_large(void *ptr, U64 size)
+internal B32 os_vmem_commit_large(void *ptr, U64 size)
 {
 	return 1;
 }
