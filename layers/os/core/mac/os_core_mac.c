@@ -214,7 +214,8 @@ internal String8 os_full_path_from_path(Arena *arena, String8 path)
 	char buffer[PATH_MAX] = {0};
 	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
 	String8 result = zero_struct;
-	if (realpath((char *)path_copy.buffer, buffer) != 0)
+	char *realpath_result = realpath((char *)path_copy.buffer, buffer);
+	if (realpath_result != 0)
 		result = push_str8_copy(
 			arena,
 			str8_cstring_capped(buffer, ArrayCount(buffer))
