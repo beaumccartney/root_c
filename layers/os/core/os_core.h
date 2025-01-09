@@ -18,17 +18,17 @@ enum
 typedef U32 OS_FileIterFlags;
 enum
 {
-	OS_FileIterFlag_SkipFolders     = (1 << 0),
-	OS_FileIterFlag_SkipFiles       = (1 << 1),
-	OS_FileIterFlag_SkipHiddenFiles = (1 << 2),
-	OS_FileIterFlag_Done            = (1 << 31),
+	OS_FileIterFlag_SkipFolders    = (1 << 0),
+	OS_FileIterFlag_SkipFiles      = (1 << 1),
+	OS_FileIterFlag_SkipHidden     = (1 << 2),
+	OS_FileIterFlag_RecurseFolders = (1 << 3),
 };
 
 typedef struct OS_FileIter OS_FileIter;
 struct OS_FileIter
 {
 	OS_FileIterFlags flags;
-	U8 memory[800];
+	U64 memory[16]; // 8-byte aligned
 };
 
 typedef U32 FilePropertyFlags;

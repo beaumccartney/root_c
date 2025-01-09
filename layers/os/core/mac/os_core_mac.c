@@ -255,6 +255,62 @@ internal FileProperties os_properties_from_file_path(String8 path)
 	return result;
 }
 
+internal OS_FileIter *os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
+{
+	Temp scratch = scratch_begin(&arena, 1);
+	String8 full_path = os_full_path_from_path(scratch.arena, path); // guarantee absolute paths from fts_read()
+	char *fts_fileargs[] = {(char *)full_path.buffer, 0};
+	OS_FileIter *result = push_array(arena, OS_FileIter, 1);
+	result->flags = flags;
+	OS_MAC_FileIter *maciter = (OS_MAC_FileIter *)result->memory;
+	maciter->fts = fts_open(fts_fileargs, 0, 0);
+	Assert(maciter->fts != 0);
+	scratch_end(scratch);
+	return result;
+}
+internal B32 os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
+{
+	OS_MAC_FileIter *maciter = (OS_MAC_FileIter *)iter->memory;
+	FTSENT *ftsent = 0;
+	for (;;) // spin until candidate or end is reached
+	{
+		ftsent = fts_read(maciter->fts);
+		if (ftsent == 0) break;
+		u_short ftsinfo = ftsent->fts_info;
+		if (ftsent->fts_level == FTS_ROOTLEVEL && ftsinfo != FTS_F) continue;
+
+		B32 skip_because_file   = iter->flags & OS_FileIterFlag_SkipFiles   && ftsinfo == FTS_F,
+		    skip_because_folder = iter->flags & OS_FileIterFlag_SkipFolders && ftsinfo == FTS_D,
+		    skip_because_hidden = iter->flags & OS_FileIterFlag_SkipHidden  && ftsent->fts_name[0] == '.',
+
+		    should_skip = skip_because_file
+			       || skip_because_folder
+			       || skip_because_hidden;
+
+		if (!(iter->flags & OS_FileIterFlag_RecurseFolders) || skip_because_hidden)
+		{
+			int status = fts_set(maciter->fts, ftsent, FTS_SKIP);
+			Assert(status == 0);
+		}
+		if (should_skip) continue;
+		if (ftsent->fts_info != FTS_DP) break;
+	}
+	B32 result = ftsent != 0;
+	if (result)
+	{
+		info_out->props = os_mac_file_properties_from_stat(ftsent->fts_statp);
+		String8 filerelpath = str8_cstring_capped(ftsent->fts_path, ftsent->fts_pathlen);
+		info_out->name = push_str8_copy(arena, filerelpath);
+	}
+	return result;
+}
+internal void os_file_iter_end(OS_FileIter *iter)
+{
+	OS_MAC_FileIter *maciter = (OS_MAC_FileIter *)iter->memory;
+	int status = fts_close(maciter->fts);
+	Assert(status == 0);
+}
+
 internal B32 os_create_folder(String8 path)
 {
 	Temp scratch = scratch_begin(0, 0);

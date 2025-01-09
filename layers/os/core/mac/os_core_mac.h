@@ -13,6 +13,8 @@
 #include <sys/stat.h>
 #include <copyfile.h>
 #include <pthread.h>
+#include <fts.h>
+#include <sys/types.h>
 
 typedef enum
 {
@@ -47,6 +49,13 @@ struct OS_MAC_State
 	Arena *entity_arena;
 	OS_MAC_Entity *entity_free;
 };
+
+typedef struct OS_MAC_FileIter OS_MAC_FileIter;
+struct OS_MAC_FileIter { FTS *fts; };
+StaticAssert(
+	sizeof(OS_MAC_FileIter) <= sizeof(Member(OS_FileIter, memory)),
+	os_mac_file_iter_size_check
+);
 
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s);
 internal void * os_mac_thread_entry_point(void *params);
