@@ -74,7 +74,7 @@ internal B32   os_commit_large(void *ptr, U64 size);
 #define os_handle_zero ((OS_Handle) zero_struct)
 internal B32 os_handle_match(OS_Handle a, OS_Handle b);
 
-internal void os_abort(S32 exit_code);
+internal _Noreturn void os_abort(S32 exit_code);
 
 internal String8   os_data_from_file_path(Arena *arena, String8 path);
 internal B32       os_write_data_to_file_path(String8 path, String8 data);

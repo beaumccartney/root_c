@@ -90,7 +90,7 @@ internal B32 os_commit_large(void *ptr, U64 size)
 	return 1;
 }
 
-internal void os_abort(S32 exit_code)
+internal _Noreturn void os_abort(S32 exit_code)
 {
 	exit(exit_code);
 }
