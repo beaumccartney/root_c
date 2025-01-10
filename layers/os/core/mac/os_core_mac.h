@@ -56,6 +56,10 @@ StaticAssert(
 	sizeof(OS_MAC_FileIter) <= sizeof(Member(OS_FileIter, memory)),
 	os_mac_file_iter_size_check
 );
+StaticAssert(
+	AlignOf(OS_MAC_FileIter) <= AlignOf(Member(OS_FileIter, memory)),
+	os_mac_file_iter_size_check
+);
 
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s);
 internal void * os_mac_thread_entry_point(void *params);

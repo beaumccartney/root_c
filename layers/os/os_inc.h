@@ -12,6 +12,9 @@
 
 #if OS_FEATURE_GRAPHICAL
 	#include "gfx/os_gfx.h"
+	#if OS_MAC
+		#include "gfx/mac/os_gfx_mac.h"
+	#endif
 #endif
 
 #endif // OS_INC_H

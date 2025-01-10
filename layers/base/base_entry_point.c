@@ -6,6 +6,10 @@ internal void main_thread_base_entry_point(int argc, char *argv[])
 
 	cmdline_global = cmd_line_from_argcv(scratch.arena, argc, argv);
 
+	#ifdef OS_GFX_H
+	os_gfx_init();
+	#endif
+
 	entry_point();
 	scratch_end(scratch);
 }

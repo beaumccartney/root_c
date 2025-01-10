@@ -162,4 +162,8 @@ struct OS_EventList
 	U64 count;
 };
 
+internal void os_gfx_init(void);
+
+internal OS_EventList os_gfx_get_events(Arena *arena);
+
 #endif // OS_GFX_H

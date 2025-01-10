@@ -20,6 +20,10 @@ flags=(
 	"-Wno-unused-parameter"
 	"-Wconversion"
 	"-Wdouble-promotion"
+	"-ObjC"
+	"-fno-objc-arc"
+	"-framework"
+	"Cocoa"
 )
 
 # debug/release flags
