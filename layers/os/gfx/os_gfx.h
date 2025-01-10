@@ -138,6 +138,8 @@ enum OS_EventKind
 	OS_EventKind_Press,
 	OS_EventKind_Release,
 	Os_EventKind_MouseMove,
+	OS_EventKind_Quit,
+	OS_EventKind_COUNT,
 };
 
 typedef struct OS_Event OS_Event;
@@ -168,5 +170,7 @@ struct OS_EventList
 internal void os_gfx_init(void);
 
 internal OS_EventList os_gfx_get_events(Arena *arena);
+
+internal OS_Event *os_eventlist_push_new(Arena *arena, OS_EventList *list);
 
 #endif // OS_GFX_H
