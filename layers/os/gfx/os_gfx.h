@@ -15,8 +15,11 @@ enum OS_Key
 	OS_Key_Enter             = OS_Key_Return,
 
 	OS_Key_Esc               = 27,              // '\e'
+	OS_Key_Escape            = OS_Key_Esc,      // '\e'
 
 	OS_Key_Space             = 32,              // ' '
+
+	OS_Key_Quote             = 39,              // '\''
 
 	OS_Key_Comma             = 44,              // ','
 	OS_Key_Minus,
@@ -36,8 +39,8 @@ enum OS_Key
 	OS_Key_8,
 	OS_Key_9,
 
-	Semicolon                = 59,              // ';'
-	Equals                   = 61,              // '= ',
+	OS_Key_Semicolon         = 59,              // ';'
+	OS_Key_Equals            = 61,              // '= ',
 
 	OS_Key_A                 = 65,              // 'a'
 	OS_Key_B,
@@ -72,7 +75,7 @@ enum OS_Key
 	OS_Key_RightBracket      = OS_Key_RBracket,
 
 	OS_Key_Backtick          = 96,              // '`'
-	Grave_Accent             = OS_Key_Backtick,
+	OS_Key_GraveAccent      = OS_Key_Backtick,
 
 	// NOTE(beau): END ascii encoded
 
