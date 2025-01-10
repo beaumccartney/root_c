@@ -219,6 +219,13 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 						os_event->kind = ns_event_type == NSEventTypeKeyDown
 									? OS_EventKind_Press
 									: OS_EventKind_Release;
+						NSEventModifierFlags ns_mods = [ns_event modifierFlags];
+						if (ns_mods & NSEventModifierFlagShift)
+							os_event->modifiers |= OS_Modifier_Shift;
+						if (ns_mods & NSEventModifierFlagControl)
+							os_event->modifiers |= OS_Modifier_Ctrl;
+						if (ns_mods & NSEventModifierFlagOption)
+							os_event->modifiers |= OS_Modifier_Alt;
 					}
 				} break;
 			}
