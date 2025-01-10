@@ -183,11 +183,11 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 	OS_EventList result = zero_struct;
 	@autoreleasepool
 		{
-		NSEvent *ns_event = [os_mac_gfx_state->app nextEventMatchingMask:NSEventMaskAny
+		NSEvent *ns_event = [os_mac_gfx_state->window nextEventMatchingMask:NSEventMaskAny
 			untilDate:[NSDate distantFuture]
 			inMode:NSDefaultRunLoopMode
 			dequeue:YES];
-		for (; ns_event != 0; ns_event = [os_mac_gfx_state->app
+		for (; ns_event != 0; ns_event = [os_mac_gfx_state->window
 				nextEventMatchingMask:NSEventMaskAny
 				untilDate:0
 				inMode:NSDefaultRunLoopMode
