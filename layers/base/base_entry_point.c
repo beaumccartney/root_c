@@ -10,6 +10,10 @@ internal void main_thread_base_entry_point(int argc, char *argv[])
 	os_gfx_init();
 	#endif
 
+	#ifdef RENDER_CORE_H
+	r_init();
+	#endif
+
 	entry_point();
 	scratch_end(scratch);
 }

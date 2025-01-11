@@ -24,6 +24,10 @@ flags=(
 	"-fno-objc-arc"
 	"-framework"
 	"Cocoa"
+	"-framework"
+	"Metal"
+	"-framework"
+	"QuartzCore"
 )
 
 # debug/release flags
