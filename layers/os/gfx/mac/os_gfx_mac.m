@@ -138,9 +138,9 @@ internal void os_gfx_init(void)
 		os_mac_gfx_state = push_array(arena, OS_MAC_GFX_State, 1);
 		os_mac_gfx_state->arena = arena;
 	}
-	os_mac_gfx_state->app = MyApp.sharedApplication;
-	os_mac_gfx_state->app.activationPolicy = NSApplicationActivationPolicyRegular;
-	[os_mac_gfx_state->app finishLaunching];
+	[MyApp sharedApplication];
+	NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
+	[NSApp finishLaunching];
 
 	@autoreleasepool
 	{
@@ -153,7 +153,7 @@ internal void os_gfx_init(void)
 		[app_menu addItem: quit_item];
 		[main_menu_app_item setSubmenu: app_menu];
 
-		os_mac_gfx_state->app.mainMenu = main_menu;
+		NSApp.mainMenu = main_menu;
 	}
 
 	{
@@ -172,7 +172,7 @@ internal void os_gfx_init(void)
 		os_mac_gfx_state->window.title = @"Window title";
 		os_mac_gfx_state->window.isVisible = YES;
 	}
-	[os_mac_gfx_state->app activate];
+	[NSApp activate];
 
 	os_mac_gfx_state->window.opaque = YES;
 	os_mac_gfx_state->window.backgroundColor = 0;
@@ -230,7 +230,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 				} break;
 			}
 
-			[os_mac_gfx_state->app sendEvent:ns_event];
+			[NSApp sendEvent:ns_event];
 
 			// HACK(beau): this is terrible
 			if (os_mac_gfx_state->private_command_q_should_quit_flag)

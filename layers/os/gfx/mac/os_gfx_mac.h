@@ -17,11 +17,12 @@
 - (void)keyDown:(NSEvent *) event;
 @end
 
+// NOTE(beau): the NSApplication object is stored in the global NSApp so no need
+// to store it here
 typedef struct OS_MAC_GFX_State OS_MAC_GFX_State;
 struct OS_MAC_GFX_State
 {
 	Arena *arena;
-	MyApp *app;
 	MyWindow *window;
 	B8 private_command_q_should_quit_flag; // HACK(beau): this is terrible
 };
