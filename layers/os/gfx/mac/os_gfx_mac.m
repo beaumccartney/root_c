@@ -138,8 +138,8 @@ internal void os_gfx_init(void)
 		os_mac_gfx_state = push_array(arena, OS_MAC_GFX_State, 1);
 		os_mac_gfx_state->arena = arena;
 	}
-	os_mac_gfx_state->app = [MyApp sharedApplication];
-	[os_mac_gfx_state->app setActivationPolicy:NSApplicationActivationPolicyRegular];
+	os_mac_gfx_state->app = MyApp.sharedApplication;
+	os_mac_gfx_state->app.activationPolicy = NSApplicationActivationPolicyRegular;
 	[os_mac_gfx_state->app finishLaunching];
 
 	@autoreleasepool
@@ -153,11 +153,11 @@ internal void os_gfx_init(void)
 		[app_menu addItem: quit_item];
 		[main_menu_app_item setSubmenu: app_menu];
 
-		[os_mac_gfx_state->app setMainMenu: main_menu];
+		os_mac_gfx_state->app.mainMenu = main_menu;
 	}
 
 	{
-		NSRect screen_rect = [[NSScreen mainScreen] visibleFrame];
+		NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
 		NSSize window_size = {800, 600};
 		NSPoint window_origin = {
 			((screen_rect.size.width - window_size.width) / 2),
@@ -169,13 +169,13 @@ internal void os_gfx_init(void)
 			backing:NSBackingStoreBuffered
 			defer:NO ];
 
-		[os_mac_gfx_state->window setTitle:@"Window title"];
-		[os_mac_gfx_state->window setIsVisible:YES];
+		os_mac_gfx_state->window.title = @"Window title";
+		os_mac_gfx_state->window.isVisible = YES;
 	}
-	[os_mac_gfx_state->app activateIgnoringOtherApps:YES];
+	[os_mac_gfx_state->app activate];
 
-	[os_mac_gfx_state->window setOpaque:YES];
-	[os_mac_gfx_state->window setBackgroundColor:0];
+	os_mac_gfx_state->window.opaque = YES;
+	os_mac_gfx_state->window.backgroundColor = 0;
 }
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
@@ -193,7 +193,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 				inMode:NSDefaultRunLoopMode
 				dequeue:YES])
 		{
-			NSEventType ns_event_type = [ns_event type];
+			NSEventType ns_event_type = ns_event.type;
 			switch (ns_event_type)
 			{
 				case NSEventTypeLeftMouseDown:
@@ -211,7 +211,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 				case NSEventTypeKeyDown:
 				case NSEventTypeKeyUp:
 				{
-					OS_Key os_key = os_mac_kvk_table[[ns_event keyCode]];
+					OS_Key os_key = os_mac_kvk_table[ns_event.keyCode];
 					OS_Event *os_event = os_eventlist_push_new(arena, &result);
 					if (os_key != OS_Key_Null)
 					{
@@ -219,7 +219,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 						os_event->kind = ns_event_type == NSEventTypeKeyDown
 									? OS_EventKind_Press
 									: OS_EventKind_Release;
-						NSEventModifierFlags ns_mods = [ns_event modifierFlags];
+						NSEventModifierFlags ns_mods = ns_event.modifierFlags;
 						if (ns_mods & NSEventModifierFlagShift)
 							os_event->modifiers |= OS_Modifier_Shift;
 						if (ns_mods & NSEventModifierFlagControl)
