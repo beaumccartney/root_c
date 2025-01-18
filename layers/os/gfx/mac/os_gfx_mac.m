@@ -153,7 +153,7 @@ internal void os_gfx_init(void)
 			action:@selector(quit_render_loop:)
 			keyEquivalent:@"q"];
 		[app_menu addItem: quit_item];
-		[main_menu_app_item setSubmenu: app_menu];
+		main_menu_app_item.submenu = app_menu;
 
 		NSApp.mainMenu = main_menu;
 	}
@@ -167,7 +167,7 @@ internal void os_gfx_init(void)
 		};
 		os_mac_gfx_state->window = [[MyWindow alloc] initWithContentRect:
 			(NSRect) {window_origin, window_size}
-			styleMask: NSWindowStyleMaskClosable | NSWindowStyleMaskTitled
+			styleMask: NSWindowStyleMaskTitled
 			backing:NSBackingStoreBuffered
 			defer:NO ];
 
@@ -184,7 +184,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 {
 	OS_EventList result = zero_struct;
 	@autoreleasepool
-		{
+	{
 		NSEvent *ns_event = [os_mac_gfx_state->window nextEventMatchingMask:NSEventMaskAny
 			untilDate:[NSDate distantFuture]
 			inMode:NSDefaultRunLoopMode
