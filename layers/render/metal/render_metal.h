@@ -9,7 +9,7 @@ struct R_METAL_State
 {
 	Arena *arena;
 	id<MTLDevice> device;
-	CAMetalLayer *swapchain;
+	CAMetalLayer *swapchain; // REVIEW(beau): use an MTKView instead?
 	id<MTLCommandQueue> command_queue;
 };
 

@@ -24,6 +24,9 @@ struct OS_MAC_GFX_State
 {
 	Arena *arena;
 	MyWindow *window;
+
+	// NOTE HACK(beau): should only be used from the event polling thread,
+	// by the event polling code
 	B8 private_command_q_should_quit_flag; // HACK(beau): this is terrible
 };
 

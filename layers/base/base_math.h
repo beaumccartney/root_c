@@ -1,3 +1,4 @@
+// REVIEW(beau): use <simd/*.h> on macos?
 #ifndef BASE_MATH_H
 #define BASE_MATH_H
 

@@ -13,6 +13,8 @@
 - (void)keyDown:(NSEvent *) event {}
 @end
 
+// REVIEW(beau): apparently carbon is getting included with metal or something,
+// so maybe I can just use that enum?
 const global
 OS_Key os_mac_kvk_table[OS_MAC_kVK_COUNT] = {
 	[OS_MAC_kVK_ANSI_A]              = OS_Key_A,
