@@ -12,7 +12,7 @@ internal void r_init(void)
 	r_metal_state->swapchain = CAMetalLayer.layer;
 
 	r_metal_state->swapchain.device          = r_metal_state->device;
-	r_metal_state->swapchain.pixelFormat     = MTLPixelFormatRGBA8Unorm_sRGB;
+	r_metal_state->swapchain.pixelFormat     = MTLPixelFormatBGRA8Unorm_sRGB;
 	r_metal_state->swapchain.framebufferOnly = YES;
 	r_metal_state->swapchain.frame           = os_mac_gfx_state->window.frame;
 
