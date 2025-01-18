@@ -43,6 +43,7 @@
 		4B49B8442D2215AB00967460 /* chibihash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = chibihash.h; sourceTree = "<group>"; };
 		4B49B8452D2215AB00967460 /* chibihash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = chibihash.c; sourceTree = "<group>"; };
 		4B49B8472D2215AB00967460 /* stb_sprintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_sprintf.h; sourceTree = "<group>"; };
+		4B98542D2D39AA2200E8E876 /* leetcode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = leetcode.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -136,6 +137,7 @@
 		4B49B8432D2215AB00967460 /* local */ = {
 			isa = PBXGroup;
 			children = (
+				4B98542D2D39AA2200E8E876 /* leetcode.c */,
 				4B49B8422D2215AB00967460 /* main.c */,
 			);
 			path = local;

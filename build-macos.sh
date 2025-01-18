@@ -43,9 +43,12 @@ if [ -v sanitize ]; then asan=1 && ubsan=1; fi
 if [ -v asan     ]; then flags+=("-fsanitize=address")   && echo "[asan enabled]"; fi
 if [ -v ubsan    ]; then flags+=("-fsanitize=undefined") && echo "[ubsan enabled]"; fi
 
+file="../local/main.c"
+if [ -v leetcode ]; then file="../local/leetcode.c"; fi
+
 mkdir -p build local
 
 cd build
 
 # set -x # uncomment to print build command
-cc $flags -o test ../local/main.c
+cc $flags -o test $file
