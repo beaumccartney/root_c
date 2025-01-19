@@ -33,8 +33,7 @@ command = [
     "-fno-objc-arc",
 ]
 
-# prevent unused linker input warnings
-if options.isdisjoint({"analyze", "check", "c"}):
+if "metal" in options and options.isdisjoint({"analyze", "check", "c"}):
     command += (
         "-framework",
         "Cocoa",
