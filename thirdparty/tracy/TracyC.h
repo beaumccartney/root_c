@@ -61,7 +61,7 @@ typedef const void* TracyCLockCtx;
 #define TracyCSecureAllocN(x,y,z)
 #define TracyCSecureFreeN(x,y)
 
-#define TracyCFrameMark
+#define TracyCFrameMark()
 #define TracyCFrameMarkNamed(x)
 #define TracyCFrameMarkStart(x)
 #define TracyCFrameMarkEnd(x)
