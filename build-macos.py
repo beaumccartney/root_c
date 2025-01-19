@@ -91,6 +91,7 @@ os.chdir("build")
 build_targets = options & {
     "leetcode",
     "metal",
+    "scratch",
 }
 
 if not build_targets:
@@ -100,7 +101,7 @@ if not build_targets:
 for target in build_targets:
     print(f"[build {target}]")
     options.remove(target)
-    this_command = command + [f"../local/{target}.c"]
+    this_command = command + [f"../local/{target}.c", "-o", target]
     if "verbose" in options:
         print(" ".join(this_command))
     subprocess.run(this_command)

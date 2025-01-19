@@ -39,11 +39,12 @@
 		4B49B83C2D2215AB00967460 /* os_gfx.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_gfx.c; sourceTree = "<group>"; };
 		4B49B83E2D2215AB00967460 /* os_inc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_inc.h; sourceTree = "<group>"; };
 		4B49B83F2D2215AB00967460 /* os_inc.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_inc.c; sourceTree = "<group>"; };
-		4B49B8422D2215AB00967460 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		4B49B8442D2215AB00967460 /* chibihash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = chibihash.h; sourceTree = "<group>"; };
 		4B49B8452D2215AB00967460 /* chibihash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = chibihash.c; sourceTree = "<group>"; };
 		4B49B8472D2215AB00967460 /* stb_sprintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_sprintf.h; sourceTree = "<group>"; };
 		4B98542D2D39AA2200E8E876 /* leetcode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = leetcode.c; sourceTree = "<group>"; };
+		4BBE66032D3CC54900C7DB7D /* metal.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metal.c; sourceTree = "<group>"; };
+		4BBE66042D3CC54900C7DB7D /* scratch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scratch.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -137,8 +138,9 @@
 		4B49B8432D2215AB00967460 /* local */ = {
 			isa = PBXGroup;
 			children = (
+				4BBE66032D3CC54900C7DB7D /* metal.c */,
+				4BBE66042D3CC54900C7DB7D /* scratch.c */,
 				4B98542D2D39AA2200E8E876 /* leetcode.c */,
-				4B49B8422D2215AB00967460 /* main.c */,
 			);
 			path = local;
 			sourceTree = "<group>";
