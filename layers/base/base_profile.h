@@ -26,6 +26,8 @@
 #elif PROFILE_TRACY
 	#if OS_WINDOWS
 	#pragma comment(lib, "..\\thirdparty\\tracy\\windows\\TracyClient.lib")
+	#elif OS_MAC
+	#pragma comment(lib, "c++")
 	#endif
 	#define TRACY_ENABLE
 

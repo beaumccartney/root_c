@@ -17,6 +17,7 @@ command = [
     "-I../local/",
     "-I../thirdparty/",
     "-fdiagnostics-absolute-paths",
+    "-fms-extensions",
     "-Wall",
     "-Wextra",
     "-Wshadow",
@@ -60,7 +61,7 @@ if check_and_remove(options, "release"):
 if check_and_remove(options, "profile"):
     options.add("tracy")
 if check_and_remove(options, "tracy"):
-    command += ("-lc++", "-DPROFILE_TRACY", "../thirdparty/tracy/mac/libTracyClient.a")
+    command += ("-DPROFILE_TRACY", "../thirdparty/tracy/mac/libTracyClient.a")
     print("[tracy profiling enabled]")
 
 if check_and_remove(options, "sanitize"):
