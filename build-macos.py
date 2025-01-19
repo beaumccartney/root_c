@@ -86,6 +86,7 @@ if check_and_remove(options, "analyze"):
     command.append("--analyze")
     print("[static analyzer]")
 
+os.makedirs("local", exist_ok=True)
 os.makedirs("build", exist_ok=True)
 os.chdir("build")
 
