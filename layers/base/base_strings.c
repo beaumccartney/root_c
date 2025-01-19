@@ -462,12 +462,11 @@ internal String8 str8_list_join(Arena *arena, String8List list, StringJoin *opti
 	StringJoin params = zero_struct;
 	if (optional_params != 0) params = *optional_params;
 
-	U64 sep_count = 0;
-	if (list.node_count > 0) sep_count = list.node_count - 1;
+	U64 sep_count = list.node_count > 0 ? list.node_count - 1 : 0;
 	U64 total_length = list.total_length
 			   + params.pre.length
-			   + params.post.length
-			   + params.sep.length * sep_count;
+			   + params.sep.length * sep_count
+			   + params.post.length;
 
 	String8 result = push_str8(arena, total_length);
 	U8 *copy_target = result.buffer;
