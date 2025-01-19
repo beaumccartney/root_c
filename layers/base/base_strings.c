@@ -488,7 +488,6 @@ internal String8 str8_list_join(Arena *arena, String8List list, StringJoin *opti
 	}
 
 	MemoryCopy(copy_target, params.post.buffer, params.post.length);
-	copy_target += params.post.length;
 
 	return result;
 }

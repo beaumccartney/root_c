@@ -19,6 +19,9 @@ command = [
     "-fdiagnostics-absolute-paths",
     "-Wall",
     "-Wextra",
+    "-Wshadow",
+    "-Wstrict-prototypes",
+    "-Wvla",
     "-Wimplicit-int-conversion",
     "-Wno-unused-function",
     "-Wno-missing-braces",
@@ -27,13 +30,18 @@ command = [
     "-Wdouble-promotion",
     "-ObjC",
     "-fno-objc-arc",
-    "-framework",
-    "Cocoa",
-    "-framework",
-    "Metal",
-    "-framework",
-    "QuartzCore",
 ]
+
+# prevent unused linker input warnings
+if options.isdisjoint({"analyze", "check", "c"}):
+    command += (
+        "-framework",
+        "Cocoa",
+        "-framework",
+        "Metal",
+        "-framework",
+        "QuartzCore",
+    )
 
 # used to check membership in the set, non pruned elements are unused (for warning)
 def check_and_remove(options, option):
@@ -63,6 +71,19 @@ if check_and_remove(options, "asan"):
 if check_and_remove(options, "ubsan"):
     command.append("-fsanitize=undefined")
     print("[ubsan enabled]")
+
+if check_and_remove(options, "check") or check_and_remove(options, "c"):
+    command.append("-fsyntax-only")
+    print("[check only]")
+
+if check_and_remove(options, "pedantic"):
+    command.append("-pedantic")
+    print("[pedantic warnings]")
+    if "analyze" in options:
+        print("[WARNING] static analyzer and pedantic warnings enabled; pedantic warnings will be suppressed.")
+if check_and_remove(options, "analyze"):
+    command.append("--analyze")
+    print("[static analyzer]")
 
 os.makedirs("build", exist_ok=True)
 os.chdir("build")

@@ -244,8 +244,7 @@ typedef double   F64;
 
 typedef U8 Byte;
 
-typedef enum Side Side;
-enum Side
+typedef enum
 {
 	Side_Min,
 	Side_Left   = Side_Min,
@@ -255,37 +254,34 @@ enum Side
 	Side_Right  = Side_Max,
 	Side_Top    = Side_Max,
 	Side_COUNT,
-};
+} Side;
 #define side_flip(s) ((Side)(!(s)))
 
-typedef enum Axis2 Axis2;
-enum Axis2
+typedef enum
 {
 	Axis2_X,
 	Axis2_Y,
 	Axis2_COUNT,
-};
+} Axis2;
 #define axis2_flip(s) ((Axis2)(!(s)))
 
-typedef enum Axis3 Axis3;
-enum Axis3
+typedef enum
 {
 	Axis3_X,
 	Axis3_Y,
 	Axis3_Z,
 	Axis3_COUNT,
-};
+} Axis3;
 
 
-typedef enum Axis4 Axis4;
-enum Axis4
+typedef enum
 {
 	Axis4_X,
 	Axis4_Y,
 	Axis4_Z,
 	Axis4_W,
 	Axis4_COUNT,
-};
+} Axis4;
 
 typedef enum OperatingSystem
 {
