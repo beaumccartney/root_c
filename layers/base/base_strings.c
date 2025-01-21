@@ -322,6 +322,22 @@ internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 	return str8_match(postfix, end, flags);
 }
 
+internal String8 str8_skip_last_dot(String8 string)
+{
+	U8 *one_past_last = string.buffer + string.length,
+	   *one_past_last_dot = one_past_last;
+	while (one_past_last_dot != string.buffer)
+	{
+		one_past_last_dot--;
+		if (*one_past_last_dot == '.')
+		{
+			one_past_last_dot++;
+			break;
+		}
+	}
+	String8 result = str8_region(one_past_last_dot, one_past_last);
+	return result;
+}
 
 
 internal String8Node* str8_list_push_node(String8List *list, String8Node *node)
