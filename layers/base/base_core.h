@@ -52,6 +52,12 @@
 	#error AlignOf not yet defined for this compiler
 #endif
 
+#if COMPILER_CLANG
+	#define no_return _Noreturn
+#elif COMPILER_MSVC
+	#define no_return __declspec(noreturn)
+#endif
+
 #define this_function_name __func__
 
 #define KB(n)  (((U64)(n)) << 10)
