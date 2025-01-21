@@ -74,7 +74,7 @@ typedef enum
 	OS_Key_RightBracket      = OS_Key_RBracket,
 
 	OS_Key_Backtick          = 96,              // '`'
-	OS_Key_GraveAccent      = OS_Key_Backtick,
+	OS_Key_GraveAccent       = OS_Key_Backtick,
 
 	// NOTE(beau): END ascii encoded
 
