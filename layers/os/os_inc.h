@@ -8,6 +8,8 @@
 #include "core/os_core.h"
 #if OS_MAC
 	#include "core/mac/os_core_mac.h"
+#elif OS_WINDOWS
+	#include "core/windows/os_core_windows.h"
 #endif
 
 #if OS_FEATURE_GRAPHICAL
