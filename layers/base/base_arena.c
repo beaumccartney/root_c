@@ -5,24 +5,28 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
 {
 	OS_SystemInfo info = os_get_system_info();
 
-	U64 reserve = 0, commit = 0;
-	void *base;
+	U64 page_granularity                       = 0;
+	void* (*reserve_proc)(U64 size)            = 0;
+	B32   (*commit_proc )(void *ptr, U64 size) = 0;
 	if (flags & ArenaFlag_LargePages)
 	{
-		reserve = AlignPow2(min_reserve_size, info.large_page_size);
-		commit  = AlignPow2(min_commit_size, info.large_page_size);
-		base    = os_vmem_reserve_large(reserve);
-		os_vmem_commit_large(base, commit);
+		page_granularity = info.large_page_size;
+		reserve_proc     = os_vmem_reserve_large;
+		commit_proc      = os_vmem_commit_large;
 	}
 	else
 	{
-		reserve = AlignPow2(min_reserve_size, info.page_size);
-		commit  = AlignPow2(min_commit_size, info.page_size);
-		base    = os_vmem_reserve(reserve);
-		os_vmem_commit(base, commit);
+		page_granularity = info.page_size;
+		reserve_proc     = os_vmem_reserve;
+		commit_proc      = os_vmem_commit;
 	}
+	U64 reserve = AlignPow2(min_reserve_size, page_granularity),
+	    commit  = AlignPow2(min_commit_size, page_granularity);
+	void *base  = reserve_proc(reserve);
+	B32 status  = commit_proc(base, commit);
+	Assert(status);
 
-	AsanPoisonMemoryRegion(base, commit);
+	AsanPoisonMemoryRegion(base, reserve);
 	AsanUnpoisonMemoryRegion(base, ARENA_HEADER_SIZE);
 
 	Arena *arena     = (Arena *)base;
@@ -52,21 +56,22 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 	if (endpos > arena->committed) {
 		OS_SystemInfo info = os_get_system_info();
 
-		U64 new_commitpos = 0;
+		U64 commit_granularity = 0;
 		B32 (*commit_proc)(void *ptr, U64 size) = 0;
 		if (arena->flags & ArenaFlag_LargePages)
 		{
-			new_commitpos = AlignPow2(endpos, info.large_page_size);
-			commit_proc   = os_vmem_commit_large;
+			commit_granularity = info.large_page_size;
+			commit_proc        = os_vmem_commit_large;
 		}
 		else
 		{
-			new_commitpos = AlignPow2(endpos, info.page_size);
-			commit_proc   = os_vmem_commit;
+			commit_granularity = info.page_size;
+			commit_proc        = os_vmem_commit;
 		}
-		U8 *commit_start = arena->base + arena->committed;
-		U64 commit_size  = new_commitpos - arena->committed;
-		B32 status       = commit_proc(commit_start, commit_size);
+		U8 *commit_start  = arena->base + arena->committed;
+		U64 new_commitpos = AlignPow2(endpos, commit_granularity),
+		    commit_size   = new_commitpos - arena->committed;
+		B32 status        = commit_proc(commit_start, commit_size);
 		Assert(status);
 		AsanPoisonMemoryRegion(commit_start, commit_size);
 		arena->committed = new_commitpos;
