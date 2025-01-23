@@ -19,7 +19,7 @@ internal void tctx_release(void);
 internal void    tctx_set_thread_name(String8 name);
 internal String8 tctx_get_thread_name(void);
 
-internal Arena* tctx_get_scratch(Arena **conflicts, U64 count);
+internal Arena* tctx_get_scratch(Arena *conflicts[], U64 count);
 
 #define tctx_write_this_srcloc() {tctx_thread_local->file_name=__FILE__;tctx_thread_local->line_number=__LINE__;}
 

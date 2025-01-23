@@ -32,7 +32,7 @@ internal String8 tctx_get_thread_name(void)
 	return result;
 }
 
-internal Arena* tctx_get_scratch(Arena **conflicts, U64 count)
+internal Arena* tctx_get_scratch(Arena *conflicts[], U64 count)
 {
 	Arena *result = 0;
 	Arena **ctx_ptr = tctx_thread_local->arenas;
