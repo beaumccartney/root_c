@@ -30,10 +30,7 @@
 #endif // PROFILE_SUPERLUMINAL
 
 // without TRACY_ENABLE tracy apis don't do anything
-#pragma push_macro("function")
-#undef function
 #include "tracy/TracyC.h"
-#pragma pop_macro("function")
 
 #ifndef ProfThreadName
 	#define ProfThreadName(name_cstr) (0)
