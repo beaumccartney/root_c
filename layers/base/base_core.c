@@ -55,3 +55,10 @@ safe_cast_s32(S64 x)
   S32 result = (S32)x;
   return result;
 }
+
+internal U32
+u32_from_u64_saturate(U64 x)
+{
+	U32 result = (U32)ClampTop(x, max_U32);
+	return result;
+}

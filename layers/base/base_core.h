@@ -475,4 +475,6 @@ internal U16 safe_cast_u16(U32 x);
 internal U32 safe_cast_u32(U64 x);
 internal S32 safe_cast_s32(S64 x);
 
+internal U32 u32_from_u64_saturate(U64 x);
+
 #endif // BASE_CORE_H
