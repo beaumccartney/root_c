@@ -552,8 +552,8 @@ internal String8 indented_from_string(Arena *arena, String8 string)
 			} break;
 		}
 	}
-	scratch_end(scratch);
 	String8 result = str8_list_join(arena, indented_strings, 0);
+	scratch_end(scratch);
 	return result;
 }
 
