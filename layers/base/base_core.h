@@ -218,12 +218,12 @@ CheckNil(nil,p) ? \
 #define IntFromPtr(ptr) ((U64)(ptr))
 #define PtrFromInt(i) (void*)((U8*)0 + (i))
 
-#define Compose64Bit(a,b)  ((((U64)a) << 32) | ((U64)b));
-#define AlignPow2(x,b)     (((x) + (b) - 1)&(~((b) - 1)))
-#define AlignDownPow2(x,b) ((x)&(~((b) - 1)))
-#define AlignPadPow2(x,b)  ((0-(x)) & ((b) - 1))
-#define IsPow2(x)          ((x)!=0 && ((x)&((x)-1))==0)
-#define IsPow2OrZero(x)    ((((x) - 1)&(x)) == 0)
+#define Compose64Bit(hi,lo) ((((U64)hi) << 32) | ((U64)lo))
+#define AlignPow2(x,b)      (((x) + (b) - 1)&(~((b) - 1)))
+#define AlignDownPow2(x,b)  ((x)&(~((b) - 1)))
+#define AlignPadPow2(x,b)   ((0-(x)) & ((b) - 1))
+#define IsPow2(x)           ((x)!=0 && ((x)&((x)-1))==0)
+#define IsPow2OrZero(x)     ((((x) - 1)&(x)) == 0)
 
 #define ExtractBit(word, idx) (((word) >> (idx)) & 1)
 
