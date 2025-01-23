@@ -22,15 +22,15 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
 		os_vmem_commit(base, commit);
 	}
 
+	AsanPoisonMemoryRegion(base, commit);
+	AsanUnpoisonMemoryRegion(base, ARENA_HEADER_SIZE);
+
 	Arena *arena     = (Arena *)base;
 	arena->base      = base;
 	arena->reserved  = reserve;
 	arena->committed = commit;
 	arena->pos       = ARENA_HEADER_SIZE;
 	arena->flags     = flags;
-
-	AsanPoisonMemoryRegion(base, commit);
-	AsanUnpoisonMemoryRegion(base, ARENA_HEADER_SIZE);
 
 	return base;
 }
@@ -52,11 +52,23 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 	if (endpos > arena->committed) {
 		OS_SystemInfo info = os_get_system_info();
 
-		U64 commit_gran = arena->flags & ArenaFlag_LargePages
-			? info.large_page_size
-			: info.page_size;
-		U64 new_commitpos = AlignPow2(endpos, commit_gran);
-		os_vmem_commit(arena->base + arena->committed, new_commitpos - arena->committed);
+		U64 new_commitpos = 0;
+		B32 (*commit_proc)(void *ptr, U64 size) = 0;
+		if (arena->flags & ArenaFlag_LargePages)
+		{
+			new_commitpos = AlignPow2(endpos, info.large_page_size);
+			commit_proc   = os_vmem_commit_large;
+		}
+		else
+		{
+			new_commitpos = AlignPow2(endpos, info.page_size);
+			commit_proc   = os_vmem_commit;
+		}
+		U8 *commit_start = arena->base + arena->committed;
+		U64 commit_size  = new_commitpos - arena->committed;
+		B32 status       = commit_proc(commit_start, commit_size);
+		Assert(status);
+		AsanPoisonMemoryRegion(commit_start, commit_size);
 		arena->committed = new_commitpos;
 	}
 
