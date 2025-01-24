@@ -196,7 +196,7 @@ internal B32 os_copy_file_path(String8 dst, String8 src)
 	int status = stat((char *)src_copy.buffer, &s);
 	if (status != -1 && S_ISREG(s.st_mode)) // only copy files, not folders
 	{
-		String8 dst_copy = push_str8_copy(scratch.arena, dst);
+		String8 dst_copy = push_str8_copy(scratch.arena, dst); // guarantee null termination
 		status = copyfile(
 			(char *)src_copy.buffer,
 			(char *)dst_copy.buffer,
