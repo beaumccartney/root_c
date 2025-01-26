@@ -276,9 +276,84 @@ os_properties_from_file_path(String8 path)
 }
 
 
-internal OS_FileIter *os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags);
-internal B32          os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out);
-internal void         os_file_iter_end(OS_FileIter *iter);
+internal OS_FileIter*
+os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
+{
+	OS_FileIter *result = push_array(arena, OS_FileIter, 1);
+	result->flags = flags;
+	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)result->memory;
+	Temp scratch = scratch_begin(&arena, 1);
+	String8 path_with_wildcard = push_str8_cat(scratch.arena, path, str8_lit("\\*"));
+	String16 path16 = str16_from_8(scratch.arena, path_with_wildcard);
+	FINDEX_SEARCH_OPS search_op = flags & OS_FileIterFlag_SkipFiles
+					? FindExSearchLimitToDirectories
+					: FindExSearchNameMatch;
+	windows_iter->search_handle = FindFirstFileExW(
+		path16.buffer,
+		FindExInfoBasic,
+		&windows_iter->data,
+		search_op,
+		0,
+		0
+	);
+	Assert(windows_iter->search_handle != INVALID_HANDLE_VALUE);
+
+	scratch_end(scratch);
+	return result;
+}
+internal B32
+os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
+{
+	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
+	B32 status = 0;
+	String16 current_file_name = zero_struct;
+	FilePropertyFlags current_file_flags = 0;
+	for (;;)
+	{
+		status = FindNextFileW(windows_iter->search_handle, &windows_iter->data);
+		if (!status)
+			goto end;
+		current_file_name = str16_cstring_capped(windows_iter->data.cFileName, MAX_PATH);
+		Assert(current_file_name.length > 0);
+		current_file_flags = os_windows_file_property_flags_from_dwFileAttributes(windows_iter->data.dwFileAttributes);
+		B32 is_folder                  = current_file_flags & FilePropertyFlag_IsFolder,
+		    skip_because_file          = iter->flags & OS_FileIterFlag_SkipFiles   && !is_folder,
+		    skip_because_folder        = iter->flags & OS_FileIterFlag_SkipFolders && is_folder,
+		    skip_because_dot_or_dotdot = 0,
+		    skip_because_hidden        = 0;
+		if (current_file_name.buffer[0] == L'.')
+		{
+			skip_because_dot_or_dotdot =
+				current_file_name.length == 1 ||
+			       (current_file_name.length == 2 && current_file_name.buffer[1] == L'.');
+			skip_because_hidden = iter->flags & OS_FileIterFlag_SkipHidden;
+		}
+		if (iter->flags & OS_FileIterFlag_RecurseFolders && is_folder)
+		{
+			// push folder to queue of folders
+		}
+		B32 should_skip = skip_because_file
+			       || skip_because_folder
+			       || skip_because_hidden
+			       || skip_because_dot_or_dotdot;
+		if (!should_skip)
+			break;
+	}
+	*info_out = (OS_FileInfo) {
+		.name        = str8_from_16(arena, current_file_name),
+		.props.size  = Compose64Bit(windows_iter->data.nFileSizeHigh, windows_iter->data.nFileSizeLow),
+		.props.flags = current_file_flags,
+	};
+end:;
+	return status;
+}
+internal void
+os_file_iter_end(OS_FileIter *iter)
+{
+	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
+	BOOL status = FindClose(windows_iter->search_handle);
+	Assert(status);
+}
 
 internal B32 os_create_folder(String8 path)
 {
