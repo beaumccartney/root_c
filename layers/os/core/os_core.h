@@ -28,7 +28,7 @@ typedef struct OS_FileIter OS_FileIter;
 struct OS_FileIter
 {
 	OS_FileIterFlags flags;
-	U64 memory[16]; // 8-byte aligned
+	U64 memory[256]; // 8-byte aligned
 };
 
 typedef U32 FilePropertyFlags;
