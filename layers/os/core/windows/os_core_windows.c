@@ -7,6 +7,43 @@ os_windows_file_property_flags_from_dwFileAttributes(DWORD dwFileAttributes)
 	return result;
 }
 
+// NOTE(beau): path16.buffer at index path16.length must be a null terminator,
+// and therefore must also be valid to access i.e. the buffer needs to have one
+// more than the string's length
+internal String16
+os_full_path_from_path_windows_inner(Arena *arena, String16 path16)
+{
+	DWORD guess_length = safe_cast_u32(Max(MAX_PATH, path16.length) + 1);
+	WCHAR *buf = push_array_no_zero(arena, WCHAR, guess_length);
+	DWORD actual_length = GetFullPathNameW(
+		path16.buffer,
+		guess_length,
+		buf,
+		0
+	);
+	Assert(actual_length != 0);
+	DWORD actual_length_with_nt = actual_length + 1;
+	if (actual_length_with_nt <= guess_length)
+	{
+		arena_pop(arena, (guess_length - actual_length_with_nt) * sizeof(WCHAR));
+	}
+	else // == means no room for the null terminator
+	{
+		arena_pop(arena, guess_length * sizeof(WCHAR));
+		buf = push_array_no_zero(arena, WCHAR, actual_length_with_nt);
+		DWORD new_actual_length = GetFullPathNameW(
+			path16.buffer,
+			actual_length_with_nt,
+			buf,
+			0
+		);
+		Assert(new_actual_length == actual_length_with_nt);
+	}
+	Assert(buf[actual_length] == 0);
+	String16 full_path16 = str16(buf, actual_length);
+	return full_path16;
+}
+
 internal OS_SystemInfo os_get_system_info(void)
 {
 	SYSTEM_INFO info = zero_struct;
@@ -211,26 +248,7 @@ os_full_path_from_path(Arena *arena, String8 path)
 {
 	Temp scratch = scratch_begin(&arena, 1);
 	String16 path16 = str16_from_8(scratch.arena, path);
-	DWORD guess_length = safe_cast_u32(Max(MAX_PATH, path.length * 2) + 1);
-	WCHAR *buf = push_array(scratch.arena, WCHAR, guess_length);
-	DWORD actual_length = GetFullPathNameW(
-		path16.buffer,
-		guess_length,
-		buf,
-		0
-	);
-	if (actual_length >= guess_length) // == means no room for the null terminator
-	{
-		arena_pop(scratch.arena, guess_length);
-		buf = push_array(scratch.arena, WCHAR, actual_length + 1);
-		actual_length = GetFullPathNameW(
-			path16.buffer,
-			guess_length,
-			buf,
-			0
-		);
-	}
-	String16 full_path16 = str16(buf, actual_length);
+	String16 full_path16 = os_full_path_from_path_windows_inner(scratch.arena, path16);
 	String8 full_path8 = str8_from_16(arena, full_path16);
 	scratch_end(scratch);
 	return full_path8;
