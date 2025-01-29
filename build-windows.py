@@ -98,6 +98,7 @@ for file in glob.glob("*.pdb"):
     os.remove(file)
 
 build_targets = options & {
+    "metagen_main",
     "leetcode",
     "scratch",
     "opengl",
