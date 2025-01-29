@@ -45,11 +45,12 @@ struct FileProperties
 	FilePropertyFlags flags;
 };
 
+// TODO(beau): unify with FileProperties
 typedef struct OS_FileInfo OS_FileInfo;
 struct OS_FileInfo
 {
-  String8 name;
-  FileProperties props;
+	String8 name;
+	FileProperties props;
 };
 
 typedef struct OS_Handle OS_Handle;
