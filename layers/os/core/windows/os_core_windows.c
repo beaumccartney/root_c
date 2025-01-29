@@ -44,6 +44,35 @@ os_full_path_from_path_windows_inner(Arena *arena, String16 path16)
 	return full_path16;
 }
 
+internal void
+os_windows_file_iter_push(OS_FileIter *iter, U64 path_length)
+{
+	FINDEX_SEARCH_OPS search_op = iter->flags & OS_FileIterFlag_SkipFiles
+					? FindExSearchLimitToDirectories
+					: FindExSearchNameMatch;
+	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
+	OS_WINDOWS_FileIterSearchFolder *result = push_array(windows_iter->search_dirs_arena, OS_WINDOWS_FileIterSearchFolder, 1);
+
+	result->dirname_length = path_length + 1;
+	AssertAlways(result->dirname_length + 2 <= ArrayCount(windows_iter->working_path)); // room for \, *, and 0
+	windows_iter->working_path[result->dirname_length-1] = L'\\';
+	windows_iter->working_path[result->dirname_length  ] = L'*';
+	windows_iter->working_path[result->dirname_length+1] = L'\0';
+
+	result->search_handle = FindFirstFileExW(
+		windows_iter->working_path,
+		FindExInfoBasic,
+		&result->find_data,
+		search_op,
+		0,
+		0
+	);
+	Assert(result->search_handle != INVALID_HANDLE_VALUE);
+	SLLStackPush(windows_iter->search_dirs, result);
+
+	windows_iter->working_path[result->dirname_length] = 0;
+}
+
 internal OS_SystemInfo os_get_system_info(void)
 {
 	SYSTEM_INFO info = zero_struct;
@@ -297,26 +326,26 @@ os_properties_from_file_path(String8 path)
 internal OS_FileIter*
 os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
 {
-	OS_FileIter *result = push_array(arena, OS_FileIter, 1);
-	result->flags = flags;
-	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)result->memory;
-	Temp scratch = scratch_begin(&arena, 1);
-	String8 path_with_wildcard = push_str8_cat(scratch.arena, path, str8_lit("\\*"));
-	String16 path16 = str16_from_8(scratch.arena, path_with_wildcard);
-	FINDEX_SEARCH_OPS search_op = flags & OS_FileIterFlag_SkipFiles
-					? FindExSearchLimitToDirectories
-					: FindExSearchNameMatch;
-	windows_iter->search_handle = FindFirstFileExW(
-		path16.buffer,
-		FindExInfoBasic,
-		&windows_iter->data,
-		search_op,
-		0,
-		0
-	);
-	Assert(windows_iter->search_handle != INVALID_HANDLE_VALUE);
+	OS_FileIter *result = 0;
+	if (path.length > 0)
+	{
+		result = push_array(arena, OS_FileIter, 1);
+		OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)result->memory;
+		windows_iter->search_dirs_arena = arena_default;
+		result->flags = flags;
 
-	scratch_end(scratch);
+		Temp scratch = scratch_begin(&arena, 1);
+		String16 relative_path16 = str16_from_8(scratch.arena, path),
+			 absolute_path16 = os_full_path_from_path_windows_inner(scratch.arena, relative_path16);
+
+		MemoryCopyTyped(
+			windows_iter->working_path,
+			absolute_path16.buffer,
+			absolute_path16.length
+		);
+		os_windows_file_iter_push(result, absolute_path16.length);
+		scratch_end(scratch);
+	}
 	return result;
 }
 internal B32
@@ -324,53 +353,91 @@ os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
 {
 	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
 	B32 status = 0;
-	String16 current_file_name = zero_struct;
+	String16 current_file_name16 = zero_struct;
+	U64 working_path_length = 0;
 	FilePropertyFlags current_file_flags = 0;
 	for (;;)
 	{
-		status = FindNextFileW(windows_iter->search_handle, &windows_iter->data);
-		if (!status)
-			goto end;
-		current_file_name = str16_cstring_capped(windows_iter->data.cFileName, MAX_PATH);
-		Assert(current_file_name.length > 0);
-		current_file_flags = os_windows_file_property_flags_from_dwFileAttributes(windows_iter->data.dwFileAttributes);
+		while (windows_iter->search_dirs != 0)
+		{
+			status = FindNextFileW(
+				windows_iter->search_dirs->search_handle,
+				&windows_iter->search_dirs->find_data
+			);
+			if (status)
+				goto process_file;
+			B32 close_status = FindClose(windows_iter->search_dirs->search_handle);
+			Assert(close_status);
+			SLLStackPop(windows_iter->search_dirs);
+		}
+		MemoryZeroStruct(info_out);
+		goto end;
+		process_file:;
+		current_file_name16 = str16_cstring_capped(windows_iter->search_dirs->find_data.cFileName, MAX_PATH);
+		Assert(current_file_name16.length > 0);
+		current_file_flags = os_windows_file_property_flags_from_dwFileAttributes(windows_iter->search_dirs->find_data.dwFileAttributes);
 		B32 is_folder                  = current_file_flags & FilePropertyFlag_IsFolder,
 		    skip_because_file          = iter->flags & OS_FileIterFlag_SkipFiles   && !is_folder,
 		    skip_because_folder        = iter->flags & OS_FileIterFlag_SkipFolders && is_folder,
 		    skip_because_dot_or_dotdot = 0,
 		    skip_because_hidden        = 0;
-		if (current_file_name.buffer[0] == L'.')
+		if (current_file_name16.buffer[0] == L'.')
 		{
 			skip_because_dot_or_dotdot =
-				current_file_name.length == 1 ||
-			       (current_file_name.length == 2 && current_file_name.buffer[1] == L'.');
+				current_file_name16.length == 1 ||
+			       (current_file_name16.length == 2 && current_file_name16.buffer[1] == L'.');
 			skip_because_hidden = iter->flags & OS_FileIterFlag_SkipHidden;
 		}
-		if (iter->flags & OS_FileIterFlag_RecurseFolders && is_folder)
+		B32 skip_recurse = skip_because_hidden || skip_because_dot_or_dotdot;
+		if (!skip_recurse)
 		{
-			// push folder to queue of folders
+			B32 should_skip    = skip_because_file || skip_because_folder,
+			    should_recurse = iter->flags & OS_FileIterFlag_RecurseFolders && is_folder;
+			if (!should_skip || should_recurse)
+			{
+				working_path_length =
+					windows_iter->search_dirs->dirname_length + current_file_name16.length;
+				AssertAlways(working_path_length < ArrayCount(windows_iter->working_path));
+				MemoryCopyTyped(
+					windows_iter->working_path + windows_iter->search_dirs->dirname_length,
+					current_file_name16.buffer,
+					(current_file_name16.length)
+				);
+				windows_iter->working_path[working_path_length] = 0;
+				if (should_recurse)
+					os_windows_file_iter_push(iter, working_path_length);
+				if (!should_skip)
+					break;
+			}
 		}
-		B32 should_skip = skip_because_file
-			       || skip_because_folder
-			       || skip_because_hidden
-			       || skip_because_dot_or_dotdot;
-		if (!should_skip)
-			break;
 	}
 	*info_out = (OS_FileInfo) {
-		.name        = str8_from_16(arena, current_file_name),
-		.props.size  = Compose64Bit(windows_iter->data.nFileSizeHigh, windows_iter->data.nFileSizeLow),
+		.name = str8_from_16(
+			arena,
+			str16(
+				windows_iter->working_path,
+				working_path_length
+			)
+		),
+		.props.size = Compose64Bit(
+			windows_iter->search_dirs->find_data.nFileSizeHigh,
+			windows_iter->search_dirs->find_data.nFileSizeLow
+		),
 		.props.flags = current_file_flags,
 	};
-end:;
+	end:;
 	return status;
 }
 internal void
 os_file_iter_end(OS_FileIter *iter)
 {
 	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
-	BOOL status = FindClose(windows_iter->search_handle);
-	Assert(status);
+	for (OS_WINDOWS_FileIterSearchFolder *n = windows_iter->search_dirs; n != 0; SLLStackPop(n))
+	{
+		BOOL status = FindClose(n->search_handle);
+		Assert(status);
+	}
+	arena_release(windows_iter->search_dirs_arena);
 }
 
 internal B32 os_create_folder(String8 path)
