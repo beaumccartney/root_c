@@ -61,16 +61,16 @@ const global U8 base64_reverse[128] = {
   0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x20,0x21,0x22,0x23,0xFF,0xFF,0xFF,0xFF,0xFF,
 };
 
-internal B32 char_is_space(U8 c)           {return c == ' '  || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';}
-internal B32 char_is_upper(U8 c)           {return 'A' <= c && c <= 'Z';}
-internal B32 char_is_lower(U8 c)           {return 'a' <= c && c <= 'z';}
-internal B32 char_is_alpha(U8 c)           {return char_is_upper(c) || char_is_lower(c);}
-internal B32 char_is_slash(U8 c)           {return c == '/' || c == '\\';}
-internal B32 char_is_digit(U8 c, U32 base) {return 0 < base && base <= 16 && integer_symbol_reverse[c] < base;}
-internal U8 char_to_lower(U8 c)            {if (char_is_upper(c)) c+=('a'-'A'); return c;}
-internal U8 char_to_upper(U8 c)            {if (char_is_lower(c)) c-=('a'-'A'); return c;}
-internal U8 char_to_forward_slash(U8 c)    {if (char_is_slash(c)) c='/'; return c;}
-internal U8 char_to_back_slash(U8 c)       {if (char_is_slash(c)) c='\\'; return c;}
+internal B32 char_is_space(U8 c)            {return c == ' '  || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v';}
+internal B32 char_is_upper(U8 c)            {return 'A' <= c && c <= 'Z';}
+internal B32 char_is_lower(U8 c)            {return 'a' <= c && c <= 'z';}
+internal B32 char_is_alpha(U8 c)            {return char_is_upper(c) || char_is_lower(c);}
+internal B32 char_is_slash(U8 c)            {return c == '/' || c == '\\';}
+internal B32 char_is_digit(U8 c, U32 radix) {return 0 < radix && radix <= 16 && integer_symbol_reverse[c] < radix;}
+internal U8 char_to_lower(U8 c)             {if (char_is_upper(c)) c+=('a'-'A'); return c;}
+internal U8 char_to_upper(U8 c)             {if (char_is_lower(c)) c-=('a'-'A'); return c;}
+internal U8 char_to_forward_slash(U8 c)     {if (char_is_slash(c)) c='/'; return c;}
+internal U8 char_to_back_slash(U8 c)        {if (char_is_slash(c)) c='\\'; return c;}
 
 internal U64 cstring8_length(char *c)
 {
