@@ -56,10 +56,10 @@ internal String8 os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64
 {
 	String8 result = zero_struct;
 	U64 wanted_read = dim_1u64(range);
-	// REVIEW(beau): null terminate the string?
-	result.buffer = push_array_no_zero(arena, U8, wanted_read);
+	result.buffer = push_array_no_zero(arena, U8, wanted_read + 1);
 	U64 actually_read = os_file_read(file, range, result.buffer);
 	result.length = actually_read;
+	result.buffer[actually_read] = 0;
 	arena_pop(arena, wanted_read - actually_read);
 	return result;
 }
