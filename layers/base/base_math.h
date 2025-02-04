@@ -9,6 +9,14 @@ union Vec2F32
 	F32 v[2];
 };
 
+typedef union Vec2U64 Vec2U64;
+union Vec2U64
+{
+	struct { U64 x, y;         };
+	struct { U64 column, line; };
+	U64 v[2];
+};
+
 typedef union Vec3F32 Vec3F32;
 union Vec3F32
 {
@@ -87,6 +95,15 @@ union Rng2F32
 	Vec2F32 v[2];
 };
 
+typedef union Rng2U64 Rng2U64;
+union Rng2U64
+{
+	struct { Vec2U64 min, max;   };
+	struct { Vec2U64 p0, p1;     };
+	struct { U64 x0, y0, x1, y1; };
+	Vec2U64 v[2];
+};
+
 typedef union Rng3F32 Rng3F32;
 union Rng3F32
 {
@@ -148,6 +165,20 @@ internal F32 length_squared_2f32(Vec2F32 v);
 internal F32 length_2f32(Vec2F32 v);
 internal Vec2F32 normalize_2f32(Vec2F32 v);
 internal Vec2F32 mix_2f32(Vec2F32 a, Vec2F32 b, F32 t);
+
+#define v2u64(x, y) vec_2u64((x), (y))
+internal Vec2U64 vec_2u64(U64 x, U64 y);
+internal Vec2U64 splat_2u64(U64 e);
+internal Vec2U64 add_2u64(Vec2U64 a, Vec2U64 b);
+internal Vec2U64 sub_2u64(Vec2U64 a, Vec2U64 b);
+internal Vec2U64 mul_2u64(Vec2U64 a, Vec2U64 b);
+internal Vec2U64 div_2u64(Vec2U64 a, Vec2U64 b);
+internal Vec2U64 scale_2u64(Vec2U64 v, U64 s);
+internal U64 dot_2u64(Vec2U64 a, Vec2U64 b);
+internal U64 length_squared_2u64(Vec2U64 v);
+internal U64 length_2u64(Vec2U64 v);
+internal Vec2U64 normalize_2u64(Vec2U64 v);
+internal Vec2U64 mix_2u64(Vec2U64 a, Vec2U64 b, F32 t);
 
 #define v3f32(x, y, z) vec_3f32((x), (y), (z))
 internal Vec3F32 vec_3f32(F32 x, F32 y, F32 z);
@@ -244,6 +275,18 @@ internal Vec2F32 dim_2f32(Rng2F32 r);
 internal Rng2F32 union_2f32(Rng2F32 a, Rng2F32 b);
 internal Rng2F32 intersect_2f32(Rng2F32 a, Rng2F32 b);
 internal Vec2F32 clamp_2f32(Rng2F32 r, Vec2F32 v);
+
+#define r2u64(min, max) rng_2u64((min), (max))
+#define r2u64p(x, y, z, w) r2u64(v2u64((x), (y)), v2u64((z), (w)))
+internal Rng2U64 rng_2u64(Vec2U64 min, Vec2U64 max);
+internal Rng2U64 shift_2u64(Rng2U64 r, Vec2U64 x);
+internal Rng2U64 pad_2u64(Rng2U64 r, U64 x);
+internal Vec2U64 center_2u64(Rng2U64 r);
+internal B32 contains_2u64(Rng2U64 r, Vec2U64 x);
+internal Vec2U64 dim_2u64(Rng2U64 r);
+internal Rng2U64 union_2u64(Rng2U64 a, Rng2U64 b);
+internal Rng2U64 intersect_2u64(Rng2U64 a, Rng2U64 b);
+internal Vec2U64 clamp_2u64(Rng2U64 r, Vec2U64 v);
 
 #define r3f32(min, max) rng_3f32((min), (max))
 #define r3f32p(x0, y0, z0, x1, y1, z1) r3f32(v3f32((x0), (y0), (z0)), v3f32((x0), (y0), (z0)))
