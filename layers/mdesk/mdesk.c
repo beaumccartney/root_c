@@ -253,7 +253,7 @@ md_tokens_from_string(Arena *arena, String8 source)
 		break_lex_switch:;
 
 		Assert(c > tok_start);
-		Rng1U64 range = r1u64(tok_start - source.buffer, c - source.buffer);
+		Rng1U64 range = r1u64((U64)(tok_start - source.buffer), (U64)(c - source.buffer));
 		MD_TokenNode *node = push_array_no_zero(scratch.arena, MD_TokenNode, 1);
 		*node = (MD_TokenNode) {
 			.token.kind         = token_kind,
