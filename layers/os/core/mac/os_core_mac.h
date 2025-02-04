@@ -58,7 +58,7 @@ StaticAssert(
 );
 StaticAssert(
 	AlignOf(OS_MAC_FileIter) <= AlignOf(Member(OS_FileIter, memory)),
-	os_mac_file_iter_size_check
+	os_mac_file_iter_alignment_check
 );
 
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s);
