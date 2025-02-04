@@ -142,6 +142,8 @@ internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 
 internal String8 str8_skip_last_dot(String8 string);
 
+internal Vec2U64 str8_pos_from_offset(String8 string, U64 offset);
+
 internal String8Node* str8_list_push_node(String8List *list, String8Node *node);
 internal String8Node* str8_list_push_node_set_string(String8List *list, String8Node *node, String8 string);
 internal String8Node* str8_list_push_node_front(String8List *list, String8Node *node);

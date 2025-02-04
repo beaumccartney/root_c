@@ -340,6 +340,27 @@ internal String8 str8_skip_last_dot(String8 string)
 }
 
 
+internal Vec2U64
+str8_pos_from_offset(String8 string, U64 offset)
+{
+	Vec2U64 result = {1, 1};
+	if (string.length < offset)
+		offset = string.length;
+	U8 *one_past_last = string.buffer + offset;
+	for (U8 *c = string.buffer; c < one_past_last; c++)
+	{
+		if (*c == '\n')
+		{
+			result.line++;
+			result.column = 1;
+		}
+		else
+			result.column++;
+	}
+	return result;
+}
+
+
 internal String8Node* str8_list_push_node(String8List *list, String8Node *node)
 {
 	SLLQueuePush(list->first, list->last, node);
