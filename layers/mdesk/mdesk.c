@@ -1,12 +1,15 @@
 internal MD_TokenizeResult
 md_tokens_from_string(Arena *arena, String8 source)
 {
-	MD_TokenList toklist = zero_struct;
-	Temp scratch = scratch_begin(&arena, 1);
-	U8 *one_past_last = source.buffer + source.length;
+	MD_TokenList toklist    = zero_struct;
+	MD_MessageList messages = zero_struct;
+	Temp scratch            = scratch_begin(&arena, 1);
+	U8 *one_past_last       = source.buffer + source.length;
 	for (U8 *c = source.buffer; c < one_past_last;)
 	{
-		MD_TokenKind kind = MD_TokenKind_NULL;
+		MD_TokenKind token_kind = MD_TokenKind_NULL;
+		MD_Message message      = zero_struct;
+
 		U8 *tok_start = c;
 		switch (*c)
 		{
@@ -15,38 +18,19 @@ md_tokens_from_string(Arena *arena, String8 source)
 			case '\n':
 			case '\r':
 			case '\f':
-			case '\v':
-				goto spin;
-			case '_':
-			case ',':
-			case '.':
-			case '(':
-			case ')':
-			case '{':
-			case '}': {
-				const local_persist
-				MD_TokenKind single_char_tok_table[UINT8_MAX] = {
-					['_'] = MD_TokenKind_Underscore,
-					[','] = MD_TokenKind_Commma,
-					['.'] = MD_TokenKind_Period,
-					['('] = MD_TokenKind_OpenParen,
-					[')'] = MD_TokenKind_CloseParen,
-					['{'] = MD_TokenKind_OpenBrace,
-					['}'] = MD_TokenKind_CloseBrace,
-				};
-				kind = single_char_tok_table[*c];
-				Assert(kind != 0);
+			case '\v': {
 				c++;
+				continue;
 			} break;
 			case '/': {
-				if (c >= one_past_last - 1) // trailing '/'
+				if (++c == one_past_last || (*c != '/' && *c != '*')) // trailing '/'
 				{
-					// TODO: trailing '/' error
-					NotImplemented
+					message.kind   = MD_MessageKind_Error;
+					message.string = str8_lit("trailing / - comments begin with // or /*");
 				}
-				if (*++c == '/' || *c == '*') // comment
+				else // comment
 				{
-					// REVIEW: allowed characters?
+					// TODO: allowed characters
 					if (*c++ == '/')
 					{
 						while (c < one_past_last && *c != '\n')
@@ -70,23 +54,20 @@ md_tokens_from_string(Arena *arena, String8 source)
 						}
 						if (comment_stack > 0)
 						{
-							// unclosed multi line comment
-							NotImplemented
+							message.kind   = MD_MessageKind_Error;
+							message.string = str8_lit("unclosed block comment");
 							break;
 						}
 					}
 					continue;
 				}
-				else
-				{
-					// TODO: either division or trailing slash operator
-					NotImplemented
-				}
 			} break;
 			case '@': {
+				// REVIEW: have directive name just be an
+				// identifier and check in parsing?
 				const local_persist struct MD_Directive_StringToken_Map {
 					String8 string;
-					MD_TokenKind kind;
+					MD_TokenKind token_kind;
 				} directive_table[] = {
 					{str8_lit_comp("table"),  MD_TokenKind_DirectiveTable },
 					{str8_lit_comp("enum"),   MD_TokenKind_DirectiveEnum  },
@@ -95,30 +76,31 @@ md_tokens_from_string(Arena *arena, String8 source)
 					{str8_lit_comp("exists"), MD_TokenKind_DirectiveExists},
 					{str8_lit_comp("data"),   MD_TokenKind_DirectiveData  },
 				};
-				String8 remaining_source = str8_region(++c, one_past_last);
+				do c++; while (c < one_past_last && (*c == '_' || char_is_alpha(*c)));
+				String8 lexeme = str8_region(tok_start + 1, c);
 				for EachElement(i, directive_table)
 				{
 					struct MD_Directive_StringToken_Map entry = directive_table[i];
-					if (str8_match(entry.string, remaining_source, StringMatchFlag_RightSideSloppy))
+					if (str8_match(entry.string, lexeme, 0))
 					{
-						kind = entry.kind;
+						token_kind = entry.token_kind;
 						c += entry.string.length;
-						goto directive_success;
+						goto break_lex_switch; // skip unknown directive error
 					}
 				}
-				// TODO: unknown directive error
-				NotImplemented
-				directive_success:; // skips unknown directive error
+				message.kind   = MD_MessageKind_Error;
+				message.string = str8_lit("unknown directive");
 			} break;
 			case '"': {
 				// REVIEW: allowed characters?
-				kind = MD_TokenKind_StringLit;
+				token_kind = MD_TokenKind_StringLit;
 				while (++c < one_past_last && *c != '"')
 					if (*c == '\\') // just skip escaped characters
 						c++;
 				if (c == one_past_last)
 				{
-					// TODO: broken string literal error
+					message.kind   = MD_MessageKind_Error;
+					message.string = str8_lit("broken string literal");
 				}
 				else
 					c++;
@@ -175,7 +157,7 @@ md_tokens_from_string(Arena *arena, String8 source)
 			case 'x':
 			case 'y':
 			case 'z': {
-				kind = MD_TokenKind_Ident;
+				token_kind = MD_TokenKind_Ident;
 				do c++; while (c < one_past_last && (*c == '_' || char_is_alpha(*c)));
 			} break;
 			case '0':
@@ -188,9 +170,9 @@ md_tokens_from_string(Arena *arena, String8 source)
 			case '7':
 			case '8':
 			case '9': {
-				kind = MD_TokenKind_IntLit;
+				token_kind = MD_TokenKind_IntLit;
 				U32 radix = 10;
-				if (*c++ == '0' && c != one_past_last)
+				if (*c++ == '0' && c < one_past_last)
 				{
 					switch (*c)
 					{
@@ -204,8 +186,10 @@ md_tokens_from_string(Arena *arena, String8 source)
 						case '7':
 						case '8':
 						case '9': {
-							// TODO: no radix on leading zero error
-							NotImplemented
+							message.kind   = MD_MessageKind_Error;
+							message.string = str8_lit("no radix on leading zero - please use 0x, 0b, or 0o");
+							c++;
+							goto break_lex_switch;
 						} break;
 						case 'b':
 						case 'B': {
@@ -225,8 +209,11 @@ md_tokens_from_string(Arena *arena, String8 source)
 					}
 					if (++c == one_past_last || !char_is_digit(*c, radix))
 					{
-						// TODO: incomplete 0x literal
-						NotImplemented
+						message.kind   = MD_MessageKind_Error;
+						message.string = str8_lit("incomplete 0x literal");
+						if (c < one_past_last)
+							c++;
+						goto break_lex_switch;
 					}
 				}
 				while (c < one_past_last && char_is_digit(*c, radix))
@@ -234,43 +221,60 @@ md_tokens_from_string(Arena *arena, String8 source)
 				integral_zero:;
 				if (c < one_past_last && *c == '.')
 				{
-					if (radix != 10)
-					{
-						// TODO: error - only decimal floating point literals are supported
-						NotImplemented
-					}
-					kind = MD_TokenKind_FloatLit;
-					// REVIEW: error for digits in a too-large radix?
+					// REVIEW:
+					//  floating point literals with radix != 10?
+					//  error for digits in a too-large radix?
+					token_kind = MD_TokenKind_FloatLit;
 					do c++; while (c < one_past_last && char_is_digit(*c, radix));
 				}
 			} break;
 			default: {
+				const global
+				MD_TokenKind single_char_tok_table[UINT8_MAX] = {
+					['_'] = MD_TokenKind_Underscore,
+					[','] = MD_TokenKind_Commma,
+					['.'] = MD_TokenKind_Period,
+					['('] = MD_TokenKind_OpenParen,
+					[')'] = MD_TokenKind_CloseParen,
+					['{'] = MD_TokenKind_OpenBrace,
+					['}'] = MD_TokenKind_CloseBrace,
+				};
+				token_kind = single_char_tok_table[*c++];
 				// REVIEW: allowed characters?
 				//  what abt unused punctuation? perhaps split into weird stuff and normal stuff
-				// TODO: unknown character warning
-				NotImplemented
-				spin:; // jump here for characters that are allowed and ignored in the syntax
-				c++;
-				continue;
+				if (token_kind == 0)
+				{
+					message.kind   = MD_MessageKind_Warning;
+					// TODO: include an escaped version of the character in the message
+					message.string = str8_lit("unknown character - ignoring");
+				}
 			} break;
 		}
+		break_lex_switch:;
 
 		Assert(c > tok_start);
+		Rng1U64 range = r1u64(tok_start - source.buffer, c - source.buffer);
 		MD_TokenNode *node = push_array_no_zero(scratch.arena, MD_TokenNode, 1);
 		*node = (MD_TokenNode) {
-			.token.kind = kind,
-			.token.source_range = r1u64(
-				tok_start - source.buffer,
-				c - source.buffer
-			),
+			.token.kind         = token_kind,
+			.token.source_range = range,
 		};
 		SLLQueuePush(toklist.first, toklist.last, node);
 		toklist.count++;
+		if (message.kind != MD_MessageKind_NULL)
+		{
+			MD_Message *pushed_message = push_array_no_zero(arena, MD_Message, 1);
+			pushed_message = push_array_no_zero(arena, MD_Message, 1);
+			*pushed_message            = message;
+			SLLQueuePush(messages.first, messages.last, pushed_message);
+			pushed_message->tokens_ix = toklist.count - 1;;
+		}
 	}
 
 	MD_TokenizeResult result = {
 		.tokens.tokens = push_array_no_zero(arena, MD_Token, toklist.count),
-		.tokens.count = toklist.count,
+		.tokens.count  = toklist.count,
+		.messages      = messages,
 	};
 	MD_Token *dst = result.tokens.tokens;
 	for (MD_TokenNode *n = toklist.first; n != 0; n = n->next, dst++)

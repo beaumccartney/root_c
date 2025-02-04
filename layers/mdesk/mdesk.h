@@ -3,7 +3,7 @@
 
 typedef enum
 {
-	MD_TokenKind_NULL = 0,
+	MD_TokenKind_NULL = 0, // also denotes illegal characters
 	MD_TokenKind_Underscore,
 	MD_TokenKind_Commma,
 	MD_TokenKind_Period,
@@ -56,21 +56,37 @@ struct MD_TokenArray
 
 typedef enum
 {
+	MD_MessageKind_NULL,
+	MD_MessageKind_Warning,
+	MD_MessageKind_Error,
 	MD_MessageKind_COUNT,
 } MD_MessageKind;
 
 typedef struct MD_Message MD_Message;
 struct MD_Message
 {
-	MD_MessageKind kind;
+	MD_Message *next;
 	String8 string;
+	union // infer which from if the message is in a parse or tokenize result
+	{
+		U64 tokens_ix;
+		struct MD_AST *ast;
+	};
+	MD_MessageKind kind;
+};
+
+typedef struct MD_MessageList MD_MessageList;
+struct MD_MessageList
+{
+	MD_Message *first, *last;
+	U64 count;
 };
 
 typedef struct MD_TokenizeResult MD_TokenizeResult;
 struct MD_TokenizeResult
 {
 	MD_TokenArray tokens;
-	MD_Message *messages;
+	MD_MessageList messages;
 };
 
 typedef enum
