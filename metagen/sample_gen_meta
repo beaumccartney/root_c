@@ -1,0 +1,30 @@
+/* nested block comments
+ * /* just work */
+ */
+
+// also line comments
+// NOTE: @exists does string formatting using the string arg then all args after
+
+@table(name, val, string,)
+os_key_table
+{
+	{  OS_Key_Null,         0,               "null", },
+
+	{  OS_Key_Z,            90,              "Z",    }, // 'z'
+	{  OS_Key_LBracket,     _,               "[",    },
+	{  OS_Key_LeftBracket,  OS_Key_LBracket, _,      },
+	{  OS_Key_Backslash,    _,               "\\",   },
+	{  OS_Key_RBracket,     _,               "]",    },
+	{  OS_Key_RightBracket, OS_Key_RBracket, _,      },
+	{  OS_Key_COUNT,        _,               _,      },
+}
+
+@enum OS_Key
+{
+	@expand(os_key_table, a) @format("%%,", a.name, @exists(a.val, " = %", a.val))
+}
+
+@data(String8, OS_Key_COUNT) os_key_strings
+{
+	@expand(os_key_table, a) @exists(a.string, "[%] = %,", a.name, a.string)
+}
