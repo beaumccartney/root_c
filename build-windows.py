@@ -97,17 +97,18 @@ os.chdir("build")
 for file in glob.glob("*.pdb"):
     os.remove(file)
 
-build_targets = options & {
-    "metagen_main",
-    "leetcode",
-    "scratch",
-    "opengl",
+build_table = {
+    "metagen":  "metagen/metagen_main.c",
+    "leetcode": "local/leetcode.c",
+    "scratch":  "local/scratch.c",
 }
+
+build_targets = options & set(build_table.keys())
 
 for target in build_targets:
     print(f"[build {target}]")
     options.remove(target)
-    file_and_out = [f"../local/{target}.c", f"/Fe{target}"]
+    file_and_out = [f"../{build_table[target]}", f"/Fe{target}"]
     this_command = command + file_and_out + link_flags
     if "verbose" in options:
         print(" ".join(this_command))
