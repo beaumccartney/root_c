@@ -91,15 +91,33 @@ struct MD_TokenizeResult
 
 typedef enum
 {
+	MD_ASTKind_NULL = 0,
+	MD_ASTKind_Root,
+
+	// leaf nodes
+	MD_ASTKind_IntLit,
+	MD_ASTKind_FloatLit,
+	MD_ASTKind_StringLit,
+	MD_ASTKind_Ident,
+
+	MD_ASTKind_Expression,
+	MD_ASTKind_DirectiveTable,
+	MD_ASTKind_DirectiveEnum,
+	MD_ASTKind_DirectiveExpand,
+	MD_ASTKind_DirectiveFormat,
+	MD_ASTKind_DirectiveExists,
+	MD_ASTKind_DirectiveData,
+
 	MD_ASTKind_COUNT,
 } MD_ASTKind;
 
 typedef struct MD_AST MD_AST;
 struct MD_AST
 {
-	MD_AST **children,
+	MD_AST *next,
+	       *first,
+	       *last,
 	       *parent;
-	U64 children_count;
 	MD_ASTKind kind;
 };
 
