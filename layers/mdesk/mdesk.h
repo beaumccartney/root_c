@@ -111,7 +111,7 @@ struct MD_ParseResult
 };
 
 internal MD_TokenizeResult
-md_tokens_from_string(Arena *arena, String8 string);
+md_tokens_from_source(Arena *arena, String8 source);
 
 internal MD_ParseResult
 md_parse_from_tokens(Arena *arena, MD_TokenArray tokens);

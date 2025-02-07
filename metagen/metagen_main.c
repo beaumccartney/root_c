@@ -35,7 +35,7 @@ internal void entry_point(void)
 			String8 source = os_data_from_file_path(scratch.arena, info.name);
 			if (is_meta)
 			{
-				MD_TokenizeResult tokenize = md_tokens_from_string(scratch.arena, source);
+				MD_TokenizeResult tokenize = md_tokens_from_source(scratch.arena, source);
 
 				MD_MessageKind worst = MD_MessageKind_NULL;
 				for (MD_Message *m = tokenize.messages.first; m != 0; m = m->next)

@@ -1,5 +1,5 @@
 internal MD_TokenizeResult
-md_tokens_from_string(Arena *arena, String8 source)
+md_tokens_from_source(Arena *arena, String8 source)
 {
 	MD_TokenList toklist    = zero_struct;
 	MD_MessageList messages = zero_struct;
