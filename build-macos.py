@@ -11,6 +11,8 @@ options = set(sys.argv[1:])
 if "release" not in options:
     options.add("debug")
 
+exit_code = 0
+
 command = [
     "cc",
     "-I../layers/",
@@ -29,8 +31,6 @@ command = [
     "-Wno-unused-parameter",
     "-Wconversion",
     "-Wdouble-promotion",
-    "-ObjC",
-    "-fno-objc-arc",
 ]
 
 if "metal" in options and options.isdisjoint({"analyze", "check", "c"}):
@@ -41,6 +41,8 @@ if "metal" in options and options.isdisjoint({"analyze", "check", "c"}):
         "Metal",
         "-framework",
         "QuartzCore",
+        "-ObjC",
+        "-fno-objc-arc",
     )
 
 # used to check membership in the set, non pruned elements are unused (for warning)
@@ -89,20 +91,24 @@ os.makedirs("local", exist_ok=True)
 os.makedirs("build", exist_ok=True)
 os.chdir("build")
 
-build_targets = options & {
-    "leetcode",
-    "metal",
-    "scratch",
+build_table = {
+    "metagen":  "metagen/metagen_main.c",
+    "leetcode": "local/leetcode.c",
+    "scratch":  "local/scratch.c",
+    "metal":    "local/metal.c",
 }
+
+build_targets = options & set(build_table.keys())
 
 if not build_targets:
     print("[WARNING] no valid build target specified")
-    exit(1)
+    exit_code = 1
 
 for target in build_targets:
     print(f"[build {target}]")
     options.remove(target)
-    this_command = command + [f"../local/{target}.c", "-o", target]
+    file_and_out = [f"../{build_table[target]}", "-o", target]
+    this_command = command + file_and_out
     if "verbose" in options:
         print(" ".join(this_command))
     subprocess.run(this_command)
@@ -112,4 +118,6 @@ options.discard("verbose")
 if options:
     unused_string = ", ".join([f"'{option}'" for option in options])
     print("[WARNING] unused option(s):", unused_string)
-    exit(1)
+    exit_code = 1
+
+exit(exit_code)
