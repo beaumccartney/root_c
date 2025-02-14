@@ -42,7 +42,10 @@ internal void os_mac_entity_release(OS_MAC_Entity *entity)
 
 internal OS_SystemInfo os_get_system_info(void)
 {
-	return (OS_SystemInfo){vm_page_size, MB(2)};
+	OS_SystemInfo result = {
+		vm_page_size,
+	};
+	return result;
 }
 
 internal void *os_vmem_reserve(U64 size)
@@ -76,18 +79,6 @@ internal void os_vmem_release(void *ptr, U64 size)
 		(vm_address_t)ptr,
 		size
 	) == KERN_SUCCESS);
-}
-
-internal void *os_vmem_reserve_large(U64 size)
-{
-	AssertAlways(!(_Bool)"Not implemented!");
-	NotImplemented;
-	return 0;
-}
-
-internal B32 os_vmem_commit_large(void *ptr, U64 size)
-{
-	return 1;
 }
 
 no_return internal void os_abort(S32 exit_code)

@@ -80,7 +80,6 @@ internal OS_SystemInfo os_get_system_info(void)
 
 	OS_SystemInfo result = {
 		.page_size = info.dwPageSize,
-		.large_page_size = GetLargePageMinimum(),
 	};
 
 	return result;
@@ -104,16 +103,6 @@ internal void os_vmem_decommit(void *ptr, U64 size)
 internal void os_vmem_release(void *ptr, U64 size)
 {
 	VirtualFree(ptr, size, MEM_RELEASE);
-}
-
-internal void *os_vmem_reserve_large(U64 size)
-{
-	return VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES, PAGE_READWRITE);
-}
-
-internal B32 os_vmem_commit_large(void *ptr, U64 size)
-{
-	return 1;
 }
 
 no_return internal void os_abort(S32 exit_code)

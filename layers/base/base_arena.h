@@ -1,6 +1,7 @@
 /* TODO(beau):
  *  make arena from pre-allocated backing buffer
  *  adjustable commit size
+ *  large pages
  */
 
 #ifndef BASE_ARENA_H
@@ -8,18 +9,11 @@
 
 #define ARENA_HEADER_SIZE 128
 
-typedef U64 ArenaFlags;
-enum
-{
-	ArenaFlag_LargePages = (1 << 0),
-};
-
 typedef struct Arena Arena;
 struct Arena
 {
 	U8 *base;
 	U64 reserved, committed, pos;
-	ArenaFlags flags;
 };
 
 StaticAssert(sizeof(Arena) <= ARENA_HEADER_SIZE, arena_header_size_check);
@@ -33,10 +27,9 @@ struct Temp
 
 global U64 arena_default_reserve_size = MB(64);
 global U64 arena_default_commit_size  = KB(64);
-global ArenaFlags arena_default_flags = 0;
 
-internal Arena *arena_alloc(U64 min_reserve, U64 min_commit, ArenaFlags flags);
-#define arena_default arena_alloc(arena_default_reserve_size, arena_default_commit_size, arena_default_flags);
+internal Arena *arena_alloc(U64 min_reserve, U64 min_commit);
+#define arena_default arena_alloc(arena_default_reserve_size, arena_default_commit_size);
 internal void arena_release(Arena * arena);
 
 internal void *arena_push(Arena *arena, U64 size, U64 alignment);

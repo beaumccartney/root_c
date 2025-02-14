@@ -1,40 +1,31 @@
-// TODO, XXX(beau): panic on allocation failure
+// TODO
+//  large pages
+//  XXX: panic on allocation failure
+//  REVIEW: move alignment stuff into os_reserve and things i.e. call AlignPow2
+//   inside os_reserve and friends
 
 internal Arena *
-arena_alloc(U64 min_reserve_size, U64 min_commit_size, ArenaFlags flags)
+arena_alloc(U64 min_reserve_size, U64 min_commit_size)
 {
+	Assert(min_commit_size <= min_reserve_size);
 	OS_SystemInfo info = os_get_system_info();
 
-	U64 page_granularity                       = 0;
-	void* (*reserve_proc)(U64 size)            = 0;
-	B32   (*commit_proc )(void *ptr, U64 size) = 0;
-	if (flags & ArenaFlag_LargePages)
-	{
-		page_granularity = info.large_page_size;
-		reserve_proc     = os_vmem_reserve_large;
-		commit_proc      = os_vmem_commit_large;
-	}
-	else
-	{
-		page_granularity = info.page_size;
-		reserve_proc     = os_vmem_reserve;
-		commit_proc      = os_vmem_commit;
-	}
-	U64 reserve = AlignPow2(min_reserve_size, page_granularity),
-	    commit  = AlignPow2(min_commit_size, page_granularity);
-	void *base  = reserve_proc(reserve);
-	B32 status  = commit_proc(base, commit);
+	U64 reserve = AlignPow2(min_reserve_size, info.page_size),
+	    commit  = AlignPow2(min_commit_size, info.page_size);
+	void *base  = os_vmem_reserve(reserve);
+	B32 status  = os_vmem_commit(base, commit);
 	Assert(status);
 
-	AsanPoisonMemoryRegion(base, reserve);
-	AsanUnpoisonMemoryRegion(base, ARENA_HEADER_SIZE);
+	AsanPoisonMemoryRegion(
+		(U8 *)base + ARENA_HEADER_SIZE,
+		reserve - ARENA_HEADER_SIZE
+	);
 
 	Arena *arena     = (Arena *)base;
 	arena->base      = base;
 	arena->reserved  = reserve;
 	arena->committed = commit;
 	arena->pos       = ARENA_HEADER_SIZE;
-	arena->flags     = flags;
 
 	return base;
 }
@@ -56,22 +47,10 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 	if (endpos > arena->committed) {
 		OS_SystemInfo info = os_get_system_info();
 
-		U64 commit_granularity = 0;
-		B32 (*commit_proc)(void *ptr, U64 size) = 0;
-		if (arena->flags & ArenaFlag_LargePages)
-		{
-			commit_granularity = info.large_page_size;
-			commit_proc        = os_vmem_commit_large;
-		}
-		else
-		{
-			commit_granularity = info.page_size;
-			commit_proc        = os_vmem_commit;
-		}
 		U8 *commit_start  = arena->base + arena->committed;
-		U64 new_commitpos = AlignPow2(endpos, commit_granularity),
+		U64 new_commitpos = AlignPow2(endpos, info.page_size),
 		    commit_size   = new_commitpos - arena->committed;
-		B32 status        = commit_proc(commit_start, commit_size);
+		B32 status        = os_vmem_commit(commit_start, commit_size);
 		Assert(status);
 		AsanPoisonMemoryRegion(commit_start, commit_size);
 		arena->committed = new_commitpos;

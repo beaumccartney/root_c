@@ -1,10 +1,13 @@
+// TODO:
+//  large pages
+
 #ifndef OS_CORE_H
 #define OS_CORE_H
 
 typedef struct OS_SystemInfo OS_SystemInfo;
 struct OS_SystemInfo
 {
-	U64 page_size, large_page_size;
+	U64 page_size;
 };
 
 typedef U32 OS_AccessFlags;
@@ -68,9 +71,6 @@ internal void *os_vmem_reserve(U64 size);
 internal B32   os_vmem_commit(void *ptr, U64 size);
 internal void  os_vmem_decommit(void *ptr, U64 size);
 internal void  os_vmem_release(void *ptr, U64 size);
-
-internal void *os_vmem_reserve_large(U64 size);
-internal B32   os_vmem_commit_large(void *ptr, U64 size);
 
 #define os_handle_zero ((OS_Handle) zero_struct)
 internal B32 os_handle_match(OS_Handle a, OS_Handle b);
