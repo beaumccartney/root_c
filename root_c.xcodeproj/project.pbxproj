@@ -45,6 +45,12 @@
 		4B98542D2D39AA2200E8E876 /* leetcode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = leetcode.c; sourceTree = "<group>"; };
 		4BBE66032D3CC54900C7DB7D /* metal.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metal.c; sourceTree = "<group>"; };
 		4BBE66042D3CC54900C7DB7D /* scratch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scratch.c; sourceTree = "<group>"; };
+		4BFC7A2E2D5FDAB30053200F /* metagen_main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metagen_main.c; sourceTree = "<group>"; };
+		4BFC7A2F2D5FDAB30053200F /* sample_gen.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sample_gen.c; sourceTree = "<group>"; };
+		4BFC7A302D5FDAB30053200F /* sample_gen_meta */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample_gen_meta; sourceTree = "<group>"; };
+		4BFC7A312D5FDAB30053200F /* test.meta */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.meta; sourceTree = "<group>"; };
+		4BFC7A392D5FDB490053200F /* mdesk.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mdesk.h; sourceTree = "<group>"; };
+		4BFC7A3A2D5FDB490053200F /* mdesk.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mdesk.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -131,6 +137,7 @@
 			children = (
 				4B49B8332D2215AB00967460 /* base */,
 				4B49B8402D2215AB00967460 /* os */,
+				4BFC7A3B2D5FDB490053200F /* mdesk */,
 			);
 			path = layers;
 			sourceTree = "<group>";
@@ -174,10 +181,31 @@
 		4BEA6DED2D22151800FB4CF2 = {
 			isa = PBXGroup;
 			children = (
+				4BFC7A322D5FDAB30053200F /* metagen */,
 				4B49B8412D2215AB00967460 /* layers */,
 				4B49B8432D2215AB00967460 /* local */,
 				4B49B8492D2215AB00967460 /* thirdparty */,
 			);
+			sourceTree = "<group>";
+		};
+		4BFC7A322D5FDAB30053200F /* metagen */ = {
+			isa = PBXGroup;
+			children = (
+				4BFC7A2E2D5FDAB30053200F /* metagen_main.c */,
+				4BFC7A2F2D5FDAB30053200F /* sample_gen.c */,
+				4BFC7A302D5FDAB30053200F /* sample_gen_meta */,
+				4BFC7A312D5FDAB30053200F /* test.meta */,
+			);
+			path = metagen;
+			sourceTree = "<group>";
+		};
+		4BFC7A3B2D5FDB490053200F /* mdesk */ = {
+			isa = PBXGroup;
+			children = (
+				4BFC7A392D5FDB490053200F /* mdesk.h */,
+				4BFC7A3A2D5FDB490053200F /* mdesk.c */,
+			);
+			path = mdesk;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
