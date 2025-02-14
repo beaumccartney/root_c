@@ -5,7 +5,7 @@ typedef enum
 {
 	MD_TokenKind_NULL = 0, // also denotes illegal characters
 	MD_TokenKind_Underscore,
-	MD_TokenKind_Commma,
+	MD_TokenKind_Comma, // REVIEW: is this even useful?
 	MD_TokenKind_Period,
 	MD_TokenKind_OpenParen,
 	MD_TokenKind_CloseParen,
@@ -17,8 +17,6 @@ typedef enum
 	MD_TokenKind_DirectiveTable,
 	MD_TokenKind_DirectiveEnum,
 	MD_TokenKind_DirectiveExpand,
-	MD_TokenKind_DirectiveFormat,
-	MD_TokenKind_DirectiveExists,
 	MD_TokenKind_DirectiveData,
 	MD_TokenKind_Ident,
 	MD_TokenKind_COUNT,
@@ -30,7 +28,7 @@ typedef struct MD_Token MD_Token;
 struct MD_Token
 {
 	MD_TokenKind kind;
-	Rng1U64 source_range;
+	String8 source;
 };
 
 typedef struct MD_TokenNode MD_TokenNode;
@@ -50,7 +48,7 @@ struct MD_TokenList
 typedef struct MD_TokenArray MD_TokenArray;
 struct MD_TokenArray
 {
-	MD_Token *tokens;
+	MD_Token *tokens; // REVIEW: rename to something better
 	U64 count;
 };
 
@@ -59,6 +57,7 @@ typedef enum
 	MD_MessageKind_NULL,
 	MD_MessageKind_Warning,
 	MD_MessageKind_Error,
+	MD_MessageKind_FatalError, // stops tokenizing/parsing immediately
 	MD_MessageKind_COUNT,
 } MD_MessageKind;
 
@@ -80,6 +79,7 @@ struct MD_MessageList
 {
 	MD_Message *first, *last;
 	U64 count;
+	MD_MessageKind worst_message;
 };
 
 typedef struct MD_TokenizeResult MD_TokenizeResult;
@@ -94,13 +94,12 @@ typedef enum
 	MD_ASTKind_NULL = 0,
 	MD_ASTKind_Root,
 
-	// leaf nodes
 	MD_ASTKind_IntLit,
 	MD_ASTKind_FloatLit,
 	MD_ASTKind_StringLit,
 	MD_ASTKind_Ident,
 
-	MD_ASTKind_Expression,
+	MD_ASTKind_Expression, // REVIEW: needed?
 	MD_ASTKind_DirectiveTable,
 	MD_ASTKind_DirectiveEnum,
 	MD_ASTKind_DirectiveExpand,
@@ -108,16 +107,24 @@ typedef enum
 	MD_ASTKind_DirectiveExists,
 	MD_ASTKind_DirectiveData,
 
+	// REVIEW: one list kind with flags for allowed node kinds?
+	MD_ASTKind_IdentList,
+	MD_ASTKind_ExprList,
+
 	MD_ASTKind_COUNT,
 } MD_ASTKind;
 
 typedef struct MD_AST MD_AST;
 struct MD_AST
 {
-	MD_AST *next,
-	       *first,
-	       *last,
+	// REVIEW: doubly link siblings?
+	MD_AST *next, // sibling
+	       *first, // children
+	       *last, // children
 	       *parent;
+	// REVIEW: children count?
+	U64 children_count;
+	MD_Token *token;
 	MD_ASTKind kind;
 };
 
@@ -125,13 +132,44 @@ typedef struct MD_ParseResult MD_ParseResult;
 struct MD_ParseResult
 {
 	MD_AST *root;
-	MD_Message *messages;
+	MD_MessageList messages;
+};
+
+// REVIEW: should I pass any of this separately?
+typedef struct MD_ParseState MD_ParseState;
+struct MD_ParseState
+{
+	Arena *arena;
+	MD_MessageList *messages;
+	String8 source;
+	MD_Token *token,
+		 *tokens_one_past_last;
 };
 
 internal MD_TokenizeResult
 md_tokens_from_source(Arena *arena, String8 source);
 
 internal MD_ParseResult
-md_parse_from_tokens(Arena *arena, MD_TokenArray tokens);
+md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source);
+
+// NOTE: recursive descent parsing apis only used for generating the AST
+internal MD_AST*
+md_parse_root(MD_ParseState *parser);
+
+internal MD_AST*
+md_parse_exprlist(MD_ParseState *parser);
+
+internal void
+md_ast_add_child(MD_AST *parent, MD_AST *child);
+
+internal MD_AST*
+md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
+
+internal void
+md_messagelist_push_token(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix);
+
+// REVIEW: pass *MD_ParseState instead of arena and messages?
+internal void
+md_messagelist_push_ast(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_AST *ast);
 
 #endif // MDESK_H
