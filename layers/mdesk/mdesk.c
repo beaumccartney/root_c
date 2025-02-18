@@ -264,12 +264,13 @@ md_tokens_from_source(Arena *arena, String8 source)
 		toklist.count++;
 		if (message_kind != MD_MessageKind_NULL)
 		{
-			md_messagelist_push_token(
+			md_messagelist_push(
 				arena,
 				&messages,
 				message_kind,
 				message_string,
-				toklist.count - 1
+				toklist.count - 1,
+				0
 			);
 			if (messages.worst_message >= MD_MessageKind_FatalError)
 				break;
@@ -298,14 +299,15 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 	MD_ParseResult result = zero_struct;
 
 	MD_ParseState parser = {
-		arena,
-		&result.messages,
-		source,
-		tokens.tokens,
-		tokens.tokens + tokens.count,
+		.arena                = arena,
+		.messages             = &result.messages,
+		.source               = source,
+		.tokens_first         = tokens.tokens,
+		.token                = tokens.tokens,
+		.tokens_one_past_last = tokens.tokens + tokens.count,
 	};
 
-	result.root = md_parse_root(&parser);
+	result.root = md_parse_root(&parser); // REVIEW: inline?
 
 	return result;
 }
@@ -349,11 +351,12 @@ md_parse_root(MD_ParseState *parser)
 						parser->token->source
 					);
 					// TODO: error expected open paren
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError,
 						message_str,
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					break;
@@ -372,11 +375,12 @@ md_parse_root(MD_ParseState *parser)
 							"non-ident argument to %S",
 							parser->token->source
 						);
-						md_messagelist_push_ast(
+						md_messagelist_push(
 							parser->arena,
 							parser->messages,
 							MD_MessageKind_Error, // REVIEW: fatal?
 							message_str,
+							parser->token - parser->tokens_first,
 							global_directive_node
 						);
 						// REVIEW: stop parsing?
@@ -398,11 +402,12 @@ md_parse_root(MD_ParseState *parser)
 						"unclosed argument list for %S - missing ')'",
 						parser->token->source
 					);
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError,
 						message_str,
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					break;
@@ -415,11 +420,12 @@ md_parse_root(MD_ParseState *parser)
 						"missing name for %S directive",
 						parser->token->source
 					);
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_Error, // REVIEW: fatal?
 						message_str,
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					parser->token++;
@@ -440,11 +446,12 @@ md_parse_root(MD_ParseState *parser)
 						"missing name for %S directive",
 						parser->token->source
 					);
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError,
 						message_str,
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					break;
@@ -463,27 +470,55 @@ md_parse_root(MD_ParseState *parser)
 					{
 						if (parser->token->kind != MD_TokenKind_OpenBrace)
 						{
-							md_messagelist_push_ast(
+							md_messagelist_push(
 								parser->arena,
 								parser->messages,
 								MD_MessageKind_FatalError,
 								str8_lit("expected '{' to open @table's row"),
+								parser->token - parser->tokens_first,
 								global_directive_node
 							);
 							goto break_parse_switch;
 						}
-						// REVIEW: expect expr list num children is the same as directive ident
-						parser->token++;
-						MD_AST *table_row = md_parse_exprlist(parser);
-						// REVIEW: tablerows ast node to parent each expression list?
-						md_ast_add_child(global_directive_node, table_row);
-						if (parser->token->kind != MD_TokenKind_CloseBrace)
+						// REVIEW: expect table row's number of children is the same as directive ident
+						MD_AST *table_row = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_TableRow);
+						while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 						{
-							md_messagelist_push_ast(
+							MD_ASTKind kind = md_token_to_ast_kind_table[parser->token->kind];
+							switch (kind)
+							{
+								case MD_ASTKind_IntLit:
+								case MD_ASTKind_FloatLit:
+								case MD_ASTKind_StringLit:
+								case MD_ASTKind_Ident: {
+									MD_AST *table_entry = md_ast_push_child(parser->arena, table_row, kind);
+									table_entry->token = parser->token;
+								} break;
+								default: {
+									md_messagelist_push(
+										parser->arena,
+										parser->messages,
+										MD_MessageKind_Error, // REVIEW: fatal?
+										push_str8f(
+											parser->arena,
+											"illegal table entry: '%S'",
+											parser->token->source
+										),
+										parser->token - parser->tokens_first,
+										table_row
+									);
+									continue; // REVIEW: fatal?
+								} break;
+							}
+						}
+						if (parser->token == parser->tokens_one_past_last)
+						{
+							md_messagelist_push(
 								parser->arena,
 								parser->messages,
 								MD_MessageKind_FatalError,
 								str8_lit("expected '}' to close @table's row"),
+								parser->token - parser->tokens_first,
 								global_directive_node
 							);
 							goto break_parse_switch;
@@ -496,13 +531,14 @@ md_parse_root(MD_ParseState *parser)
 					global_directive_node->kind = MD_ASTKind_DirectiveData;
 					// TODO: parse children
 				}
-				if (parser->token == parser->tokens_one_past_last)
+				if (parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_CloseBrace)
 				{
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError,
 						push_str8f(parser->arena, "%S directive missing closing '}'", parser->token->source),
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					goto break_parse_switch;
@@ -511,56 +547,80 @@ md_parse_root(MD_ParseState *parser)
 			} break;
 			case MD_TokenKind_DirectiveEnum: {
 				global_directive_node->kind = MD_ASTKind_DirectiveEnum;
-				// TODO: expect ident then openbrace
-				if (++(parser->token)->kind != MD_TokenKind_Ident)
+				if ((++parser->token)->kind != MD_TokenKind_Ident)
 				{
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
-						MD_MessageKind_FatalError, // REVIEW: fatal?
+						MD_MessageKind_Error, // REVIEW: fatal?
 						str8_lit("expected name for @enum"), // REVIEW: print got?
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
-					goto break_parse_switch;
 				}
-				if (++(parser->token)->kind != MD_TokenKind_OpenBrace)
+				else
 				{
-					md_messagelist_push_ast(
+					MD_AST *enum_name = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_Ident);
+					enum_name->token = parser->token;
+					parser->token++;
+				}
+				if (parser->token->kind != MD_TokenKind_OpenBrace)
+				{
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError, // REVIEW: fatal?
 						str8_lit("expected '{' to open @enum"),
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
 					goto break_parse_switch;
 				}
-				while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
+				parser->token++;
+				while (parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 				{
-					MD_ASTKind kind = MD_ASTKind_NULL;
 					switch (parser->token->kind)
 					{
 						case MD_TokenKind_StringLit: {
-							// TODO: push string node as child of the enum
+							MD_AST *string = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_StringLit);
+							string->token = parser->token++;
 						} break;
 						case MD_TokenKind_DirectiveExpand: {
-							// TODO: push expand node as child of the enum
+							MD_AST *expand = md_parse_directive_expand(parser);
+							md_ast_add_child(global_directive_node, expand);
+							if (parser->messages->worst_message >= MD_MessageKind_FatalError)
+								goto break_parse_switch;
 						} break;
 						default: {
-							// TODO: error invalid argument to @enum
+							md_messagelist_push(
+								parser->arena,
+								parser->messages,
+								MD_MessageKind_FatalError, // REVIEW: fatal?
+								push_str8f(
+									parser->arena,
+									"expected string literal or @expand for entry in @enum, got '%S'",
+									parser->token->source
+								),
+								parser->token - parser->tokens_first,
+								global_directive_node // REVIEW: push the token instead of the AST? the source info of the problem token is then attached
+							);
+							goto break_parse_switch;
 						} break;
 					}
 				}
 				if (parser->token == parser->tokens_one_past_last)
 				{
-					// TODO: error unfinished enum directive (i.e. missing '}'
-					md_messagelist_push_ast(
+					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						MD_MessageKind_FatalError,
 						str8_lit("@enum directive missing closing '}'"),
+						parser->token - parser->tokens_first,
 						global_directive_node
 					);
+					goto break_parse_switch;
 				}
+				parser->token++;
 			} break;
 			default: {
 				arena_pop(parser->arena, sizeof(MD_AST)); // the node we allocated won't be used
@@ -573,6 +633,7 @@ md_parse_root(MD_ParseState *parser)
 
 
 		// TODO: error %S directive missing closing '}'
+		// to do it here, I'll have to pull it from each directive's implementation
 
 		if (global_directive_node != 0)
 			SLLQueuePush(root->first, root->last, global_directive_node);
@@ -584,31 +645,98 @@ md_parse_root(MD_ParseState *parser)
 }
 
 internal MD_AST*
-md_parse_exprlist(MD_ParseState *parser)
+md_parse_directive_expand(MD_ParseState *parser)
 {
-	MD_AST *exprlist = push_array_no_zero(parser->arena, MD_AST, 1);
-	*exprlist = (MD_AST) {
-		.kind = MD_ASTKind_ExprList,
+	Assert(parser->token->kind == MD_TokenKind_DirectiveExpand);
+	MD_AST *directive_expand = push_array_no_zero(parser->arena, MD_AST, 1);
+	*directive_expand = (MD_AST) {
+		.kind  = MD_ASTKind_DirectiveExpand,
+		.token = parser->token,
 	};
 
-	// REVIEW: mask to indicate allowed tokens?
-	for (; parser->token != parser->tokens_one_past_last; parser->token++)
+	if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenParen)
 	{
-		MD_ASTKind kind = md_token_to_ast_kind_table[parser->token->kind];
-		switch (kind) {
-			case MD_ASTKind_IntLit:
-			case MD_ASTKind_FloatLit:
-			case MD_ASTKind_StringLit:
-			case MD_ASTKind_Ident: {
-				MD_AST *expr = md_ast_push_child(parser->arena, exprlist, kind);
-				expr->token = parser->token;
-			} break;
-			default: goto break_loop;
-		}
+		md_messagelist_push(
+			parser->arena,
+			parser->messages,
+			MD_MessageKind_FatalError, // REVIEW: fatal?
+			str8_lit("expected '(' to open @expand's argument list"),
+			parser->token - parser->tokens_first,
+			directive_expand
+		);
+		goto finish;
 	}
-	break_loop:;
+	if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_Ident)
+	{
+		md_messagelist_push(
+			parser->arena,
+			parser->messages,
+			MD_MessageKind_FatalError, // REVIEW: fatal?
+			str8_lit("expected identifier for @expand's first argument"),
+			parser->token - parser->tokens_first,
+			directive_expand
+		);
+		goto finish;
+	}
+	{
+		MD_AST *ident = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident);
+		ident->token = parser->token;
+	}
+	if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_StringLit)
+	{
+		md_messagelist_push(
+			parser->arena,
+			parser->messages,
+			MD_MessageKind_FatalError, // REVIEW: fatal?
+			str8_lit("expected format string for @expand's second argument"),
+			parser->token - parser->tokens_first,
+			directive_expand
+		);
+		goto finish;
+	}
+	{
+		MD_AST *format_string = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_StringLit);
+		format_string->token = parser->token;
+	}
 
-	return exprlist;
+	while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
+	{
+		if (parser->token->kind != MD_TokenKind_Ident)
+		{
+			md_messagelist_push(
+				parser->arena,
+				parser->messages,
+				MD_MessageKind_Error, // REVIEW: fatal?
+				push_str8f(
+					parser->arena,
+					"illegal format string argument: '%S' - only identifiers are allowed",
+					parser->token->source
+				),
+				parser->token - parser->tokens_first,
+				directive_expand
+			);
+			continue;
+		}
+		MD_AST *format_arg = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident);
+		format_arg->token = parser->token;
+	}
+
+	if (parser->token == parser->tokens_one_past_last)
+	{
+		md_messagelist_push(
+			parser->arena,
+			parser->messages,
+			MD_MessageKind_FatalError,
+			str8_lit("expected ')' to close @expand"),
+			parser->token - parser->tokens_first,
+			directive_expand
+		);
+		goto finish;
+	}
+	parser->token++;
+
+	finish:;
+	return directive_expand;
 }
 
 // REVIEW: can I get by without this?
@@ -632,29 +760,17 @@ md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind)
 }
 
 internal MD_Message*
-md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string)
+md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix, MD_AST *ast)
 {
 	MD_Message *message = push_array_no_zero(arena, MD_Message, 1);
 	*message = (MD_Message) {
-		.kind = kind,
-		.string = string,
+		.kind      = kind,
+		.string    = string,
+		.tokens_ix = tokens_ix,
+		.ast       = ast,
 	};
 	SLLQueuePush(messages->first, messages->last, message);
 	if (kind > messages->worst_message)
 		messages->worst_message = kind;
 	return message;
-}
-
-internal void
-md_messagelist_push_token(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix)
-{
-	MD_Message *message = md_messagelist_push_inner(arena, messages, kind, string);
-	message->tokens_ix = tokens_ix;
-}
-
-internal void
-md_messagelist_push_ast(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_AST *ast)
-{
-	MD_Message *message = md_messagelist_push_inner(arena, messages, kind, string);
-	message->ast = ast;
 }

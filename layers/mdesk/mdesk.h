@@ -66,11 +66,11 @@ struct MD_Message
 {
 	MD_Message *next;
 	String8 string;
-	union // infer which from if the message is in a parse or tokenize result
-	{
-		U64 tokens_ix;
-		struct MD_AST *ast;
-	};
+
+	// REVIEW: union of these? is there ever a case where I benefit from storing both in one message?
+	U64 tokens_ix; // REVIEW: can I make this a pointer somehow?
+	struct MD_AST *ast;
+
 	MD_MessageKind kind;
 };
 
@@ -109,7 +109,7 @@ typedef enum
 
 	// REVIEW: one list kind with flags for allowed node kinds?
 	MD_ASTKind_IdentList,
-	MD_ASTKind_ExprList,
+	MD_ASTKind_TableRow,
 
 	MD_ASTKind_COUNT,
 } MD_ASTKind;
@@ -142,7 +142,8 @@ struct MD_ParseState
 	Arena *arena;
 	MD_MessageList *messages;
 	String8 source;
-	MD_Token *token,
+	MD_Token *tokens_first, // REVIEW: store token array and index instead?
+		 *token,
 		 *tokens_one_past_last;
 };
 
@@ -159,17 +160,16 @@ md_parse_root(MD_ParseState *parser);
 internal MD_AST*
 md_parse_exprlist(MD_ParseState *parser);
 
+internal MD_AST*
+md_parse_directive_expand(MD_ParseState *parser);
+
 internal void
 md_ast_add_child(MD_AST *parent, MD_AST *child);
 
 internal MD_AST*
 md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
 
-internal void
-md_messagelist_push_token(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix);
-
-// REVIEW: pass *MD_ParseState instead of arena and messages?
-internal void
-md_messagelist_push_ast(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_AST *ast);
+internal MD_Message*
+md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix, MD_AST *ast);
 
 #endif // MDESK_H
