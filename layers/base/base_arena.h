@@ -1,6 +1,7 @@
 /* TODO(beau):
  *  make arena from pre-allocated backing buffer
  *  adjustable commit size
+ *  adjustable decommit size (default zero)
  *  large pages
  */
 
