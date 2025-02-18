@@ -118,6 +118,18 @@
 #endif
 #define NotImplemented Assert(!(char *)"Not implemented!");
 
+#if BUILD_DEBUG
+	#define Unreachable AssertAlways(!(char *)"Unreachable!");
+#else
+	#if COMPILER_MSVC
+		#define Unreachable __assume(0);
+	#elif COMPILER_CLANG || COMPILER_GCC
+		#define Unreachable __builtin_unreachable();
+	#else
+		#error Unreachable not defined for this compiler
+	#endif
+#endif // BUILD_DEBUG
+
 #define AssertAlways(x) do{if(!(x)) {Trap();}}while(0)
 #if BUILD_DEBUG
 	#define Assert(x) AssertAlways(x)
