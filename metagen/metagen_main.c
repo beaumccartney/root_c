@@ -52,7 +52,7 @@ internal void entry_point(void)
 					const char *prefix = msg_kind_prefix_table[m->kind];
 					AssertAlways(prefix != 0);
 					MD_Token token = tokenize.tokens.tokens[m->tokens_ix];
-					Vec2U64 pos = str8_pos_from_offset(source, token.source.buffer - source.buffer);
+					Vec2U64 pos = str8_pos_from_offset(source, (U64)(token.source.buffer - source.buffer));
 					printf(
 						"%.*s(%llu, %llu): %s: %.*s\n",
 						str8_varg(info.name),

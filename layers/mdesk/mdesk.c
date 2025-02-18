@@ -357,7 +357,7 @@ md_parse_root(MD_ParseState *parser)
 							parser->messages,
 							MD_MessageKind_FatalError,
 							message_str,
-							parser->token - parser->tokens_first,
+							(U64)(parser->token - parser->tokens_first),
 							global_directive_node
 						);
 						break;
@@ -381,7 +381,7 @@ md_parse_root(MD_ParseState *parser)
 								parser->messages,
 								MD_MessageKind_Error, // REVIEW: fatal?
 								message_str,
-								parser->token - parser->tokens_first,
+								(U64)(parser->token - parser->tokens_first),
 								global_directive_node
 							);
 							// REVIEW: fatal?
@@ -408,7 +408,7 @@ md_parse_root(MD_ParseState *parser)
 							parser->messages,
 							MD_MessageKind_FatalError,
 							message_str,
-							parser->token - parser->tokens_first,
+							(U64)(parser->token - parser->tokens_first),
 							global_directive_node
 						);
 						break;
@@ -426,7 +426,7 @@ md_parse_root(MD_ParseState *parser)
 						parser->messages,
 						MD_MessageKind_Error, // REVIEW: fatal?
 						message_str,
-						parser->token - parser->tokens_first,
+						(U64)(parser->token - parser->tokens_first),
 						global_directive_node
 					);
 				}
@@ -452,7 +452,7 @@ md_parse_root(MD_ParseState *parser)
 						parser->messages,
 						MD_MessageKind_FatalError,
 						message_str,
-						parser->token - parser->tokens_first,
+						(U64)(parser->token - parser->tokens_first),
 						global_directive_node
 					);
 					break;
@@ -470,7 +470,7 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									MD_MessageKind_FatalError,
 									str8_lit("expected '{' to open @table's row"),
-									parser->token - parser->tokens_first,
+									(U64)(parser->token - parser->tokens_first),
 									global_directive_node
 								);
 								goto break_parse_outer_loop;
@@ -499,7 +499,7 @@ md_parse_root(MD_ParseState *parser)
 												"illegal table entry: '%S'",
 												parser->token->source
 											),
-											parser->token - parser->tokens_first,
+											(U64)(parser->token - parser->tokens_first),
 											table_row
 										);
 										continue; // REVIEW: fatal?
@@ -513,7 +513,7 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									MD_MessageKind_FatalError,
 									str8_lit("expected '}' to close @table's row"),
-									parser->token - parser->tokens_first,
+									(U64)(parser->token - parser->tokens_first),
 									global_directive_node
 								);
 								goto break_parse_outer_loop;
@@ -545,7 +545,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError,
 											str8_lit("expected '(' to open @expand's argument list"),
-											parser->token - parser->tokens_first,
+											(U64)(parser->token - parser->tokens_first),
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -557,7 +557,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError, // REVIEW: fatal?
 											str8_lit("expected identifier for @expand's first argument"),
-											parser->token - parser->tokens_first,
+											(U64)(parser->token - parser->tokens_first),
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -573,7 +573,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError, // REVIEW: fatal?
 											str8_lit("expected format string for @expand's second argument"),
-											parser->token - parser->tokens_first,
+											(U64)(parser->token - parser->tokens_first),
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -596,7 +596,7 @@ md_parse_root(MD_ParseState *parser)
 													"illegal format string argument: '%S' - only identifiers are allowed",
 													parser->token->source
 												),
-												parser->token - parser->tokens_first,
+												(U64)(parser->token - parser->tokens_first),
 												directive_expand
 											);
 											continue;
@@ -612,7 +612,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError,
 											str8_lit("expected ')' to close @expand"),
-											parser->token - parser->tokens_first,
+											(U64)(parser->token - parser->tokens_first),
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -630,7 +630,7 @@ md_parse_root(MD_ParseState *parser)
 											global_directive_node->token->source,
 											parser->token->source
 										),
-										parser->token - parser->tokens_first,
+										(U64)(parser->token - parser->tokens_first),
 										global_directive_node // REVIEW: push the token instead of the AST? the source info of the problem token is then attached
 									);
 									goto break_parse_outer_loop;
@@ -649,7 +649,7 @@ md_parse_root(MD_ParseState *parser)
 						parser->messages,
 						MD_MessageKind_FatalError,
 						push_str8f(parser->arena, "%S directive missing closing '}'", parser->token->source),
-						parser->token - parser->tokens_first,
+						(U64)(parser->token - parser->tokens_first),
 						global_directive_node
 					);
 					break;
@@ -662,7 +662,7 @@ md_parse_root(MD_ParseState *parser)
 					parser->messages,
 					MD_MessageKind_FatalError,
 					push_str8f(parser->arena, "only @enum, @table, or @data allowed at global scope, got '%S'", parser->token->source),
-					parser->token - parser->tokens_first,
+					(U64)(parser->token - parser->tokens_first),
 					0
 				);
 			} break;
