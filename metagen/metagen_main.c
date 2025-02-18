@@ -41,12 +41,6 @@ internal void entry_point(void)
 			{
 				MD_TokenizeResult tokenize = md_tokens_from_source(scratch.arena, source);
 
-				for (U64 ix = 0; ix < tokenize.tokens.count; ix++)
-				{
-					MD_Token tok = tokenize.tokens.tokens[ix];
-					printf("lexeme: '%.*s'\n", str8_varg(tok.source));
-				}
-
 				for (MD_Message *m = tokenize.messages.first; m != 0; m = m->next)
 				{
 					const local_persist
@@ -80,17 +74,15 @@ internal void entry_point(void)
 					tokenize.tokens,
 					source
 				);
-				#if 0
 				for (MD_Message *m = parsed.messages.first; m != 0; m = m->next)
 				{
 					// TODO:
 				}
-				if (parse.messages.worst_message >= MD_MessageKind_Error)
+				if (parsed.messages.worst_message >= MD_MessageKind_Error)
 				{
 					// TODO: indicate that further processing won't happen
 					continue;
 				}
-				#endif
 			}
 			else // is_c_lang
 			{

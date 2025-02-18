@@ -57,7 +57,7 @@ typedef enum
 	MD_MessageKind_NULL,
 	MD_MessageKind_Warning,
 	MD_MessageKind_Error,
-	MD_MessageKind_FatalError, // stops tokenizing/parsing immediately
+	MD_MessageKind_FatalError, // REVIEW: remove and use goto if all parsing is done inline
 	MD_MessageKind_COUNT,
 } MD_MessageKind;
 
@@ -135,7 +135,9 @@ struct MD_ParseResult
 	MD_MessageList messages;
 };
 
-// REVIEW: should I pass any of this separately?
+// REVIEW:
+//  should I pass any of this separately?
+//  if all parsing is done in one function then remove
 typedef struct MD_ParseState MD_ParseState;
 struct MD_ParseState
 {
@@ -159,9 +161,6 @@ md_parse_root(MD_ParseState *parser);
 
 internal MD_AST*
 md_parse_exprlist(MD_ParseState *parser);
-
-internal MD_AST*
-md_parse_directive_expand(MD_ParseState *parser);
 
 internal void
 md_ast_add_child(MD_AST *parent, MD_AST *child);
