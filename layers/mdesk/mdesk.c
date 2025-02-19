@@ -396,6 +396,9 @@ md_parse_root(MD_ParseState *parser)
 							ident_node->token = parser->token;
 						}
 					}
+					// TODO: min identlist length
+					//  @table
+					//  @data
 					if (parser->token == parser->tokens_one_past_last)
 					{
 						String8 message_str = push_str8f(
@@ -518,6 +521,7 @@ md_parse_root(MD_ParseState *parser)
 								);
 								goto break_parse_outer_loop;
 							}
+							// TODO: error if number of the elements in the row isn't the same as declared in the table (in the identlist)
 						}
 					} break;
 					case MD_ASTKind_DirectiveData:
