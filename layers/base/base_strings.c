@@ -183,14 +183,13 @@ internal String8 push_str8fv(Arena *arena, char *fmt, va_list args)
 	va_list args2;
 	va_copy(args2, args);
 	int needed_bytes = stbsp_vsnprintf(0, 0, fmt, args) + 1;
-	AssertAlways(needed_bytes >= 0);
 	String8 result = push_str8(arena, (U64)needed_bytes);
 	int length = stbsp_vsnprintf((char*)result.buffer, needed_bytes, fmt, args2);
-	AssertAlways(length >= 0);
 	result.length = (U64)length;
-	result.buffer[result.length] = 0;
+	if (length > 0)
+		result.buffer[result.length] = 0;
 	va_end(args2);
-	return(result);
+	return result;
 }
 internal String8 push_str8f(Arena *arena, char *fmt, ...)
 {
