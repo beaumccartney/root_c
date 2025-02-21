@@ -1591,7 +1591,7 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE( vsnprintf )( char * buf, int count, c
     int l;
     
     c.buf = buf;
-    c.length = count;
+    c.count = count;
     c.length = 0;
     
     STB_SPRINTF_DECORATE( vsprintfcb )( stbsp__clamp_callback, &c, stbsp__clamp_callback(0,&c,0), fmt, va );
