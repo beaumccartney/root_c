@@ -604,18 +604,27 @@ md_parse_root(MD_ParseState *parser)
 							}
 							if (table_row->children_count == 0 || table_row->children_count != directive_ident_params->children_count)
 							{
-								String8 message = table_row->children_count == 0
-									? str8_lit("empty @table row")
-									: push_str8f(
+								MD_MessageKind message_kind = 0;
+								String8 message = zero_struct;
+								if (table_row->children_count == 0 && directive_ident_params->children_count == 0)
+								{
+									message_kind = MD_MessageKind_Warning;
+									message = str8_lit("empty @table row");
+								}
+								else
+								{
+									message_kind = MD_MessageKind_Error;
+									message = push_str8f(
 										parser->arena,
 										"@table row element number mismatch: expected %d, got %d",
 										directive_ident_params->children_count,
 										table_row->children_count
 									);
+								}
 								md_messagelist_push(
 									parser->arena,
 									parser->messages,
-									MD_MessageKind_Error,
+									message_kind,
 									message,
 									0, // REVIEW: row's opening '{'?
 									table_row
