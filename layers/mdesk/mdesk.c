@@ -264,14 +264,13 @@ md_tokens_from_source(Arena *arena, String8 source)
 		toklist.count++;
 		if (message_kind != MD_MessageKind_NULL)
 		{
-			md_messagelist_push(
+			MD_Message *message = md_messagelist_push_inner(
 				arena,
 				&messages,
 				message_kind,
-				message_string,
-				toklist.count - 1,
-				0
+				message_string
 			);
+			message->tokens_ix = toklist.count - 1;
 			if (messages.worst_message >= MD_MessageKind_FatalError)
 				break;
 		}
@@ -356,7 +355,7 @@ md_parse_root(MD_ParseState *parser)
 								"expected '(' after %S",
 								global_directive_node->token->source
 							),
-							(U64)(parser->token - parser->tokens_first),
+							parser->token,
 							global_directive_node
 						);
 						goto break_parse_outer_loop;
@@ -380,7 +379,7 @@ md_parse_root(MD_ParseState *parser)
 									global_directive_node->token->source,
 									parser->token->source
 								),
-								(U64)(parser->token - parser->tokens_first),
+								parser->token,
 								global_directive_node
 							);
 							goto break_parse_outer_loop;
@@ -403,7 +402,7 @@ md_parse_root(MD_ParseState *parser)
 								"unclosed argument list for %S - missing ')'",
 								global_directive_node->token->source
 							),
-							(U64)(parser->token - parser->tokens_first),
+							parser->token,
 							global_directive_node
 						);
 						goto break_parse_outer_loop;
@@ -421,7 +420,7 @@ md_parse_root(MD_ParseState *parser)
 						parser->messages,
 						MD_MessageKind_FatalError,
 						message_str,
-						(U64)(parser->token - parser->tokens_first),
+						parser->token,
 						global_directive_node
 					);
 					goto break_parse_outer_loop;
@@ -446,7 +445,7 @@ md_parse_root(MD_ParseState *parser)
 							"@table directive '%S' has no named columns",
 							directive_name->token->source
 						),
-						(U64)(parser->token - parser->tokens_first),
+						parser->token,
 						global_directive_node
 					);
 				}
@@ -461,7 +460,7 @@ md_parse_root(MD_ParseState *parser)
 							"incorrect number of parameters for @data directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
 							directive_name->token->source
 						),
-						(U64)(parser->tokens_one_past_last - parser->tokens_first), // REVIEW: which token to point at?
+						0,
 						global_directive_node
 					);
 				}
@@ -480,7 +479,7 @@ md_parse_root(MD_ParseState *parser)
 							global_directive_node->token->source,
 							directive_name->token->source
 						),
-						(U64)(parser->token - parser->tokens_first),
+						parser->token,
 						global_directive_node
 					);
 					goto break_parse_outer_loop;
@@ -499,7 +498,7 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									MD_MessageKind_FatalError,
 									str8_lit("expected '{' to open @table's row"),
-									(U64)(parser->token - parser->tokens_first),
+									parser->token,
 									global_directive_node
 								);
 								goto break_parse_outer_loop;
@@ -528,7 +527,7 @@ md_parse_root(MD_ParseState *parser)
 												"illegal @table entry: '%S' - perhaps closing '}' is missing?",
 												parser->token->source
 											),
-											(U64)(parser->token - parser->tokens_first),
+											parser->token,
 											table_row
 										);
 										goto break_parse_outer_loop;
@@ -542,7 +541,7 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									MD_MessageKind_FatalError,
 									str8_lit("expected '}' to close @table's row"),
-									(U64)(parser->token - parser->tokens_first),
+									parser->token,
 									global_directive_node
 								);
 								goto break_parse_outer_loop;
@@ -562,7 +561,7 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									MD_MessageKind_Error,
 									message,
-									parser->tokens_one_past_last - parser->tokens_first, // REVIEW: row's opening '{'?
+									0, // REVIEW: row's opening '{'?
 									table_row
 								);
 							}
@@ -593,7 +592,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError,
 											str8_lit("expected '(' to open @expand's argument list"),
-											(U64)(parser->token - parser->tokens_first),
+											parser->token,
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -606,7 +605,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError, // REVIEW: fatal?
 											str8_lit("expected identifier for @expand's first argument"),
-											(U64)(parser->token - parser->tokens_first),
+											parser->token,
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -622,7 +621,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError, // REVIEW: fatal?
 											str8_lit("expected format string for @expand's second argument"),
-											(U64)(parser->token - parser->tokens_first),
+											parser->token,
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -646,7 +645,7 @@ md_parse_root(MD_ParseState *parser)
 													"illegal format string argument: '%S' - only identifiers are allowed",
 													parser->token->source
 												),
-												(U64)(parser->token - parser->tokens_first),
+												parser->token,
 												directive_expand
 											);
 											continue;
@@ -662,7 +661,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											MD_MessageKind_FatalError,
 											str8_lit("expected ')' to close @expand"),
-											(U64)(parser->token - parser->tokens_first),
+											parser->token,
 											directive_expand
 										);
 										goto break_parse_outer_loop;
@@ -680,7 +679,7 @@ md_parse_root(MD_ParseState *parser)
 											global_directive_node->token->source,
 											parser->token->source
 										),
-										(U64)(parser->token - parser->tokens_first),
+										parser->token,
 										global_directive_node // REVIEW: push the token instead of the AST? the source info of the problem token is then attached
 									);
 									goto break_parse_outer_loop;
@@ -699,7 +698,7 @@ md_parse_root(MD_ParseState *parser)
 						parser->messages,
 						MD_MessageKind_FatalError,
 						push_str8f(parser->arena, "%S directive missing closing '}'", parser->token->source),
-						(U64)(parser->token - parser->tokens_first),
+						parser->token,
 						global_directive_node
 					);
 					goto break_parse_outer_loop;
@@ -717,7 +716,7 @@ md_parse_root(MD_ParseState *parser)
 							global_directive_node->token->source,
 							directive_name->token->source
 						),
-						(parser->tokens_one_past_last - parser->tokens_first), // REVIEW
+						0, // REVIEW
 						global_directive_node
 					);
 				}
@@ -729,7 +728,7 @@ md_parse_root(MD_ParseState *parser)
 					parser->messages,
 					MD_MessageKind_FatalError,
 					push_str8f(parser->arena, "only @enum, @table, or @data allowed at global scope, got '%S'", parser->token->source),
-					(U64)(parser->token - parser->tokens_first),
+					parser->token,
 					0
 				);
 			} break;
@@ -741,15 +740,6 @@ md_parse_root(MD_ParseState *parser)
 	return root;
 }
 
-// REVIEW: remove?
-internal void
-md_ast_add_child(MD_AST *parent, MD_AST *child)
-{
-	SLLQueuePush(parent->first, parent->last, child);
-	child->parent = parent;
-	parent->children_count++;
-}
-
 internal MD_AST*
 md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind)
 {
@@ -757,19 +747,19 @@ md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind)
 	*result = (MD_AST) {
 		.kind = kind,
 	};
-	md_ast_add_child(parent, result);
+	SLLQueuePush(parent->first, parent->last, result);
+	result->parent = parent;
+	parent->children_count++;
 	return result;
 }
 
 internal MD_Message*
-md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix, MD_AST *ast)
+md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string)
 {
 	MD_Message *message = push_array_no_zero(arena, MD_Message, 1);
 	*message = (MD_Message) {
 		.kind      = kind,
 		.string    = string,
-		.tokens_ix = tokens_ix,
-		.ast       = ast,
 	};
 	SLLQueuePush(messages->first, messages->last, message);
 	messages->count++;
@@ -777,3 +767,12 @@ md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind,
 		messages->worst_message = kind;
 	return message;
 }
+internal MD_Message*
+md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast)
+{
+	MD_Message *result = md_messagelist_push_inner(arena, messages, kind, string);
+	result->token = token;
+	result->ast = ast;
+	return result;
+}
+

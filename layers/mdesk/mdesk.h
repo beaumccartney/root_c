@@ -67,8 +67,11 @@ struct MD_Message
 	MD_Message *next;
 	String8 string;
 
-	// REVIEW: union of these? is there ever a case where I benefit from storing both in one message?
-	U64 tokens_ix; // REVIEW: can I make this a pointer somehow?
+	union
+	{
+		U64 tokens_ix;   // md_tokens_from_source() populates this
+		MD_Token *token; // everything else uses this
+	};
 	struct MD_AST *ast;
 
 	MD_MessageKind kind;
@@ -160,15 +163,13 @@ internal MD_AST*
 md_parse_root(MD_ParseState *parser);
 
 internal MD_AST*
-md_parse_exprlist(MD_ParseState *parser);
-
-internal void
-md_ast_add_child(MD_AST *parent, MD_AST *child);
-
-internal MD_AST*
 md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
 
 internal MD_Message*
-md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, U64 tokens_ix, MD_AST *ast);
+md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string);
+
+internal MD_Message*
+md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
+
 
 #endif // MDESK_H
