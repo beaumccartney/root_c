@@ -304,6 +304,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 		.tokens_first         = tokens.tokens,
 		.token                = tokens.tokens,
 		.tokens_one_past_last = tokens.tokens + tokens.count,
+		.global_stab           = &result.global_stab,
 	};
 
 	result.root = md_parse_root(&parser); // REVIEW: inline?
@@ -311,7 +312,6 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 	return result;
 }
 
-// REVIEW: start building symbol table here?
 internal MD_AST*
 md_parse_root(MD_ParseState *parser)
 {
@@ -432,22 +432,81 @@ md_parse_root(MD_ParseState *parser)
 					MD_ASTKind_Ident
 				);
 				directive_name->token = parser->token;
-				parser->token++;
-
-				if (global_directive_node->kind == MD_ASTKind_DirectiveTable && directive_ident_params->children_count < 1)
+				MD_SymbolTableEntry *directive_symbol = md_symbol_from_ident(
+					parser->arena,
+					parser->global_stab,
+					directive_name->token->source
+				);
+				if (directive_symbol->ast != 0)
 				{
+					// TODO: directive_symbol->key points
+					// to the original declaration of the
+					// symbol, use it to find the position
+					// of the original declaration and
+					// report in the error message
+					Assert(str8_match(directive_symbol->key, directive_name->token->source, 0));
 					md_messagelist_push(
 						parser->arena,
 						parser->messages,
-						MD_MessageKind_Warning,
+						MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
 						push_str8f(
 							parser->arena,
-							"@table directive '%S' has no named columns",
+							"redeclaration of '%S'",
 							directive_name->token->source
 						),
-						parser->token,
-						global_directive_node
+						directive_name->token,
+						global_directive_node // REVIEW: the directive_name instead?
 					);
+					goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
+				}
+				directive_symbol->ast = global_directive_node;
+
+				if (global_directive_node->kind == MD_ASTKind_DirectiveTable)
+				{
+					if (directive_ident_params->children_count < 1)
+					{
+						md_messagelist_push(
+							parser->arena,
+							parser->messages,
+							MD_MessageKind_Warning,
+							push_str8f(
+								parser->arena,
+								"@table directive '%S' has no named columns",
+								directive_name->token->source
+							),
+							0, // REVIEW
+							global_directive_node
+						);
+					}
+					else
+					{
+						for (MD_AST *column = directive_ident_params->first; column != 0; column = column->next)
+						{
+							MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
+								parser->arena,
+								&directive_symbol->table_columns,
+								column->token->source
+							);
+							if (column_symbol->ast != 0)
+							{
+								md_messagelist_push(
+									parser->arena,
+									parser->messages,
+									MD_MessageKind_Error,
+									push_str8f(
+										parser->arena,
+										"duplicate column name '%S' in @table '%S",
+										column->token->source,
+										directive_name->token->source
+									),
+									column->token,
+									global_directive_node // REVIEW: ast of the name itself?
+								);
+							}
+							else
+								column_symbol->ast = column;
+						}
+					}
 				}
 				else if (global_directive_node->kind == MD_ASTKind_DirectiveData && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
 				{
@@ -460,14 +519,12 @@ md_parse_root(MD_ParseState *parser)
 							"incorrect number of parameters for @data directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
 							directive_name->token->source
 						),
-						0,
+						0, // REVIEW
 						global_directive_node
 					);
 				}
 
-				// TODO: check for ident collisions in ident list, and if no foo.bar, then check for collision with directive name too e.g. table named 'foo' wouldn't be able to have a column named 'foo'
-
-				if (parser->token->kind != MD_TokenKind_OpenBrace)
+				if ((++parser->token)->kind != MD_TokenKind_OpenBrace)
 				{
 					md_messagelist_push(
 						parser->arena,
@@ -503,7 +560,6 @@ md_parse_root(MD_ParseState *parser)
 								);
 								goto break_parse_outer_loop;
 							}
-							// REVIEW: expect table row's number of children is the same as directive ident
 							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_TableRow);
 							while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 							{
@@ -631,7 +687,8 @@ md_parse_root(MD_ParseState *parser)
 										format_string->token = parser->token;
 									}
 
-									// REVIEW name collisions, and possible name.item syntax to solve name collision with the parent table
+									// REVIEW: name collisions, and possible name.item syntax to solve name collision with the parent table
+									// don't do here if avoiding ordered declarations
 									while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
 									{
 										if (parser->token->kind != MD_TokenKind_Ident)
@@ -680,7 +737,7 @@ md_parse_root(MD_ParseState *parser)
 											parser->token->source
 										),
 										parser->token,
-										global_directive_node // REVIEW: push the token instead of the AST? the source info of the problem token is then attached
+										global_directive_node // REVIEW: push the token instead of the AST?
 									);
 									goto break_parse_outer_loop;
 								} break;
@@ -767,6 +824,7 @@ md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind
 		messages->worst_message = kind;
 	return message;
 }
+
 internal MD_Message*
 md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast)
 {
@@ -774,5 +832,32 @@ md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind,
 	result->token = token;
 	result->ast = ast;
 	return result;
+}
+
+internal U64 md_hash_ident(String8 ident)
+{
+	U64 result = chibihash64(ident.buffer, (ptrdiff_t)ident.length, 0);
+	return result;
+}
+
+internal MD_SymbolTableEntry*
+md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
+{
+	for (U64 hash = md_hash_ident(ident); *stab != 0; hash <<=2)
+	{
+		if (str8_match((*stab)->key, ident, 0))
+			goto finish;
+		stab = &(*stab)->slots[hash >> 62];
+	}
+	if (arena != 0)
+	{
+		*stab = push_array_no_zero(arena, MD_SymbolTableEntry, 1);
+		**stab = (MD_SymbolTableEntry) {
+			.key = ident,
+		};
+	}
+
+	finish:;
+	return *stab;
 }
 

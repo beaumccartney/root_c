@@ -125,10 +125,18 @@ struct MD_AST
 	       *first, // children
 	       *last, // children
 	       *parent;
-	// REVIEW: children count?
 	U64 children_count;
 	MD_Token *token;
 	MD_ASTKind kind;
+};
+
+typedef struct MD_SymbolTableEntry MD_SymbolTableEntry;
+struct MD_SymbolTableEntry
+{
+	String8 key;
+	MD_AST *ast;
+	MD_SymbolTableEntry *slots[4],
+			    *table_columns;
 };
 
 typedef struct MD_ParseResult MD_ParseResult;
@@ -136,6 +144,7 @@ struct MD_ParseResult
 {
 	MD_AST *root;
 	MD_MessageList messages;
+	MD_SymbolTableEntry *global_stab;
 };
 
 // REVIEW:
@@ -150,6 +159,7 @@ struct MD_ParseState
 	MD_Token *tokens_first, // REVIEW: store token array and index instead?
 		 *token,
 		 *tokens_one_past_last;
+	MD_SymbolTableEntry **global_stab;
 };
 
 internal MD_TokenizeResult
@@ -171,5 +181,9 @@ md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind
 internal MD_Message*
 md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
 
+internal U64 md_hash_ident(String8 ident);
+
+internal MD_SymbolTableEntry*
+md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident);
 
 #endif // MDESK_H
