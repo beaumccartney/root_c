@@ -539,6 +539,7 @@ internal String8Array str8_array_from_list(Arena *arena, String8List list)
 	{
 		*copy_target = node->string;
 	}
+	Assert(copy_target == result.v + result.count);
 	return result;
 }
 

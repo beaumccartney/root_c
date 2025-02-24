@@ -1,3 +1,7 @@
+// REVIEW:
+//  nil ast node?
+//  nil symbol table node?
+
 #ifndef MDESK_H
 #define MDESK_H
 
@@ -135,8 +139,12 @@ struct MD_SymbolTableEntry
 {
 	String8 key;
 	MD_AST *ast;
-	MD_SymbolTableEntry *slots[4],
-			    *table_columns;
+	MD_SymbolTableEntry *slots[4];
+	union
+	{
+		MD_SymbolTableEntry *table_columns; // symbol table for @table's columns
+		U64 column_number;                  // this ident names the nth column of the table
+	};
 };
 
 typedef struct MD_ParseResult MD_ParseResult;
@@ -172,14 +180,22 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source);
 internal MD_AST*
 md_parse_root(MD_ParseState *parser);
 
+// TODO: change param name stab to stab_root
+
+internal MD_MessageList
+md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 source);
+
 internal MD_AST*
 md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
 
-internal MD_Message*
-md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string);
+internal inline MD_Message*
+md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source, U8* source_loc, MD_MessageKind kind, String8 string);
 
-internal MD_Message*
-md_messagelist_push(Arena *arena, MD_MessageList *messages, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
+// TODO:
+//  return void
+//  take U8 * param to location in source and add line and column to message
+internal void
+md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
 
 internal U64 md_hash_ident(String8 ident);
 
