@@ -98,7 +98,54 @@ md_tokens_from_source(Arena *arena, String8 source)
 				token_kind = MD_TokenKind_StringLit;
 				while (++c < one_past_last && *c != '"')
 					if (*c == '\\') // just skip escaped characters
-						c++;
+					{
+						switch (*++c)
+						{
+							// NOTE: escape sequences allowed in c spec
+							case 'a':
+							case 'b':
+							case 'f':
+							case 'n':
+							case 'r':
+							case 't':
+							case 'v':
+							case '\\':
+							case '\'':
+							case '"':
+							case '?':
+
+							// octal digits
+							case '0':
+							case '1':
+							case '2':
+							case '3':
+							case '4':
+							case '5':
+							case '6':
+							case '7':
+
+							// hex prefix
+							case 'x':
+
+							// unicode prefix
+							case 'u':
+							case 'U':
+
+							// escaped format specifier
+							case '%': {
+								// do nothing
+							} break;
+							default: {
+								message_kind = MD_MessageKind_FatalError;
+								message_string = push_str8f(
+									arena,
+									"unrecognized escape sequence - '\\x%x'",
+									*c // TODO: print not in hex and make it nice
+								);
+								goto break_lex_switch; // REVIEW: keep lexing and push an error per bad escape?
+							} break;
+						}
+					}
 				if (c == one_past_last)
 				{
 					message_kind   = MD_MessageKind_Error;
