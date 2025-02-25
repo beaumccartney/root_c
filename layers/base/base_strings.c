@@ -388,15 +388,22 @@ internal String8Node* str8_list_push_node_front_set_string(String8List *list, St
 }
 internal String8Node* str8_list_push(Arena *arena, String8List *list, String8 string)
 {
-	String8Node *node = push_array_no_zero(arena, String8Node, 1);
-	str8_list_push_node_set_string(list, node, string);
+	String8Node *node = 0;
+	if (string.length > 0)
+	{
+		node = push_array_no_zero(arena, String8Node, 1);
+		str8_list_push_node_set_string(list, node, string);
+	}
 	return node;
 }
 internal String8Node* str8_list_push_front(Arena *arena, String8List *list, String8 string)
 {
-	String8Node *node = push_array_no_zero(arena, String8Node, 1);
-	node->string = string;
-	str8_list_push_node_front(list, node);
+	String8Node *node = 0;
+	if (string.length > 0)
+	{
+		node = push_array_no_zero(arena, String8Node, 1);
+		str8_list_push_node_front_set_string(list, node, string);
+	}
 	return node;
 }
 internal void str8_list_concat_in_place(String8List *list, String8List *to_push)
