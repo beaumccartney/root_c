@@ -91,7 +91,7 @@ internal void entry_point(void)
 				if (check_messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
 
-				MG_GenResult generated = mg_generate_from_checked(work_arena, parsed.root, parsed.global_stab);
+				MG_GenResult generated = mg_generate_from_checked(work_arena, parsed.root, parsed.global_stab, source);
 
 				for (MD_Message *m = generated.messages.first; m != 0; m = m->next)
 					mg_print_message_push(iter_arena, &print_messages, m->string, info.name);

@@ -12,7 +12,7 @@ mg_print_message_push(Arena *arena, String8List *print_messages, String8 message
 }
 
 internal MG_GenResult
-mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root)
+mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source)
 {
 	MG_GenResult result = zero_struct;
 
