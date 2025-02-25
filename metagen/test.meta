@@ -26,5 +26,5 @@ os_key_table
 @data(String8 OS_Key_COUNT)
 os_key_strings
 {
-	@expand(os_key_table "[%] = %," name string)
+	@expand(os_key_table "[%] = str8_lit_comp(%)," name string)
 }
