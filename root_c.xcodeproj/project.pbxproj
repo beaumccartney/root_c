@@ -45,6 +45,8 @@
 		4B98542D2D39AA2200E8E876 /* leetcode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = leetcode.c; sourceTree = "<group>"; };
 		4BBE66032D3CC54900C7DB7D /* metal.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metal.c; sourceTree = "<group>"; };
 		4BBE66042D3CC54900C7DB7D /* scratch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scratch.c; sourceTree = "<group>"; };
+		4BD032E22D6E676A00A83C41 /* metagen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = metagen.h; sourceTree = "<group>"; };
+		4BD032E32D6E676A00A83C41 /* metagen.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metagen.c; sourceTree = "<group>"; };
 		4BFC7A2E2D5FDAB30053200F /* metagen_main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metagen_main.c; sourceTree = "<group>"; };
 		4BFC7A2F2D5FDAB30053200F /* sample_gen.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = sample_gen.c; sourceTree = "<group>"; };
 		4BFC7A302D5FDAB30053200F /* sample_gen_meta */ = {isa = PBXFileReference; lastKnownFileType = text; path = sample_gen_meta; sourceTree = "<group>"; };
@@ -191,6 +193,8 @@
 		4BFC7A322D5FDAB30053200F /* metagen */ = {
 			isa = PBXGroup;
 			children = (
+				4BD032E22D6E676A00A83C41 /* metagen.h */,
+				4BD032E32D6E676A00A83C41 /* metagen.c */,
 				4BFC7A2E2D5FDAB30053200F /* metagen_main.c */,
 				4BFC7A2F2D5FDAB30053200F /* sample_gen.c */,
 				4BFC7A302D5FDAB30053200F /* sample_gen_meta */,
