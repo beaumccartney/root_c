@@ -504,7 +504,7 @@ internal String8 str8_list_join(Arena *arena, String8List list, StringJoin *opti
 			   + params.sep.length * sep_count
 			   + params.post.length;
 
-	String8 result = push_str8(arena, total_length);
+	String8 result = push_str8_nt(arena, total_length);
 	U8 *copy_target = result.buffer;
 
 	MemoryCopy(copy_target, params.pre.buffer, params.pre.length);
