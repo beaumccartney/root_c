@@ -1102,6 +1102,7 @@ internal U64 md_hash_ident(String8 ident)
 internal MD_SymbolTableEntry*
 md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
 {
+	Assert(ident.length > 0);
 	for (U64 hash = md_hash_ident(ident); *stab != 0; hash <<=2)
 	{
 		if (str8_match((*stab)->key, ident, 0))
