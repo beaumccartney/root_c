@@ -508,7 +508,6 @@ md_parse_root(MD_ParseState *parser)
 					// symbol, use it to find the position
 					// of the original declaration and
 					// report in the error message
-					Assert(str8_match(directive_symbol->key, directive_name->token->source, 0));
 					md_messagelist_push(
 						parser->arena,
 						parser->messages,
