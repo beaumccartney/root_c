@@ -54,6 +54,8 @@ internal void entry_point(void)
 			String8 source = os_data_from_file_path(work_arena, info.name);
 			if (is_meta)
 			{
+				// TODO: messages for each type of work starting?
+
 				MD_TokenizeResult tokenize = md_tokens_from_source(work_arena, source);
 
 				for (MD_Message *m = tokenize.messages.first; m != 0; m = m->next)
@@ -98,6 +100,69 @@ internal void entry_point(void)
 
 				if (generated.messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
+
+				// TODO:
+				//  message saying generation was successful and output will happen
+
+				Assert(extension.buffer[-1] == '.');
+				String8 thing          = str8_skip_last_slash(info.name),
+				        folder         = str8_region(info.name.buffer, thing.buffer), // folder of source file including last slash
+				        filething      = str8_region(thing.buffer, extension.buffer), // filename without extension but including last .
+					gen_file_upper = upper_from_str8(
+						work_arena,
+						str8(filething.buffer, filething.length - 1)
+					);
+
+				Assert(folder.length > 0 && char_is_slash(folder.buffer[folder.length - 1]) && filething.length > 0 && filething.buffer[filething.length - 1] == '.');
+
+				U8 path_slash = folder.buffer[folder.length - 1];
+				// REVIEW: with above?
+				String8 gen_folder_name = str8_lit("generated"),
+					gen_file = push_str8f(
+						work_arena,
+						"%S%S%c%Smeta.h",
+						folder,
+						gen_folder_name,
+						path_slash,
+						filething
+					),
+					generated_folder = str8(
+						gen_file.buffer,
+						folder.length + gen_folder_name.length
+					);
+
+				os_create_folder(generated_folder); // REVIEW: if fails?
+
+				{
+					// XXX: remove dependency on stdio
+					String8 gen_info = str8_lit("/* GENERATED */\n\n");
+					// write header file
+					FILE *fd = fopen((char *)gen_file.buffer, "w");
+					Assert(fd); // REVIEW
+					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
+					String8 include_guard = push_str8f(
+						work_arena,
+						"#ifndef %S_META_H\n#define %S_META_H\n\n",
+						gen_file_upper,
+						gen_file_upper
+					);
+					fwrite(include_guard.buffer, sizeof(*include_guard.buffer), include_guard.length, fd);
+					fwrite(generated.h_file.buffer, sizeof(*generated.h_file.buffer), generated.h_file.length, fd);
+					String8 include_guard_end = push_str8f(
+						work_arena,
+						"\n\n#endif // %S_META_H",
+						gen_file_upper
+					);
+					fwrite(include_guard_end.buffer, sizeof(*include_guard_end.buffer), include_guard_end.length, fd);
+					Assert(!fclose(fd));
+
+					gen_file.buffer[gen_file.length - 1] = 'c'; // XXX
+					fd = fopen((char *)gen_file.buffer, "w");
+					Assert(fd); // REVIEW
+					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
+					fwrite(generated.c_file.buffer, sizeof(*generated.c_file.buffer), generated.c_file.length, fd);
+					Assert(!fclose(fd));
+				}
 
 				goto work_cleanup; // skip fail message
 				meta_fail:;
