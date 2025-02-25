@@ -128,7 +128,7 @@ struct MD_AST
 	MD_AST *next, // sibling
 	       *first, // children
 	       *last, // children
-	       *parent;
+	       *parent; // REVIEW: needed?
 	U64 children_count;
 	MD_Token *token;
 	MD_ASTKind kind;
@@ -142,8 +142,17 @@ struct MD_SymbolTableEntry
 	MD_SymbolTableEntry *slots[4];
 	union
 	{
-		MD_SymbolTableEntry *table_columns; // symbol table for @table's columns
-		U64 column_number;                  // this ident names the nth column of the table
+		struct
+		{
+			MD_SymbolTableEntry *cols_stab; // symbol table for @table's columns
+			U64 num_cols, num_rows;
+			String8 *elem_matrix; // array of strings pointing into the source of each of the tables elements, of length num_columns * num_rows i.e. one string per table element
+		} table_record;
+
+		struct
+		{
+			U64 col; // this ident names the nth column of the table
+		} col_record;
 	};
 };
 
@@ -157,7 +166,7 @@ struct MD_ParseResult
 
 // REVIEW:
 //  should I pass any of this separately?
-//  if all parsing is done in one function then remove
+//  remove if parsing is done in one function
 typedef struct MD_ParseState MD_ParseState;
 struct MD_ParseState
 {

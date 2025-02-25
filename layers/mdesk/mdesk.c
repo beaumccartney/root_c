@@ -529,7 +529,8 @@ md_parse_root(MD_ParseState *parser)
 
 				if (global_directive_node->kind == MD_ASTKind_DirectiveTable)
 				{
-					if (directive_ident_params->children_count < 1)
+					directive_symbol->table_record.num_cols = directive_ident_params->children_count;
+					if (directive_symbol->table_record.num_cols < 1)
 					{
 						md_messagelist_push(
 							parser->arena,
@@ -554,7 +555,7 @@ md_parse_root(MD_ParseState *parser)
 						{
 							MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
 								parser->arena,
-								&directive_symbol->table_columns,
+								&directive_symbol->table_record.cols_stab,
 								column->token->source
 							);
 							if (column_symbol->ast != 0)
@@ -882,6 +883,10 @@ md_parse_root(MD_ParseState *parser)
 					goto break_parse_outer_loop;
 				}
 				Assert(global_directive_node->children_count >= children_before_body);
+
+				if (global_directive_node->kind == MD_ASTKind_DirectiveTable)
+					directive_symbol->table_record.num_rows = global_directive_node->children_count - children_before_body;
+
 				if (children_before_body == global_directive_node->children_count)
 				{
 					md_messagelist_push(
@@ -926,113 +931,108 @@ internal MD_MessageList
 md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 source)
 {
 	MD_MessageList result = zero_struct;
+	Temp scratch = scratch_begin(&arena, 1);
+
 	for (MD_AST *global_directive = root->first; global_directive != 0; global_directive = global_directive->next)
 	{
-		if (global_directive->kind == MD_ASTKind_DirectiveData || global_directive->kind == MD_ASTKind_DirectiveEnum)
+		switch (global_directive->kind)
 		{
-			MD_AST *global_directive_child = global_directive->first->next;
-			if (global_directive->kind == MD_ASTKind_DirectiveData)
-				global_directive_child = global_directive_child->next;
-			else
-				Assert(global_directive->kind == MD_ASTKind_DirectiveEnum);
-
-			for (; global_directive_child != 0; global_directive_child = global_directive_child->next)
-			{
-				Assert(global_directive_child->kind == MD_ASTKind_StringLit || global_directive_child->kind == MD_ASTKind_DirectiveExpand);
-				if (global_directive_child->kind == MD_ASTKind_StringLit)
-					continue;
-				Assert(global_directive_child->kind == MD_ASTKind_DirectiveExpand);
-				Assert(global_directive_child->children_count >= 2);
-				U64 num_format_args = global_directive_child->children_count - 2;
-				MD_AST *expand_arg = global_directive_child->first;
-				MD_SymbolTableEntry *target_symbol = md_symbol_from_ident(0, &stab, expand_arg->token->source);
-				if (!target_symbol || target_symbol->ast->kind != MD_ASTKind_DirectiveTable)
+			case MD_ASTKind_DirectiveTable: {
+				MD_AST *table_child = global_directive->first->next;
+				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab, table_child->token->source);
+				String8List table_elems = zero_struct;
+				for (table_child = table_child->next; table_child != 0; table_child = table_child->next)
 				{
-					Assert(!target_symbol || target_symbol->ast->kind == MD_ASTKind_DirectiveData || target_symbol->ast->kind == MD_ASTKind_DirectiveEnum);
-					char* format = target_symbol
-						? "@expand-ing a non-@table symbol '%S'"
-						: "@expand-ing an undefined symbol '%S'";
-					String8 message = push_str8f(arena, format, expand_arg->token->source);
-					md_messagelist_push(
-						arena,
-						&result,
-						source,
-						expand_arg->token->source.buffer,
-						MD_MessageKind_Error,
-						message,
-						expand_arg->token,
-						global_directive_child
-					);
-					continue;
-				}
-				expand_arg = expand_arg->next;
-				String8 format_string = expand_arg->token->source;
-				U64 num_format_specifiers = 0;
-				if (format_string.length > 2)
-				{
-					Assert(format_string.buffer[0] == '"' && format_string.buffer[format_string.length - 1] == '"');
-					U8 *c = format_string.buffer + 1,
-					   *one_past_last = format_string.buffer + format_string.length - 1;
-					for (; c < one_past_last; c++)
+					Assert(table_child->kind == MD_ASTKind_TableRow);
+					for (MD_AST *table_elem = table_child->first; table_elem != 0; table_elem = table_elem->next)
 					{
-						if (*c == '\\')
-							c++;
-						else if (*c == '%')
-							num_format_specifiers++;
+						Assert(
+							   table_elem->kind == MD_ASTKind_Ident
+							|| table_elem->kind == MD_ASTKind_IntLit
+							|| table_elem->kind == MD_ASTKind_FloatLit
+							|| table_elem->kind == MD_ASTKind_StringLit
+						);
+						str8_list_push(scratch.arena, &table_elems, table_elem->token->source);
 					}
 				}
+				Assert(table_elems.node_count == table_symbol->table_record.num_cols * table_symbol->table_record.num_rows);
+				String8Array table_matrix = str8_array_from_list(arena, table_elems);
+				table_symbol->table_record.elem_matrix = table_matrix.v;
+			} break;
+			case MD_ASTKind_DirectiveData:
+			case MD_ASTKind_DirectiveEnum: {
+				MD_AST *global_directive_child = global_directive->first->next;
+				if (global_directive->kind == MD_ASTKind_DirectiveData)
+					global_directive_child = global_directive_child->next;
+				else
+					Assert(global_directive->kind == MD_ASTKind_DirectiveEnum);
 
-				if (num_format_specifiers != num_format_args)
+				for (; global_directive_child != 0; global_directive_child = global_directive_child->next)
 				{
-					md_messagelist_push(
-						arena,
-						&result,
-						source,
-						format_string.buffer, // REVIEW
-						MD_MessageKind_Error,
-						push_str8f(
-							arena,
-							"@expand format-arg mismatch - %llu format specifiers and %llu format arguments", // REVIEW: make better
-							num_format_specifiers,
-							num_format_args
-						),
-						0, // REVIEW: the format string?
-						global_directive_child
-					);
-				}
-
-				expand_arg = expand_arg->next;
-				for (; expand_arg != 0; expand_arg = expand_arg->next)
-				{
-					Assert(expand_arg->kind = MD_ASTKind_Ident);
-					MD_SymbolTableEntry *format_arg_symbol = md_symbol_from_ident(
-						0,
-						&target_symbol->table_columns,
-						expand_arg->token->source
-					);
-					if (!format_arg_symbol)
+					Assert(global_directive_child->kind == MD_ASTKind_StringLit || global_directive_child->kind == MD_ASTKind_DirectiveExpand);
+					if (global_directive_child->kind == MD_ASTKind_StringLit)
+						continue;
+					Assert(global_directive_child->kind == MD_ASTKind_DirectiveExpand && global_directive_child->children_count >= 2);
+					MD_AST *expand_arg = global_directive_child->first;
+					MD_SymbolTableEntry *target_symbol = md_symbol_from_ident(0, &stab, expand_arg->token->source);
+					if (!target_symbol || target_symbol->ast->kind != MD_ASTKind_DirectiveTable)
 					{
+						Assert(!target_symbol || target_symbol->ast->kind == MD_ASTKind_DirectiveData || target_symbol->ast->kind == MD_ASTKind_DirectiveEnum);
+						char* format = target_symbol
+							? "@expand-ing a non-@table symbol '%S'"
+							: "@expand-ing an undefined symbol '%S'";
+						String8 message = push_str8f(arena, format, expand_arg->token->source);
 						md_messagelist_push(
 							arena,
 							&result,
 							source,
 							expand_arg->token->source.buffer,
 							MD_MessageKind_Error,
-							push_str8f(
-								arena,
-								"undefined format arg to @expand - '%S' is not a column of %S",
-								expand_arg->token->source,
-								target_symbol->key
-							),
+							message,
 							expand_arg->token,
 							global_directive_child
 						);
+						continue;
+					}
+					expand_arg = expand_arg->next;
+					Assert(expand_arg->kind == MD_ASTKind_StringLit);
+
+					for (expand_arg = expand_arg->next; expand_arg != 0; expand_arg = expand_arg->next)
+					{
+						Assert(expand_arg->kind = MD_ASTKind_Ident);
+						MD_SymbolTableEntry *format_arg_symbol = md_symbol_from_ident(
+							0,
+							&target_symbol->table_record.cols_stab,
+							expand_arg->token->source
+						);
+						if (!format_arg_symbol)
+						{
+							md_messagelist_push(
+								arena,
+								&result,
+								source,
+								expand_arg->token->source.buffer,
+								MD_MessageKind_Error,
+								push_str8f(
+									arena,
+									"undefined format arg to @expand - '%S' is not a column of %S",
+									expand_arg->token->source,
+									target_symbol->key
+								),
+								expand_arg->token,
+								global_directive_child
+							);
+						}
 					}
 				}
-			}
+			} break;
+			default: {
+				Unreachable; // REVIEW: print an internal error?
+			} break;
 		}
 	}
 
+	scratch_end(scratch);
 	return result;
 }
 
@@ -1098,6 +1098,7 @@ internal U64 md_hash_ident(String8 ident)
 	return result;
 }
 
+// TODO: check that its not just a linked list degredation every time
 internal MD_SymbolTableEntry*
 md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
 {
@@ -1118,4 +1119,3 @@ md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
 	finish:;
 	return *stab;
 }
-
