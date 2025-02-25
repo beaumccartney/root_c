@@ -576,7 +576,10 @@ md_parse_root(MD_ParseState *parser)
 								);
 							}
 							else
-								column_symbol->column_number = column_number;
+							{
+								column_symbol->col_record.col = column_number;
+								column_symbol->ast = column;
+							}
 						}
 					}
 				}
