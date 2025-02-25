@@ -321,6 +321,9 @@ internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 	return str8_match(postfix, end, flags);
 }
 
+// REVIEW:
+//  in separate path module?
+//  deduplicate seeking backwards for a char?
 internal String8 str8_skip_last_dot(String8 string)
 {
 	U8 *one_past_last = string.buffer + string.length,
@@ -338,6 +341,22 @@ internal String8 str8_skip_last_dot(String8 string)
 	return result;
 }
 
+internal String8 str8_skip_last_slash(String8 string)
+{
+	U8 *one_past_last = string.buffer + string.length,
+	   *one_past_last_slash = one_past_last;
+	while (one_past_last_slash != string.buffer)
+	{
+		one_past_last_slash--;
+		if (char_is_slash(*one_past_last_slash))
+		{
+			one_past_last_slash++;
+			break;
+		}
+	}
+	String8 result = str8_region(one_past_last_slash, one_past_last);
+	return result;
+}
 
 internal Vec2U64
 str8_pos_from_offset(String8 string, U64 offset)
