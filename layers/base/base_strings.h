@@ -140,9 +140,15 @@ internal B32 str8_match(String8 a, String8 b, StringMatchFlags flags);
 internal U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags);
 internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags);
 
-// REVIEW: in separate path layer?
-internal String8 str8_skip_last_dot(String8 string);
+// REVIEW: mask to specify chars?
+internal U8 *str8_last_char(String8 string, U8 c);
+internal U8 *str8_one_past_last_char(String8 string, U8 c);
+internal String8 str8_skip_last_char(String8 string, U8 c);
+internal String8 str8_chop_last_char(String8 string, U8 c);
+internal U8 *str8_last_slash(String8 string);
+internal U8 *str8_one_past_last_slash(String8 string);
 internal String8 str8_skip_last_slash(String8 string);
+internal String8 str8_chop_last_slash(String8 string);
 
 internal Vec2U64 str8_pos_from_offset(String8 string, U64 offset);
 

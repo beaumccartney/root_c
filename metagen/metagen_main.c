@@ -33,7 +33,7 @@ internal void entry_point(void)
 	OS_FileInfo info = zero_struct;
 	while (os_file_iter_next(iter_arena, iter, &info))
 	{
-		String8 extension = str8_skip_last_dot(info.name);
+		String8 extension = str8_skip_last_char(info.name, '.');
 		B32 is_c_lang = 0
 		     || str8_match(extension, str8_lit("c"), 0)
 		     || str8_match(extension, str8_lit("h"), 0)

@@ -321,40 +321,78 @@ internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 	return str8_match(postfix, end, flags);
 }
 
-// REVIEW:
-//  in separate path module?
-//  deduplicate seeking backwards for a char?
-internal String8 str8_skip_last_dot(String8 string)
+internal U8 *str8_last_char(String8 string, U8 c)
 {
-	U8 *one_past_last = string.buffer + string.length,
-	   *one_past_last_dot = one_past_last;
-	while (one_past_last_dot != string.buffer)
+	U8 *last_char = string.buffer + string.length;
+	while (last_char != string.buffer)
 	{
-		one_past_last_dot--;
-		if (*one_past_last_dot == '.')
+		last_char--;
+		if (*last_char == c)
+			break;
+	}
+	return last_char;
+}
+internal U8 *str8_one_past_last_char(String8 string, U8 c)
+{
+	U8 *last_char = string.buffer + string.length;
+	while (last_char != string.buffer)
+	{
+		last_char--;
+		if (*last_char == c)
 		{
-			one_past_last_dot++;
+			last_char++;
 			break;
 		}
 	}
-	String8 result = str8_region(one_past_last_dot, one_past_last);
+	return last_char;
+}
+internal String8 str8_skip_last_char(String8 string, U8 c)
+{
+	U8 *one_past_last_char = str8_one_past_last_char(string, c);
+	String8 result = str8_region(one_past_last_char, string.buffer + string.length);
 	return result;
 }
-
-internal String8 str8_skip_last_slash(String8 string)
+internal String8 str8_chop_last_char(String8 string, U8 c)
 {
-	U8 *one_past_last = string.buffer + string.length,
-	   *one_past_last_slash = one_past_last;
-	while (one_past_last_slash != string.buffer)
+	U8 *last_char = str8_last_char(string, c);
+	String8 result = str8_region(string.buffer, last_char);
+	return result;
+}
+internal U8 *str8_last_slash(String8 string)
+{
+	U8 *last_slash = string.buffer + string.length;
+	while (last_slash != string.buffer)
 	{
-		one_past_last_slash--;
-		if (char_is_slash(*one_past_last_slash))
+		last_slash--;
+		if (char_is_slash(*last_slash))
+			break;
+	}
+	return last_slash;
+}
+internal U8 *str8_one_past_last_slash(String8 string)
+{
+	U8 *last_slash = string.buffer + string.length;
+	while (last_slash != string.buffer)
+	{
+		last_slash--;
+		if (char_is_slash(*last_slash))
 		{
-			one_past_last_slash++;
+			last_slash++;
 			break;
 		}
 	}
-	String8 result = str8_region(one_past_last_slash, one_past_last);
+	return last_slash;
+}
+internal String8 str8_skip_last_slash(String8 string)
+{
+	U8 *one_past_last_slash = str8_one_past_last_slash(string);
+	String8 result = str8_region(one_past_last_slash, string.buffer + string.length);
+	return result;
+}
+internal String8 str8_chop_last_slash(String8 string)
+{
+	U8 *last_slash = str8_last_slash(string);
+	String8 result = str8_region(string.buffer, last_slash);
 	return result;
 }
 
