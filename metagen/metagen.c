@@ -55,7 +55,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 					String8 common_arr_decl = push_str8f(
 						scratch.arena,
-						"%S %S[%S]",
+						"const %S %S[%S]",
 						type,
 						name,
 						array_count
