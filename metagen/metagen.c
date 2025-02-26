@@ -154,14 +154,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							else if (*c == '%')
 								num_format_specifiers++;
 						}
-							struct MD_FormatSpecInfo
-							{
-								Rng1U64 range; // .min is index of after last specifier, .max is index of current specifier
-								U64 col; // table column of the current specifier
-							} *specifiers               = push_array_no_zero(arena, struct MD_FormatSpecInfo, num_format_specifiers),
-							  *specifiers_one_past_last = specifiers + num_format_specifiers;
-						struct MD_FormatSpecInfo *spec_info = specifiers;
-						for (U64 prefix_ix = 0, spec_ix = 0; spec_ix < format_string.length && spec_info < specifiers_one_past_last; spec_ix++)
+						struct MD_FormatSpecInfo
+						{
+							Rng1U64 range; // .min is index of after last specifier, .max is index of current specifier
+							U64 col; // table column of the current specifier
+						} *specifiers               = push_array_no_zero(arena, struct MD_FormatSpecInfo, num_format_specifiers),
+						  *specifier                = specifiers,
+						  *specifiers_one_past_last = specifiers + num_format_specifiers;
+						for (U64 prefix_ix = 0, spec_ix = 0; spec_ix < format_string.length && specifier < specifiers_one_past_last; spec_ix++)
 						{
 							U8 c = format_string.buffer[spec_ix];
 							// TODO: deduplicate next-format-specifier logic
@@ -172,14 +172,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								Assert(expand_child->kind == MD_ASTKind_Ident);
 								// NOTE: we've already checked that all format arguments are valid
 								MD_SymbolTableEntry *col_record = md_symbol_from_ident(0, &cols_stab, expand_child->token->source);
-								spec_info->range = r1u64(prefix_ix, spec_ix);
-								spec_info->col = col_record->col_record.col;
+								specifier->range = r1u64(prefix_ix, spec_ix);
+								specifier->col = col_record->col_record.col;
 								prefix_ix = spec_ix + 1; // non-format specifier can't be on this current index
-								spec_info++;
+								specifier++;
 								expand_child = expand_child->next;
 							}
 						}
-						Assert(spec_info == specifiers + num_format_specifiers && expand_child == 0);
+						Assert(specifier == specifiers + num_format_specifiers);
 
 						Assert(directive_child->children_count >= 2); // @expand should always have a target table and a format string as children
 						U64 num_format_args = directive_child->children_count - 2; // first two children of @expand are the table and the format string
@@ -216,7 +216,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							);
 						}
 
-						Assert(num_format_specifiers == num_format_args);
+						Assert(num_format_specifiers == num_format_args && expand_child == 0); // is the number of format args correct and have we used each format arg
 						String8List expand_list = zero_struct; // instead of pushing directly to target_file for debugging purposes
 
 						// REVIEW: number of specifiers is checked elsewhere, initialize there?
