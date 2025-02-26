@@ -21,11 +21,17 @@ internal void entry_point(void)
 
 	String8List print_messages = zero_struct;
 
-	// TODO(beau):
-	//  XXX IMPORTANT begin search relative to executable i.e. do all the os_core stuff
+	// <project root>/build/.. i.e. project root
+	String8 search_root = str8_chop_last_slash(g_os_state.process_info.exe_folder);
+	str8_list_pushf(
+		iter_arena,
+		&print_messages,
+		"searching '%S'\n",
+		search_root
+	);
 	OS_FileIter *iter = os_file_iter_begin(
 		iter_arena,
-		str8_lit("."),
+		search_root,
 		OS_FileIterFlag_SkipFolders
 		| OS_FileIterFlag_RecurseFolders
 		| OS_FileIterFlag_SkipHidden
