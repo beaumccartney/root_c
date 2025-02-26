@@ -17,12 +17,12 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 {
 	MG_GenResult result = zero_struct;
 
-	String8List h_file_builder = zero_struct,
-	            c_file_builder = zero_struct;
+	String8List h_file_enums  = zero_struct,
+	            h_file_arrays = zero_struct, // arrays will always be put after enums so any ident lengths in the arrays are already declared
+	            c_file        = zero_struct;
 
 	Temp scratch = scratch_begin(&arena, 1);
 
-	// REVIEW: generate enums before arrays? this way array length idents are forward declared if they're in enums
 	for (MD_AST *global_directive = root->first; global_directive != 0; global_directive = global_directive->next)
 	{
 		switch (global_directive->kind)
@@ -34,18 +34,18 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				String8 enum_name = zero_struct; // 0 if not @enum
 				if (global_directive->kind == MD_ASTKind_DirectiveEnum)
 				{
-					target_file = &h_file_builder;
+					target_file = &h_file_enums;
 					Assert(directive_child->kind == MD_ASTKind_Ident);
 					enum_name = push_str8f(
 						scratch.arena,
 						" %S",
 						directive_child->token->source
 					);
-					str8_list_push(scratch.arena, &h_file_builder, str8_lit("typedef enum"));
+					str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
 				}
 				else
 				{
-					target_file = &c_file_builder;
+					target_file = &c_file;
 					Assert(
 						  global_directive->kind == MD_ASTKind_DirectiveData
 						&& directive_child->kind == MD_ASTKind_IdentList
@@ -76,14 +76,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 					str8_list_pushf(
 						scratch.arena,
-						&h_file_builder,
+						&h_file_arrays,
 						"extern %S;",
 						common_arr_decl
 					);
 
 					str8_list_push(
 						scratch.arena,
-						&c_file_builder,
+						&c_file,
 						push_str8f(
 							scratch.arena,
 							"%S =",
@@ -295,12 +295,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	finish_generation:;
 
+	str8_list_concat_in_place(&h_file_enums, &h_file_arrays);
 	// REVIEW: right now there's two newlines after @expand contents, because of this, should I remove it?
 	StringJoin join = {
 		.sep = str8_lit("\n"),
 	};
-	result.h_file = str8_list_join(arena, h_file_builder, &join);
-	result.c_file = str8_list_join(arena, c_file_builder, &join);
+	result.h_file = str8_list_join(arena, h_file_enums, &join);
+	result.c_file = str8_list_join(arena, c_file, &join);
 
 	scratch_end(scratch);
 
