@@ -16,16 +16,13 @@
 
 internal void entry_point(void)
 {
-	// REVIEW: right now all the memory for all the worked on files stays
-	// alive until this is released, is it worth doing an arena per file
-	// (i.e. loop iteration) and just releasing once the work in the file
-	// is done?
 	Arena *iter_arena = arena_default,
 	      *work_arena = arena_default;
 
 	String8List print_messages = zero_struct;
 
-	// TODO(beau): make os file iters work on multiple folders
+	// TODO(beau):
+	//  XXX IMPORTANT begin search relative to executable i.e. do all the os_core stuff
 	OS_FileIter *iter = os_file_iter_begin(
 		iter_arena,
 		str8_lit("."),
@@ -47,7 +44,12 @@ internal void entry_point(void)
 		{
 			if (info.name.length == extension.length + 1) // file has no name before .?
 			{
-				// TODO: warn about nameless file and that its being skipped
+				str8_list_pushf(
+					iter_arena,
+					&print_messages,
+					"warning: file '%S' has no name before '.' - skipping",
+					info.name
+				);
 				goto work_cleanup;
 			}
 
@@ -138,7 +140,6 @@ internal void entry_point(void)
 					String8 gen_info = str8_lit("/* GENERATED */\n\n");
 					// write header file
 					FILE *fd = fopen((char *)gen_file.buffer, "w");
-					Assert(fd); // REVIEW
 					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
 					String8 include_guard = push_str8f(
 						work_arena,
@@ -158,7 +159,6 @@ internal void entry_point(void)
 
 					gen_file.buffer[gen_file.length - 1] = 'c'; // XXX
 					fd = fopen((char *)gen_file.buffer, "w");
-					Assert(fd); // REVIEW
 					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
 					fwrite(generated.c_file.buffer, sizeof(*generated.c_file.buffer), generated.c_file.length, fd);
 					Assert(!fclose(fd));

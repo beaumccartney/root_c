@@ -101,6 +101,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				{
 					Assert(directive_child->kind == MD_ASTKind_StringLit || directive_child->kind == MD_ASTKind_DirectiveExpand);
 
+					// TODO: unify codepath for removing quotes from string literal
 					if (directive_child->kind == MD_ASTKind_StringLit)
 					{
 						Assert(directive_child->token->kind == MD_TokenKind_StringLit
@@ -229,7 +230,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						String8List expand_list = zero_struct; // instead of pushing directly to target_file for debugging purposes
 
 						// REVIEW: number of specifiers is checked elsewhere, initialize there?
-						U64 after_last_spec_ix = specifiers_one_past_last > specifiers
+						U64 after_last_spec_ix = specifiers < specifiers_one_past_last
 							? (specifiers_one_past_last - 1)->range.max + 1
 							: 0;
 						Assert(after_last_spec_ix <= format_string.length);

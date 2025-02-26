@@ -127,7 +127,7 @@ struct MD_AST
 	MD_AST *next, // sibling
 	       *first, // children
 	       *last, // children
-	       *parent; // REVIEW: needed?
+	       *parent; // to traverse the tree iteratively (i.e. without procedure recursion)
 	U64 children_count;
 	MD_Token *token;
 	MD_ASTKind kind;
@@ -199,9 +199,6 @@ md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
 internal inline MD_Message*
 md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source, U8* source_loc, MD_MessageKind kind, String8 string);
 
-// TODO:
-//  return void
-//  take U8 * param to location in source and add line and column to message
 internal void
 md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
 
