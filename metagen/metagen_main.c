@@ -62,7 +62,12 @@ internal void entry_point(void)
 			String8 source = os_data_from_file_path(work_arena, info.name);
 			if (is_meta)
 			{
-				// TODO: messages for each type of work starting?
+				str8_list_pushf(
+					iter_arena,
+					&print_messages,
+					"processing mdesk file '%S'",
+					info.name
+				);
 
 				MD_TokenizeResult tokenize = md_tokens_from_source(work_arena, source);
 
