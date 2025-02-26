@@ -74,6 +74,9 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						array_count
 					);
 
+					// REVIEW:
+					//  is extern needed?
+					//  static? put everything in header file?
 					str8_list_pushf(
 						scratch.arena,
 						&h_file_arrays,
