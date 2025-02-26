@@ -106,16 +106,16 @@ internal void entry_point(void)
 				// TODO:
 				//  message saying generation was successful and output will happen
 
-				Assert(extension.buffer[-1] == '.');
-				String8 thing          = str8_skip_last_slash(info.name),
-				        folder         = str8_region(info.name.buffer, thing.buffer), // folder of source file including last slash
-				        filething      = str8_region(thing.buffer, extension.buffer), // filename without extension but including last .
-					gen_file_upper = upper_from_str8(
+				Assert(extension.length > 0 && extension.buffer[-1] == '.');
+				String8 mdesk              = str8_skip_last_slash(info.name), // name of mdesk file
+				        folder             = str8_region(info.name.buffer, mdesk.buffer), // folder of source file including last slash
+				        mdesk_no_extension = str8_region(mdesk.buffer, extension.buffer), // filename without extension but including last '.' XXX var name
+					gen_file_upper     = upper_from_str8(
 						work_arena,
-						str8(filething.buffer, filething.length - 1)
+						str8(mdesk_no_extension.buffer, mdesk_no_extension.length - 1)
 					);
 
-				Assert(folder.length > 0 && char_is_slash(folder.buffer[folder.length - 1]) && filething.length > 0 && filething.buffer[filething.length - 1] == '.');
+				Assert(folder.length > 0 && char_is_slash(folder.buffer[folder.length - 1]) && mdesk_no_extension.length > 0 && mdesk_no_extension.buffer[mdesk_no_extension.length - 1] == '.');
 
 				U8 path_slash = folder.buffer[folder.length - 1];
 				// REVIEW: with above?
@@ -126,7 +126,7 @@ internal void entry_point(void)
 						folder,
 						gen_folder_name,
 						path_slash,
-						filething
+						mdesk_no_extension
 					),
 					generated_folder = str8(
 						gen_file.buffer,

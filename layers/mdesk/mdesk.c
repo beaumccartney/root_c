@@ -80,11 +80,11 @@ md_tokens_from_source(Arena *arena, String8 source)
 					{str8_lit_comp("data"),   MD_TokenKind_DirectiveData  },
 				};
 				do c++; while (c < one_past_last && (*c == '_' || char_is_alpha(*c)));
-				String8 lexeme = str8_region(tok_start + 1, c);
+				String8 directive_name = str8_region(tok_start + 1, c);
 				for EachElement(i, directive_table)
 				{
 					struct MD_Directive_StringToken_Map entry = directive_table[i];
-					if (str8_match(entry.string, lexeme, 0))
+					if (str8_match(entry.string, directive_name, 0))
 					{
 						token_kind = entry.token_kind;
 						goto break_lex_switch; // skip unknown directive error
