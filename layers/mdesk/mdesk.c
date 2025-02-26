@@ -78,7 +78,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 					{str8_lit_comp("table"),  MD_TokenKind_DirectiveTable },
 					{str8_lit_comp("enum"),   MD_TokenKind_DirectiveEnum  },
 					{str8_lit_comp("expand"), MD_TokenKind_DirectiveExpand},
-					{str8_lit_comp("data"),   MD_TokenKind_DirectiveData  },
+					{str8_lit_comp("array"),  MD_TokenKind_DirectiveArray },
 				};
 				do c++; while (c < one_past_last && (*c == '_' || char_is_alpha(*c)));
 				String8 directive_name = str8_region(tok_start + 1, c);
@@ -376,7 +376,7 @@ md_parse_root(MD_ParseState *parser)
 		switch (parser->token->kind)
 		{
 			case MD_TokenKind_DirectiveTable:
-			case MD_TokenKind_DirectiveData:
+			case MD_TokenKind_DirectiveArray:
 			case MD_TokenKind_DirectiveEnum: {
 				const local_persist MD_ASTKind
 				md_token_to_ast_kind_table[MD_TokenKind_COUNT] = {
@@ -386,15 +386,15 @@ md_parse_root(MD_ParseState *parser)
 					[MD_TokenKind_DirectiveTable ] = MD_ASTKind_DirectiveTable,
 					[MD_TokenKind_DirectiveEnum  ] = MD_ASTKind_DirectiveEnum,
 					[MD_TokenKind_DirectiveExpand] = MD_ASTKind_DirectiveExpand,
-					[MD_TokenKind_DirectiveData  ] = MD_ASTKind_DirectiveData,
+					[MD_TokenKind_DirectiveArray ] = MD_ASTKind_DirectiveArray,
 					[MD_TokenKind_Ident          ] = MD_ASTKind_Ident,
 				};
 
 				MD_AST *global_directive_node = md_ast_push_child(parser->arena, root, md_token_to_ast_kind_table[parser->token->kind]),
-				       *directive_ident_params = 0; // ident list for @table and @data
+				       *directive_ident_params = 0; // ident list for @table and @array
 				global_directive_node->token = parser->token;
-				// REVIEW: allow integer lengths for @data?
-				if (global_directive_node->kind == MD_ASTKind_DirectiveTable || global_directive_node->kind == MD_ASTKind_DirectiveData)
+				// REVIEW: allow integer lengths for @array?
+				if (global_directive_node->kind == MD_ASTKind_DirectiveTable || global_directive_node->kind == MD_ASTKind_DirectiveArray)
 				{
 					if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenParen)
 					{
@@ -583,7 +583,7 @@ md_parse_root(MD_ParseState *parser)
 						}
 					}
 				}
-				else if (global_directive_node->kind == MD_ASTKind_DirectiveData && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
+				else if (global_directive_node->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
 				{
 					md_messagelist_push(
 						parser->arena,
@@ -593,7 +593,7 @@ md_parse_root(MD_ParseState *parser)
 						MD_MessageKind_Error,
 						push_str8f(
 							parser->arena,
-							"incorrect number of parameters for @data directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
+							"incorrect number of parameters for @array directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
 							directive_name->token->source
 						),
 						0, // REVIEW
@@ -722,9 +722,9 @@ md_parse_root(MD_ParseState *parser)
 							}
 						}
 					} break;
-					case MD_ASTKind_DirectiveData:
+					case MD_ASTKind_DirectiveArray:
 					case MD_ASTKind_DirectiveEnum: {
-						Assert(global_directive_node->kind == MD_ASTKind_DirectiveData || global_directive_node->kind == MD_ASTKind_DirectiveEnum);
+						Assert(global_directive_node->kind == MD_ASTKind_DirectiveArray || global_directive_node->kind == MD_ASTKind_DirectiveEnum);
 						while (parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 						{
 							switch (parser->token->kind)
@@ -913,7 +913,7 @@ md_parse_root(MD_ParseState *parser)
 					parser->source,
 					parser->token->source.buffer,
 					MD_MessageKind_FatalError,
-					push_str8f(parser->arena, "only @enum, @table, or @data allowed at global scope, got '%S'", parser->token->source),
+					push_str8f(parser->arena, "only @enum, @table, or @Array allowed at global scope, got '%S'", parser->token->source),
 					parser->token,
 					0
 				);
@@ -958,10 +958,10 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 				String8Array table_matrix = str8_array_from_list(arena, table_elems);
 				table_symbol->table_record.elem_matrix = table_matrix.v;
 			} break;
-			case MD_ASTKind_DirectiveData:
+			case MD_ASTKind_DirectiveArray:
 			case MD_ASTKind_DirectiveEnum: {
 				MD_AST *global_directive_child = global_directive->first->next;
-				if (global_directive->kind == MD_ASTKind_DirectiveData)
+				if (global_directive->kind == MD_ASTKind_DirectiveArray)
 					global_directive_child = global_directive_child->next;
 				else
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEnum);
@@ -976,7 +976,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 					MD_SymbolTableEntry *target_symbol = md_symbol_from_ident(0, &stab, expand_arg->token->source);
 					if (!target_symbol || target_symbol->ast->kind != MD_ASTKind_DirectiveTable)
 					{
-						Assert(!target_symbol || target_symbol->ast->kind == MD_ASTKind_DirectiveData || target_symbol->ast->kind == MD_ASTKind_DirectiveEnum);
+						Assert(!target_symbol || target_symbol->ast->kind == MD_ASTKind_DirectiveArray || target_symbol->ast->kind == MD_ASTKind_DirectiveEnum);
 						char* format = target_symbol
 							? "@expand-ing a non-@table symbol '%S'"
 							: "@expand-ing an undefined symbol '%S'";

@@ -23,7 +23,7 @@ os_key_table
 	"OS_Key_RightBracket = OS_Key_RBracket,"
 }
 
-@data(String8 OS_Key_COUNT)
+@array(String8 OS_Key_COUNT)
 os_key_strings
 {
 	@expand(os_key_table "[%] = %," name string)

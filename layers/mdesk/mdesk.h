@@ -20,7 +20,7 @@ typedef enum
 	MD_TokenKind_DirectiveTable,
 	MD_TokenKind_DirectiveEnum,
 	MD_TokenKind_DirectiveExpand,
-	MD_TokenKind_DirectiveData,
+	MD_TokenKind_DirectiveArray,
 	MD_TokenKind_Ident,
 	MD_TokenKind_COUNT,
 } MD_TokenKind;
@@ -111,7 +111,7 @@ typedef enum
 	MD_ASTKind_DirectiveExpand,
 	MD_ASTKind_DirectiveFormat,
 	MD_ASTKind_DirectiveExists,
-	MD_ASTKind_DirectiveData,
+	MD_ASTKind_DirectiveArray,
 
 	// REVIEW: one list kind with flags for allowed node kinds?
 	MD_ASTKind_IdentList,

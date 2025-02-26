@@ -14,7 +14,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 	{
 		switch (global_directive->kind)
 		{
-			case MD_ASTKind_DirectiveData:
+			case MD_ASTKind_DirectiveArray:
 			case MD_ASTKind_DirectiveEnum: {
 				MD_AST *directive_child = global_directive->first;
 				String8List *target_file = 0;
@@ -34,7 +34,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				{
 					target_file = &c_file;
 					Assert(
-						  global_directive->kind == MD_ASTKind_DirectiveData
+						  global_directive->kind == MD_ASTKind_DirectiveArray
 						&& directive_child->kind == MD_ASTKind_IdentList
 						&& 0 < directive_child->children_count
 						&& directive_child->children_count <= 2
