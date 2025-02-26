@@ -1,16 +1,3 @@
-internal inline void
-mg_print_message_push(Arena *arena, String8List *print_messages, String8 message_string, String8 filename)
-{
-	String8Node *pushed = str8_list_pushf(
-		arena,
-		print_messages,
-		"%S%S",
-		filename,
-		message_string
-	);
-	Unused(pushed);
-}
-
 // REVIEW: move to mdesk - useful functionality to include with the file format in general
 internal MG_GenResult
 mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source)

@@ -19,16 +19,9 @@ internal void entry_point(void)
 	Arena *iter_arena = arena_default,
 	      *work_arena = arena_default;
 
-	String8List print_messages = zero_struct;
-
 	// <project root>/build/.. i.e. project root
 	String8 search_root = str8_chop_last_slash(g_os_state.process_info.exe_folder);
-	str8_list_pushf(
-		iter_arena,
-		&print_messages,
-		"searching '%S'\n",
-		search_root
-	);
+	printf("searching '%.*s'\n\n", str8_varg(search_root));
 	OS_FileIter *iter = os_file_iter_begin(
 		iter_arena,
 		search_root,
@@ -50,31 +43,22 @@ internal void entry_point(void)
 		{
 			if (info.name.length == extension.length + 1) // file has no name before .?
 			{
-				str8_list_pushf(
-					iter_arena,
-					&print_messages,
-					"warning: file '%S' has no name before '.' - skipping",
-					info.name
-				);
+				fprintf(stderr, "warning: file '%.*s' has no name before '.' - skipping\n", str8_varg(info.name));
 				goto work_cleanup;
 			}
 
 			String8 source = os_data_from_file_path(work_arena, info.name);
 			if (is_meta)
 			{
-				str8_list_pushf(
-					iter_arena,
-					&print_messages,
-					"processing mdesk file '%S'",
-					info.name
-				);
+				#define mg_print_message(f, m) fprintf(stderr, "%.*s%.*s\n", str8_varg(f), str8_varg((m)->string))
+				printf("processing mdesk file '%.*s'\n", str8_varg(info.name));
 
 				MD_TokenizeResult tokenize = md_tokens_from_source(work_arena, source);
 
 				for (MD_Message *m = tokenize.messages.first; m != 0; m = m->next)
 				{
 					m->token = &tokenize.tokens.tokens[m->tokens_ix]; // XXX: nothing is done with the token ix
-					mg_print_message_push(iter_arena, &print_messages, m->string, info.name);
+					mg_print_message(info.name, m);
 				}
 
 				if (tokenize.messages.worst_message >= MD_MessageKind_Error)
@@ -87,7 +71,7 @@ internal void entry_point(void)
 				);
 
 				for (MD_Message *m = parsed.messages.first; m != 0; m = m->next)
-					mg_print_message_push(iter_arena, &print_messages, m->string, info.name);
+					mg_print_message(info.name, m);
 
 				if (parsed.messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
@@ -101,7 +85,7 @@ internal void entry_point(void)
 				);
 
 				for (MD_Message *m = check_messages.first; m != 0; m = m->next)
-					mg_print_message_push(iter_arena, &print_messages, m->string, info.name);
+					mg_print_message(info.name, m);
 
 				if (check_messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
@@ -109,7 +93,7 @@ internal void entry_point(void)
 				MG_GenResult generated = mg_generate_from_checked(work_arena, parsed.root, parsed.global_stab, source);
 
 				for (MD_Message *m = generated.messages.first; m != 0; m = m->next)
-					mg_print_message_push(iter_arena, &print_messages, m->string, info.name);
+					mg_print_message(info.name, m);
 
 				if (generated.messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
@@ -177,12 +161,7 @@ internal void entry_point(void)
 
 				goto work_cleanup; // skip fail message
 				meta_fail:;
-				str8_list_pushf(
-					iter_arena,
-					&print_messages,
-					"%S: failed to process mdesk file, skipping",
-					info.name
-				);
+				fprintf(stderr, "%.*s: failed to process mdesk file, skipping", str8_varg(info.name));
 			}
 			else // is_c_lang
 			{
@@ -194,16 +173,6 @@ internal void entry_point(void)
 		}
 	}
 	os_file_iter_end(iter);
-
-	StringJoin params = {
-		.sep = str8_lit("\n"),
-	};
-	String8 print_string = str8_list_join(
-		iter_arena,
-		print_messages,
-		&params
-	);
-	fprintf(stderr, "%.*s", str8_varg(print_string));
 
 	arena_release(iter_arena);
 	arena_release(work_arena);
