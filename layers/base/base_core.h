@@ -118,6 +118,7 @@
 #endif
 #define NotImplemented Assert(!(char *)"Not implemented!");
 
+// REVIEW: remove the optimization thing?
 #if BUILD_DEBUG
 	#define Unreachable AssertAlways(!(char *)"Unreachable!");
 #else

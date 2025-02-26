@@ -5,7 +5,7 @@ typedef struct MG_GenResult MG_GenResult;
 struct MG_GenResult
 {
 	String8 h_file,
-		c_file; // REVIEW: use static for vars and put everything in header files?
+		c_file;
 	MD_MessageList messages;
 };
 

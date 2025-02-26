@@ -129,7 +129,7 @@ struct MD_AST
 	       *last, // children
 	       *parent; // to traverse the tree iteratively (i.e. without procedure recursion)
 	U64 children_count;
-	MD_Token *token;
+	MD_Token *token; // REVIEW: just the token string instead? or the string containing the entire tree?
 	MD_ASTKind kind;
 };
 

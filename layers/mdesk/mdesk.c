@@ -73,6 +73,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 					String8 string;
 					MD_TokenKind token_kind;
 				};
+				// REVIEW: if this gets large, some kind of hash table?
 				const local_persist MD_Directive_StringToken_Map directive_table[] = {
 					{str8_lit_comp("table"),  MD_TokenKind_DirectiveTable },
 					{str8_lit_comp("enum"),   MD_TokenKind_DirectiveEnum  },

@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 
+// REVIEW XXX: enforce ordering of prints to stdout and stderr relative to each other? fflush()
 internal void entry_point(void)
 {
 	Arena *iter_arena = arena_default,
