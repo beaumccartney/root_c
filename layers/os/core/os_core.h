@@ -4,11 +4,25 @@
 #ifndef OS_CORE_H
 #define OS_CORE_H
 
-typedef struct OS_SystemInfo OS_SystemInfo;
-struct OS_SystemInfo
+typedef struct OS_State OS_State; // REVIEW: name
+struct OS_State
 {
-	U64 page_size;
+	Arena *arena; // REVIEW
+	struct
+	{
+		U64 page_size;
+	} system_info;
+	struct
+	{
+		// TODO:
+		//  pid
+		//  env vars
+		String8 exe_folder, // REVIEW: include exe name?
+			initial_working_directory;
+	} process_info;
 };
+
+global OS_State g_os_state = zero_struct; // REVIEW: other compile units? perhaps extern and !BUILD_SUPPLEMENTARY_UNIT decl in os_core.c file
 
 typedef U32 OS_AccessFlags;
 enum
@@ -64,9 +78,6 @@ struct OS_Handle
 
 typedef void OS_ThreadFunctionType(void *ptr);
 
-// TODO(beau): initialize in the platform entry point and either return a pointer to that here or just define a global exposed by each header here
-internal OS_SystemInfo os_get_system_info(void);
-
 internal void *os_vmem_reserve(U64 size);
 internal B32   os_vmem_commit(void *ptr, U64 size);
 internal void  os_vmem_decommit(void *ptr, U64 size);
@@ -102,6 +113,7 @@ internal void         os_file_iter_end(OS_FileIter *iter);
 
 internal B32 os_create_folder(String8 path);
 
+internal String8 os_get_current_folder(Arena *arena);
 internal void os_set_thread_name(String8 name);
 
 internal OS_Handle os_thread_launch(OS_ThreadFunctionType *func, void *params);

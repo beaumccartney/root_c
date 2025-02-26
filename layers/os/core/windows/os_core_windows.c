@@ -73,18 +73,6 @@ os_windows_file_iter_push(OS_FileIter *iter, U64 path_length)
 	windows_iter->working_path[result->dirname_length] = 0;
 }
 
-internal OS_SystemInfo os_get_system_info(void)
-{
-	SYSTEM_INFO info = zero_struct;
-	GetSystemInfo(&info);
-
-	OS_SystemInfo result = {
-		.page_size = info.dwPageSize,
-	};
-
-	return result;
-}
-
 internal void *os_vmem_reserve(U64 size)
 {
 	return VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
@@ -437,6 +425,17 @@ internal B32 os_create_folder(String8 path)
 	scratch_end(scratch);
 	return result;
 }
+
+internal String8 os_get_current_folder(Arena *arena)
+{
+	Temp scratch   = scratch_begin(&arena, 1);
+	DWORD length   = GetCurrentDirectoryW(0, 0);
+	U16 *buffer    = push_array_no_zero(scratch.arena, U16, length + 1);
+	length         = GetCurrentDirectoryW(length + 1, (WCHAR*)buffer);
+	String8 result = str8_from_16(arena, str16(buffer, length));
+	scratch_end(scratch);
+	return result;
+}
 internal void os_set_thread_name(String8 name)
 {
 	Temp scratch = scratch_begin(0, 0);
@@ -447,8 +446,36 @@ internal void os_set_thread_name(String8 name)
 
 internal void windows_entry_point_caller(int args_count, char *args[])
 {
+	// needed for arenas
+	SYSTEM_INFO system_info = zero_struct;
+	GetSystemInfo(&system_info);
+	g_os_state.system_info.page_size = system_info.dwPageSize;
+
 	local_persist TCTX tctx;
 	tctx_init_and_equip(&tctx);
+
+	g_os_state.arena = arena_alloc(MB(1), KB(32));
+
+	g_os_state.process_info.initial_working_directory = os_get_current_folder(g_os_state.arena);
+	{
+		Temp scratch = scratch_begin(0, 0);
+
+		DWORD guess = KB(16);
+		LPWSTR buffer = push_array_no_zero(scratch.arena, WCHAR, guess);
+		DWORD length = GetModuleFileNameW(
+			0,
+			buffer,
+			guess
+		);
+		Assert(length < guess);
+		String16 exe_path16 = str16(buffer, length);
+		String8 exe_path = str8_from_16(g_os_state.arena, exe_path16);
+		g_os_state.process_info.exe_folder = str8_chop_last_slash(exe_path);
+		g_os_state.process_info.initial_working_directory = os_get_current_folder(g_os_state.arena);
+
+		scratch_end(scratch);
+	}
+
 	main_thread_base_entry_point(args_count, args);
 	tctx_release();
 }

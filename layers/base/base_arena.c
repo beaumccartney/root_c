@@ -7,11 +7,10 @@
 internal Arena *
 arena_alloc(U64 min_reserve_size, U64 min_commit_size)
 {
-	Assert(min_commit_size <= min_reserve_size);
-	OS_SystemInfo info = os_get_system_info();
+	Assert(min_commit_size <= min_reserve_size && g_os_state.system_info.page_size > 0);
 
-	U64 reserve = AlignPow2(min_reserve_size, info.page_size),
-	    commit  = AlignPow2(min_commit_size, info.page_size);
+	U64 reserve = AlignPow2(min_reserve_size, g_os_state.system_info.page_size),
+	    commit  = AlignPow2(min_commit_size, g_os_state.system_info.page_size);
 	void *base  = os_vmem_reserve(reserve);
 	B32 status  = os_vmem_commit(base, commit);
 	Assert(status);
@@ -45,10 +44,8 @@ internal void *arena_push(Arena *arena, U64 size, U64 alignment)
 	AssertAlways(endpos <= arena->reserved);
 
 	if (endpos > arena->committed) {
-		OS_SystemInfo info = os_get_system_info();
-
 		U8 *commit_start  = arena->base + arena->committed;
-		U64 new_commitpos = AlignPow2(endpos, info.page_size),
+		U64 new_commitpos = AlignPow2(endpos, g_os_state.system_info.page_size),
 		    commit_size   = new_commitpos - arena->committed;
 		B32 status        = os_vmem_commit(commit_start, commit_size);
 		Assert(status);
