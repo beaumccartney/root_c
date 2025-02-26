@@ -281,7 +281,6 @@ md_tokens_from_source(Arena *arena, String8 source)
 				const global
 				MD_TokenKind single_char_tok_table[UINT8_MAX] = {
 					['_'] = MD_TokenKind_Underscore,
-					[','] = MD_TokenKind_Comma,
 					['.'] = MD_TokenKind_Period,
 					['('] = MD_TokenKind_OpenParen,
 					[')'] = MD_TokenKind_CloseParen,

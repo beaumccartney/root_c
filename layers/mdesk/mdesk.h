@@ -9,7 +9,6 @@ typedef enum
 {
 	MD_TokenKind_NULL = 0, // also denotes illegal characters
 	MD_TokenKind_Underscore,
-	MD_TokenKind_Comma, // REVIEW: is this even useful?
 	MD_TokenKind_Period,
 	MD_TokenKind_OpenParen,
 	MD_TokenKind_CloseParen,
