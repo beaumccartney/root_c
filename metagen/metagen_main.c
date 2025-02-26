@@ -162,6 +162,7 @@ internal void entry_point(void)
 				goto work_cleanup; // skip fail message
 				meta_fail:;
 				fprintf(stderr, "%.*s: failed to process mdesk file, skipping", str8_varg(info.name));
+				#undef mg_print_message
 			}
 			else // is_c_lang
 			{
