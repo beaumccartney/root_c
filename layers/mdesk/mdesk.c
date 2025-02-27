@@ -408,11 +408,11 @@ md_parse_root(MD_ParseState *parser)
 					[MD_TokenKind_Ident          ] = MD_ASTKind_Ident,
 				};
 
-				MD_AST *global_directive_node = md_ast_push_child(parser->arena, root, md_token_to_ast_kind_table[parser->token->kind]), // XXX rename to global_directive
+				MD_AST *global_directive = md_ast_push_child(parser->arena, root, md_token_to_ast_kind_table[parser->token->kind]), // XXX rename to global_directive
 				       *directive_ident_params = 0; // ident list for @table and @array
-				global_directive_node->token = parser->token;
+				global_directive->token = parser->token;
 				// REVIEW: allow integer lengths for @array?
-				if (global_directive_node->kind == MD_ASTKind_DirectiveTable || global_directive_node->kind == MD_ASTKind_DirectiveArray)
+				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
 				{
 					if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenParen)
 					{
@@ -427,16 +427,16 @@ md_parse_root(MD_ParseState *parser)
 							push_str8f(
 								parser->arena,
 								"expected '(' after %S",
-								global_directive_node->token->source
+								global_directive->token->source
 							),
 							parser->token,
-							global_directive_node
+							global_directive
 						);
 						goto break_parse_outer_loop;
 					}
 					directive_ident_params = md_ast_push_child(
 						parser->arena,
-						global_directive_node,
+						global_directive,
 						MD_ASTKind_IdentList
 					);
 					while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
@@ -452,11 +452,11 @@ md_parse_root(MD_ParseState *parser)
 								push_str8f(
 									parser->arena,
 									"non-ident argument to %S directive: '%S' - perhaps a closing ')' is missing?", // REVIEW: better message
-									global_directive_node->token->source,
+									global_directive->token->source,
 									parser->token->source
 								),
 								parser->token,
-								global_directive_node
+								global_directive
 							);
 							goto break_parse_outer_loop;
 						}
@@ -478,10 +478,10 @@ md_parse_root(MD_ParseState *parser)
 							push_str8f(
 								parser->arena,
 								"unclosed argument list for %S - missing ')'",
-								global_directive_node->token->source
+								global_directive->token->source
 							),
 							parser->token,
-							global_directive_node
+							global_directive
 						);
 						goto break_parse_outer_loop;
 					}
@@ -491,19 +491,19 @@ md_parse_root(MD_ParseState *parser)
 				// for directives with name onlyamed?
 				MD_SymbolTableEntry *directive_symbol = 0;
 				MD_AST *directive_name = 0;
-				switch (global_directive_node->kind) // check for name on directive
+				switch (global_directive->kind) // check for name on directive
 				{
 					case MD_ASTKind_DirectiveTable:
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
-						Assert(global_directive_node->kind != MD_ASTKind_DirectiveStruct); // not implemented
+						Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 						if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_Ident)
 						{
 							String8 message_str = push_str8f(
 								parser->arena,
 								"missing name for %S directive",
-								global_directive_node->token->source
+								global_directive->token->source
 							);
 							md_messagelist_push(
 								parser->arena,
@@ -515,14 +515,14 @@ md_parse_root(MD_ParseState *parser)
 								MD_MessageKind_FatalError,
 								message_str,
 								parser->token,
-								global_directive_node
+								global_directive
 							);
 							goto break_parse_outer_loop;
 						}
 
 						directive_name = md_ast_push_child(
 							parser->arena,
-							global_directive_node,
+							global_directive,
 							MD_ASTKind_Ident
 						);
 						directive_name->token = parser->token;
@@ -550,15 +550,15 @@ md_parse_root(MD_ParseState *parser)
 									directive_name->token->source
 								),
 								directive_name->token,
-								global_directive_node // REVIEW: the directive_name instead?
+								global_directive // REVIEW: the directive_name instead?
 							);
 							goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
 						}
-						directive_symbol->ast = global_directive_node;
+						directive_symbol->ast = global_directive;
 
 					} break;
 				}
-				if (global_directive_node->kind == MD_ASTKind_DirectiveTable)
+				if (global_directive->kind == MD_ASTKind_DirectiveTable)
 				{
 					directive_symbol->table_record.num_cols = directive_ident_params->children_count;
 					if (directive_symbol->table_record.num_cols < 1)
@@ -567,7 +567,7 @@ md_parse_root(MD_ParseState *parser)
 							parser->arena,
 							parser->messages,
 							parser->source,
-							global_directive_node->token->source.buffer,
+							global_directive->token->source.buffer,
 							MD_MessageKind_Warning,
 							push_str8f(
 								parser->arena,
@@ -575,7 +575,7 @@ md_parse_root(MD_ParseState *parser)
 								directive_name->token->source
 							),
 							0, // REVIEW
-							global_directive_node
+							global_directive
 						);
 					}
 					else
@@ -604,7 +604,7 @@ md_parse_root(MD_ParseState *parser)
 										directive_name->token->source
 									),
 									column->token,
-									global_directive_node // REVIEW: ast of the name itself?
+									global_directive // REVIEW: ast of the name itself?
 								);
 							}
 							else
@@ -615,13 +615,13 @@ md_parse_root(MD_ParseState *parser)
 						}
 					}
 				}
-				else if (global_directive_node->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
+				else if (global_directive->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
 				{
 					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						parser->source,
-						global_directive_node->token->source.buffer,
+						global_directive->token->source.buffer,
 						MD_MessageKind_Error,
 						push_str8f(
 							parser->arena,
@@ -629,7 +629,7 @@ md_parse_root(MD_ParseState *parser)
 							directive_name->token->source
 						),
 						0, // REVIEW
-						global_directive_node
+						global_directive
 					);
 				}
 
@@ -646,16 +646,16 @@ md_parse_root(MD_ParseState *parser)
 						push_str8f(
 							parser->arena,
 							"%S directive missing missing opening '{'",
-							global_directive_node->token->source
+							global_directive->token->source
 						),
 						parser->token,
-						global_directive_node
+						global_directive
 					);
 					goto break_parse_outer_loop;
 				}
-				U64 children_before_body = global_directive_node->children_count; // REVIEW: body ast to hold the children count?
+				U64 children_before_body = global_directive->children_count; // REVIEW: body ast to hold the children count?
 				parser->token++;
-				switch (global_directive_node->kind)
+				switch (global_directive->kind)
 				{
 					case MD_ASTKind_DirectiveTable: {
 						for (; parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace; parser->token++)
@@ -670,11 +670,11 @@ md_parse_root(MD_ParseState *parser)
 									MD_MessageKind_FatalError,
 									str8_lit("expected '{' to open @table's row"),
 									parser->token,
-									global_directive_node
+									global_directive
 								);
 								goto break_parse_outer_loop;
 							}
-							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_TableRow);
+							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_TableRow);
 							table_row->token = parser->token; // location if there's an error
 							while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 							{
@@ -717,7 +717,7 @@ md_parse_root(MD_ParseState *parser)
 									MD_MessageKind_FatalError,
 									str8_lit("expected '}' to close @table's row"),
 									parser->token,
-									global_directive_node
+									global_directive
 								);
 								goto break_parse_outer_loop;
 							}
@@ -758,19 +758,19 @@ md_parse_root(MD_ParseState *parser)
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
-						Assert(global_directive_node->kind != MD_ASTKind_DirectiveStruct); // not implemented
+						Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 						while (parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 						{
 							switch (parser->token->kind)
 							{
 								case MD_TokenKind_StringLit: {
-									MD_AST *string = md_ast_push_child(parser->arena, global_directive_node, MD_ASTKind_StringLit);
+									MD_AST *string = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_StringLit);
 									string->token = parser->token++;
 								} break;
 								case MD_TokenKind_DirectiveExpand: {
 									MD_AST *directive_expand = md_ast_push_child(
 										parser->arena,
-										global_directive_node,
+										global_directive,
 										MD_ASTKind_DirectiveExpand
 									);
 									directive_expand->token = parser->token;
@@ -881,11 +881,11 @@ md_parse_root(MD_ParseState *parser)
 										push_str8f(
 											parser->arena,
 											"expected string literal or @expand for entry in %S, got '%S'",
-											global_directive_node->token->source,
+											global_directive->token->source,
 											parser->token->source
 										),
 										parser->token,
-										global_directive_node // REVIEW: push the token instead of the AST?
+										global_directive // REVIEW: push the token instead of the AST?
 									);
 									goto break_parse_outer_loop;
 								} break;
@@ -908,30 +908,30 @@ md_parse_root(MD_ParseState *parser)
 						MD_MessageKind_FatalError,
 						push_str8f(parser->arena, "%S directive missing closing '}'", parser->token->source),
 						parser->token,
-						global_directive_node
+						global_directive
 					);
 					goto break_parse_outer_loop;
 				}
-				Assert(global_directive_node->children_count >= children_before_body);
+				Assert(global_directive->children_count >= children_before_body);
 
-				if (global_directive_node->kind == MD_ASTKind_DirectiveTable)
-					directive_symbol->table_record.num_rows = global_directive_node->children_count - children_before_body;
+				if (global_directive->kind == MD_ASTKind_DirectiveTable)
+					directive_symbol->table_record.num_rows = global_directive->children_count - children_before_body;
 
-				if (children_before_body == global_directive_node->children_count)
+				if (children_before_body == global_directive->children_count)
 				{
 					md_messagelist_push(
 						parser->arena,
 						parser->messages,
 						parser->source,
-						global_directive_node->token->source.buffer,
+						global_directive->token->source.buffer,
 						MD_MessageKind_Warning,
 						push_str8f(
 							parser->arena,
 							"empty %S directive",
-							global_directive_node->token->source
+							global_directive->token->source
 						),
 						0, // REVIEW
-						global_directive_node
+						global_directive
 					);
 				}
 				parser->token++;
