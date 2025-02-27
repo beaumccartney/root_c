@@ -28,3 +28,13 @@ os_key_strings
 {
 	@expand(os_key_table "[%] = str8_lit_comp(%)," name string)
 }
+
+@gen_c
+{
+	@expand(os_key_table "/*name: %, string: %*/" name string)
+}
+
+@gen_h
+{
+	@expand(os_key_table "/*name: %, num: %*/" name val)
+}

@@ -14,80 +14,105 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 	{
 		switch (global_directive->kind)
 		{
-			case MD_ASTKind_DirectiveArray:
-			case MD_ASTKind_DirectiveEnum: {
+			case MD_ASTKind_DirectiveGenH:
+			case MD_ASTKind_DirectiveGenC:
+			case MD_ASTKind_DirectiveEnum:
+			case MD_ASTKind_DirectiveStruct:
+			case MD_ASTKind_DirectiveArray: {
+				Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 				MD_AST *directive_child = global_directive->first;
 				String8List *target_file = 0;
-				String8 enum_name = zero_struct; // 0 if not @enum
-				if (global_directive->kind == MD_ASTKind_DirectiveEnum)
+				String8 enum_name = zero_struct; // 0 if not @enum // TODO: type name for enum and struct
+				switch (global_directive->kind)
 				{
-					target_file = &h_file_enums;
-					Assert(directive_child->kind == MD_ASTKind_Ident);
-					enum_name = push_str8f(
-						scratch.arena,
-						" %S",
-						directive_child->token->source
-					);
-					str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
+					case MD_ASTKind_DirectiveGenH: {
+						target_file = &h_file_enums; // REVIEW:
+					} break;
+					case MD_ASTKind_DirectiveGenC: {
+						target_file = &c_file; // REVIEW:
+					} break;
+					case MD_ASTKind_DirectiveEnum: {
+						target_file = &h_file_enums;
+						Assert(directive_child->kind == MD_ASTKind_Ident);
+						enum_name = push_str8f(
+							scratch.arena,
+							" %S",
+							directive_child->token->source
+						);
+						str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
+					} break;
+					case MD_ASTKind_DirectiveStruct: {
+						NotImplemented;
+					} break;
+					case MD_ASTKind_DirectiveArray: {
+						target_file = &c_file;
+						Assert(
+							  global_directive->kind == MD_ASTKind_DirectiveArray
+							&& directive_child->kind == MD_ASTKind_IdentList
+							&& 0 < directive_child->children_count
+							&& directive_child->children_count <= 2
+							&& directive_child->first->kind == MD_ASTKind_Ident);
+						String8 type = directive_child->first->token->source,
+							array_count = zero_struct,
+							name = zero_struct;
+
+						if (directive_child->children_count == 2)
+						{
+							Assert(directive_child->last->kind == MD_ASTKind_Ident);
+							array_count = directive_child->last->token->source;
+						}
+
+						directive_child = directive_child->next;
+						Assert(directive_child->kind == MD_ASTKind_Ident);
+						name = directive_child->token->source;
+
+						String8 common_arr_decl = push_str8f(
+							scratch.arena,
+							"const %S %S[%S]",
+							type,
+							name,
+							array_count
+						);
+
+						// REVIEW:
+						//  is extern needed?
+						//  static? put everything in header file?
+						str8_list_pushf(
+							scratch.arena,
+							&h_file_arrays,
+							"extern %S;",
+							common_arr_decl
+						);
+
+						str8_list_push(
+							scratch.arena,
+							&c_file,
+							push_str8f(
+								scratch.arena,
+								"%S =",
+								common_arr_decl
+							)
+						);
+					} break;
+					default: {
+						Unreachable;
+					} break;
 				}
-				else
+				if (global_directive->kind != MD_ASTKind_DirectiveGenH && global_directive->kind != MD_ASTKind_DirectiveGenC)
 				{
-					target_file = &c_file;
-					Assert(
-						  global_directive->kind == MD_ASTKind_DirectiveArray
-						&& directive_child->kind == MD_ASTKind_IdentList
-						&& 0 < directive_child->children_count
-						&& directive_child->children_count <= 2
-						&& directive_child->first->kind == MD_ASTKind_Ident);
-					String8 type = directive_child->first->token->source,
-						array_count = zero_struct,
-						name = zero_struct;
-
-					if (directive_child->children_count == 2)
-					{
-						Assert(directive_child->last->kind == MD_ASTKind_Ident);
-						array_count = directive_child->last->token->source;
-					}
-
-					directive_child = directive_child->next;
-					Assert(directive_child->kind == MD_ASTKind_Ident);
-					name = directive_child->token->source;
-
-					String8 common_arr_decl = push_str8f(
-						scratch.arena,
-						"const %S %S[%S]",
-						type,
-						name,
-						array_count
-					);
-
-					// REVIEW:
-					//  is extern needed?
-					//  static? put everything in header file?
-					str8_list_pushf(
-						scratch.arena,
-						&h_file_arrays,
-						"extern %S;",
-						common_arr_decl
-					);
-
+					Assert(global_directive->kind == MD_ASTKind_DirectiveEnum
+					    || global_directive->kind == MD_ASTKind_DirectiveStruct
+					    || global_directive->kind == MD_ASTKind_DirectiveArray);
 					str8_list_push(
 						scratch.arena,
-						&c_file,
-						push_str8f(
-							scratch.arena,
-							"%S =",
-							common_arr_decl
-						)
+						target_file,
+						str8_lit("{")
 					);
+					Assert(directive_child->kind = MD_ASTKind_Ident);
+					directive_child = directive_child->next; // advance past name
 				}
-				str8_list_push(
-					scratch.arena,
-					target_file,
-					str8_lit("{")
-				);
 
-				for (directive_child = directive_child->next; directive_child != 0; directive_child = directive_child->next)
+				for (; directive_child != 0; directive_child = directive_child->next)
 				{
 					Assert(directive_child->kind == MD_ASTKind_StringLit || directive_child->kind == MD_ASTKind_DirectiveExpand);
 
@@ -268,12 +293,22 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					}
 				}
 
-				str8_list_pushf(
-					scratch.arena,
-					target_file,
-					"}%S;\n\n",
-					enum_name
-				);
+				switch (global_directive->kind)
+				{
+					case MD_ASTKind_DirectiveGenH:
+					case MD_ASTKind_DirectiveGenC: break; // do nothing
+					case MD_ASTKind_DirectiveStruct:
+					case MD_ASTKind_DirectiveArray:
+					case MD_ASTKind_DirectiveEnum: {
+						str8_list_pushf(
+							scratch.arena,
+							target_file,
+							"}%S;\n\n",
+							enum_name
+						);
+					} break;
+				}
+
 			} break;
 			case MD_ASTKind_DirectiveTable: {
 				// do nothing
