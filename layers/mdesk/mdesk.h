@@ -211,7 +211,7 @@ internal MD_MessageList
 md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 source);
 
 internal MD_AST*
-md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind);
+md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind, MD_Token *token);
 
 internal inline MD_Message*
 md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source, U8* source_loc, MD_MessageKind kind, String8 string);

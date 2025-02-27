@@ -428,9 +428,8 @@ md_parse_root(MD_ParseState *parser)
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveStruct:
 			case MD_ASTKind_DirectiveArray: {
-				MD_AST *global_directive = md_ast_push_child(parser->arena, root, global_directive_kind),
+				MD_AST *global_directive = md_ast_push_child(parser->arena, root, global_directive_kind, parser->token),
 				       *directive_ident_params = 0; // ident list for @table and @array
-				global_directive->token = parser->token;
 				// REVIEW: allow integer lengths for @array?
 				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
 				{
@@ -457,7 +456,8 @@ md_parse_root(MD_ParseState *parser)
 					directive_ident_params = md_ast_push_child(
 						parser->arena,
 						global_directive,
-						MD_ASTKind_IdentList
+						MD_ASTKind_IdentList,
+						parser->token
 					);
 					while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
 					{
@@ -483,9 +483,10 @@ md_parse_root(MD_ParseState *parser)
 						MD_AST *ident_node = md_ast_push_child(
 							parser->arena,
 							directive_ident_params,
-							MD_ASTKind_Ident
+							MD_ASTKind_Ident,
+							parser->token
 						);
-						ident_node->token = parser->token;
+						Unused(ident_node);
 					}
 					if (parser->token == parser->tokens_one_past_last)
 					{
@@ -541,9 +542,9 @@ md_parse_root(MD_ParseState *parser)
 						MD_AST *directive_name = md_ast_push_child(
 							parser->arena,
 							global_directive,
-							MD_ASTKind_Ident
+							MD_ASTKind_Ident,
+							parser->token
 						);
-						directive_name->token = parser->token;
 						directive_symbol = md_symbol_from_ident(
 							parser->arena,
 							parser->global_stab,
@@ -691,10 +692,11 @@ md_parse_root(MD_ParseState *parser)
 						MD_AST *string_child = md_ast_push_child(
 							parser->arena,
 							global_directive,
-							ast_kind
+							ast_kind,
+							parser->token
 						);
-						string_child->token = parser->token;
 						Assert(global_directive->children_count == 2); // name and string
+						Unused(string_child);
 						parser->token++;
 					}
 					break;
@@ -741,8 +743,7 @@ md_parse_root(MD_ParseState *parser)
 								);
 								goto break_parse_outer_loop;
 							}
-							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_TableRow);
-							table_row->token = parser->token; // location if there's an error
+							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_TableRow, parser->token);
 							while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 							{
 								MD_ASTKind kind = md_token_to_ast_kind_table[parser->token->kind];
@@ -752,8 +753,8 @@ md_parse_root(MD_ParseState *parser)
 									case MD_ASTKind_FloatLit:
 									case MD_ASTKind_StringLit:
 									case MD_ASTKind_Ident: {
-										MD_AST *table_entry = md_ast_push_child(parser->arena, table_row, kind);
-										table_entry->token = parser->token;
+										MD_AST *table_entry = md_ast_push_child(parser->arena, table_row, kind, parser->token);
+										Unused(table_entry);
 									} break;
 									default: {
 										md_messagelist_push(
@@ -830,16 +831,17 @@ md_parse_root(MD_ParseState *parser)
 							switch (parser->token->kind)
 							{
 								case MD_TokenKind_StringLit: {
-									MD_AST *string = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_StringLit);
-									string->token = parser->token++;
+									MD_AST *string = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_StringLit, parser->token);
+									Unused(string);
+									parser->token++;
 								} break;
 								case MD_TokenKind_DirectiveExpand: {
 									MD_AST *directive_expand = md_ast_push_child(
 										parser->arena,
 										global_directive,
-										MD_ASTKind_DirectiveExpand
+										MD_ASTKind_DirectiveExpand,
+										parser->token
 									);
-									directive_expand->token = parser->token;
 									if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenParen)
 									{
 										md_messagelist_push(
@@ -873,8 +875,8 @@ md_parse_root(MD_ParseState *parser)
 										goto break_parse_outer_loop;
 									}
 									{
-										MD_AST *expand_target = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident);
-										expand_target->token = parser->token;
+										MD_AST *expand_target = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident, parser->token);
+										Unused(expand_target);
 									}
 									if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_StringLit)
 									{
@@ -893,8 +895,8 @@ md_parse_root(MD_ParseState *parser)
 										goto break_parse_outer_loop;
 									}
 									{
-										MD_AST *format_string = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_StringLit);
-										format_string->token = parser->token;
+										MD_AST *format_string = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_StringLit, parser->token);
+										Unused(format_string);
 									}
 
 									while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
@@ -917,8 +919,8 @@ md_parse_root(MD_ParseState *parser)
 											);
 											continue;
 										}
-										MD_AST *format_arg = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident);
-										format_arg->token = parser->token;
+										MD_AST *format_arg = md_ast_push_child(parser->arena, directive_expand, MD_ASTKind_Ident, parser->token);
+										Unused(format_arg);
 									}
 
 									if (parser->token == parser->tokens_one_past_last)
@@ -1148,11 +1150,12 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 }
 
 internal MD_AST*
-md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind)
+md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind, MD_Token *token)
 {
 	MD_AST *result = push_array_no_zero(arena, MD_AST, 1);
 	*result = (MD_AST) {
-		.kind = kind,
+		.kind  = kind,
+		.token = token,
 	};
 	SLLQueuePush(parent->first, parent->last, result);
 	result->parent = parent;
