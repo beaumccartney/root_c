@@ -5,6 +5,10 @@
 // also line comments
 
 @embed_file embedded_file "scratch/embed.txt"
+@embed_string embedded_string
+"""
+asdf foo bar
+"""
 
 @table(name val string)
 os_key_table

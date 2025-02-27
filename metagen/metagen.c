@@ -35,8 +35,9 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString
 					    && child->kind            == MD_ASTKind_RawStringLit
 					    && child->token->kind     == MD_TokenKind_RawStringLit
+					    && gen_string.length      >= 6 // room for delimiting triple-quotes
 					);
-					// TODO: trim delimiters of raw string (don't forget newlines)
+					gen_string = str8_trim_whitespace(str8(gen_string.buffer + 3, gen_string.length - 6)); // trim delimiting """ and any whitespace
 				}
 
 				if (gen_string.length == 0)
@@ -115,9 +116,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					}
 					Assert(!(props.flags & FilePropertyFlag_IsFolder));
 					gen_string = os_string_from_file_range(scratch.arena, file, rng_1u64(0, props.size));
-				}
-				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
-				{
+
 					String8 bytes_varname = push_str8_cat(
 						scratch.arena,
 						embedded_varname,
@@ -173,8 +172,47 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				}
 				else
 				{
+					String8List lines = zero_struct;
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString);
-					NotImplemented;
+					str8_list_pushf(
+						scratch.arena,
+						&lines,
+						"const global String8 %S = str8_lit(\n",
+						embedded_varname
+					);
+					U8 *one_past_last = gen_string.buffer + gen_string.length;
+					for (U8 *line_begin = gen_string.buffer; line_begin < one_past_last; line_begin++)
+					{
+						str8_list_push(
+							scratch.arena,
+							&lines,
+							str8_lit("\"")
+						);
+						U8 *line_end = line_begin;
+						for (; line_end < one_past_last && *line_end != '\n'; line_end++);
+						String8 line = str8_region(line_begin, line_end);
+						String8Node *line_node = str8_list_pushf(
+							scratch.arena,
+							&lines,
+							"%S\"\n",
+							line
+						);
+						Unused(line_node); // inspect in debugger
+						line_begin = line_end;
+						if (line_begin != one_past_last)
+							line_begin++;
+					}
+					str8_list_push(
+						scratch.arena,
+						&lines,
+						str8_lit(");")
+					);
+					String8Node * embedded_cstring_lit = str8_list_push(
+						scratch.arena,
+						&h_file_embeds,
+						str8_list_join(scratch.arena, lines, 0) // XXX: remove once auto-newlines are gone
+					);
+					Unused(embedded_cstring_lit); // inspect in debugger
 				}
 			} break;
 			case MD_ASTKind_DirectiveGenH:
@@ -503,7 +541,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 	str8_list_concat_in_place(&h_file_enums, &h_file_embeds);
 	// REVIEW: right now there's two newlines after @expand contents, because of this, should I remove it?
 	StringJoin join = {
-		.sep = str8_lit("\n"),
+		.sep = str8_lit("\n"), // XXX: get rid of this its stupid
 	};
 	result.h_file = str8_list_join(arena, h_file_enums, &join);
 	result.c_file = str8_list_join(arena, c_file, &join);

@@ -694,7 +694,6 @@ md_parse_root(MD_ParseState *parser)
 							ast_kind
 						);
 						string_child->token = parser->token;
-						Unused(string_child);
 						Assert(global_directive->children_count == 2); // name and string
 						parser->token++;
 					}
