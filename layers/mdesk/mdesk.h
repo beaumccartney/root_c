@@ -17,6 +17,7 @@ typedef enum
 	MD_TokenKind_IntLit,
 	MD_TokenKind_FloatLit,
 	MD_TokenKind_StringLit,
+	MD_TokenKind_RawStringLit,
 
 	MD_TokenKind_DirectiveTable,
 
@@ -113,6 +114,7 @@ typedef enum
 	MD_ASTKind_IntLit,
 	MD_ASTKind_FloatLit,
 	MD_ASTKind_StringLit,
+	MD_ASTKind_RawStringLit,
 	MD_ASTKind_Ident,
 
 	MD_ASTKind_DirectiveTable,

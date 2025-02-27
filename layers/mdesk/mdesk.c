@@ -105,7 +105,14 @@ md_tokens_from_source(Arena *arena, String8 source)
 			case '"': {
 				// REVIEW: allowed characters?
 				token_kind = MD_TokenKind_StringLit;
-				while (++c < one_past_last && *c != '"')
+				String8 end_delim = str8_lit("\"");
+				if ((c + 1) != one_past_last && c[1] == '"' && (c + 2) != one_past_last && c[2] == '"')
+				{
+					token_kind = MD_TokenKind_RawStringLit;
+					end_delim = str8_lit("\"\"\"");
+					c += 2;
+				}
+				while (++c <= one_past_last - end_delim.length && !MemoryMatch(c, end_delim.buffer, end_delim.length))
 					if (*c == '\\') // just skip escaped characters
 					{
 						switch (*++c)
@@ -161,7 +168,12 @@ md_tokens_from_source(Arena *arena, String8 source)
 					message_string = str8_lit("broken string literal");
 				}
 				else
+				{
+					Assert(token_kind == MD_TokenKind_StringLit || token_kind == MD_TokenKind_RawStringLit);
 					c++;
+					if (token_kind == MD_TokenKind_RawStringLit)
+						c += 2; // skip the ending """
+				}
 			} break;
 			case 'A':
 			case 'B':
