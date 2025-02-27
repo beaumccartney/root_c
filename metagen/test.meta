@@ -4,6 +4,8 @@
 
 // also line comments
 
+@embed_file embedded_file "scratch/embed.txt"
+
 @table(name val string)
 os_key_table
 {

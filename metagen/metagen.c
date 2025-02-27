@@ -1,11 +1,12 @@
 // REVIEW: move to mdesk - useful functionality to include with the file format in general
 internal MG_GenResult
-mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source)
+mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source)
 {
 	MG_GenResult result = zero_struct;
 
 	String8List h_file_enums  = zero_struct,
 	            h_file_arrays = zero_struct, // arrays will always be put after enums so any ident lengths in the arrays are already declared
+	            h_file_embeds = zero_struct,
 	            c_file        = zero_struct;
 
 	Temp scratch = scratch_begin(&arena, 1);
@@ -14,6 +15,168 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 	{
 		switch (global_directive->kind)
 		{
+			case MD_ASTKind_DirectiveEmbedFile:
+			case MD_ASTKind_DirectiveEmbedString: {
+				MD_AST *child = global_directive->first;
+				Assert(child->kind == MD_ASTKind_Ident && child->token->kind == MD_TokenKind_Ident);
+				String8 embedded_varname = child->token->source;
+
+				child = child->next;
+				String8 gen_string = child->token->source;
+				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
+				{
+					Assert(child->kind        == MD_ASTKind_StringLit
+					    && child->token->kind == MD_TokenKind_StringLit
+					    && gen_string.length  >= 2); // string literals should have at least two quotes
+					gen_string = str8(gen_string.buffer + 1, gen_string.length - 2); // trim delmiting quotes
+				}
+				else
+				{
+					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString
+					    && child->kind            == MD_ASTKind_RawStringLit
+					    && child->token->kind     == MD_TokenKind_RawStringLit
+					);
+					// TODO: trim delimiters of raw string (don't forget newlines)
+				}
+
+				if (gen_string.length == 0)
+				{
+					md_messagelist_push(
+						arena,
+						&result.messages,
+						source,
+						gen_string.buffer,
+						MD_MessageKind_Warning,
+						push_str8f(
+							arena,
+							"empty argument to %S",
+							global_directive->token->source
+						),
+						child->token,
+						global_directive
+					);
+					break;
+				}
+
+				FileProperties props = zero_struct;
+				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
+				{
+					Assert(gen_string.length > 2 && gen_folder.length > 0); // REVIEW
+					// REVIEW: fix the slashes, possibly in a dedicated path_cat api
+					//  fix in gen_folder, and gen_string. gen_string is important because its provided by the user, so one slash should work everywhere
+					Assert(char_is_slash(gen_folder.buffer[gen_folder.length - 1]) && !char_is_slash(gen_string.buffer[0])); // folder ends in a slash and file doesn't begin with one
+					String8 filepath = push_str8_cat(
+						scratch.arena,
+						gen_folder,
+						gen_string
+					);
+					OS_Handle file = os_file_open(OS_AccessFlag_Read, filepath);
+
+					MD_MessageKind message_kind = MD_MessageKind_NULL;
+					char *message_format = 0; // if set MUST HAVE ONE FORMAT SPECIFIER %S
+					if (os_handle_match(file, os_handle_zero))
+					{
+						message_kind   = MD_MessageKind_Error; // REVIEW: should this stop codegen? perhaps have errors still proceed and fatal errors actually stop. if so then I'll need to do a small refactor to do that
+						message_format = "failed to open @embed_file target %S"; // REVIEW: better message
+					}
+					else
+					{
+						props = os_properties_from_file(file);
+						if (props.flags & FilePropertyFlag_IsFolder)
+						{
+							message_kind   = MD_MessageKind_Error; // REVIEW: should this stop codegen? same as above
+							message_format = "@embed_file target %S is a folder";
+						}
+						else if (props.size == 0)
+						{
+							message_kind   = MD_MessageKind_Warning;
+							message_format = "@embed_file target %S is empty";
+						}
+					}
+					if (message_kind != MD_MessageKind_NULL)
+					{
+						Assert(message_format);
+						md_messagelist_push(
+							arena,
+							&result.messages,
+							source,
+							child->token->source.buffer, // opening '"' of the string literal
+							message_kind,
+							push_str8f(
+								arena,
+								message_format,
+								filepath
+							),
+							child->token,
+							global_directive
+						);
+						if (message_kind >= MD_MessageKind_Error) // still generate data for empty files
+							break; // REVIEW: needed?
+					}
+					Assert(!(props.flags & FilePropertyFlag_IsFolder));
+					gen_string = os_string_from_file_range(scratch.arena, file, rng_1u64(0, props.size));
+				}
+				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
+				{
+					String8 bytes_varname = push_str8_cat(
+						scratch.arena,
+						embedded_varname,
+						str8_lit("__bytes")
+					);
+					str8_list_pushf(
+						scratch.arena,
+						&h_file_embeds,
+						"const global U8 %S[] =\n{",
+						bytes_varname
+					);
+					if (props.size > 0)
+					{
+						#define MG_BYTELIT_STRLEN 5 // strlen("0xXX,")
+						#define MG_BYTELITS_PER_LINE 40
+						Assert(props.size > 0);
+						U64 num_newlines = (props.size - 1) / MG_BYTELITS_PER_LINE;
+						String8 c_byte_lits = push_str8_nt(scratch.arena, props.size * MG_BYTELIT_STRLEN + num_newlines);
+						U8 *copy_target = c_byte_lits.buffer;
+						for (U8 *c = gen_string.buffer, *one_past_last = gen_string.buffer + gen_string.length; c < one_past_last; c++)
+						{
+							*copy_target++ = '0';
+							*copy_target++ = 'x';
+							*copy_target++ = integer_symbols[*c / 16];
+							*copy_target++ = integer_symbols[*c % 16];
+							*copy_target++ = ',';
+							ptrdiff_t nth_char = (c - gen_string.buffer) + 1;
+							Assert(nth_char > 0);
+							if (nth_char % MG_BYTELITS_PER_LINE == 0)
+							{
+								*copy_target++ = '\n';
+								num_newlines--;
+							}
+						}
+						Assert(copy_target == c_byte_lits.buffer + c_byte_lits.length && num_newlines == 0);
+						#undef MG_BYTELIT_STRLEN
+						#undef MG_BYTELITS_PER_LINE
+
+						str8_list_push(
+							scratch.arena,
+							&h_file_embeds,
+							c_byte_lits
+						);
+					}
+					str8_list_pushf(
+						scratch.arena,
+						&h_file_embeds,
+						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n",
+						embedded_varname,
+						bytes_varname,
+						bytes_varname
+					);
+				}
+				else
+				{
+					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString);
+					NotImplemented;
+				}
+			} break;
 			case MD_ASTKind_DirectiveGenH:
 			case MD_ASTKind_DirectiveGenC:
 			case MD_ASTKind_DirectiveEnum:
@@ -95,7 +258,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						str8_list_pushf(
 							scratch.arena,
 							&h_file_arrays,
-							"extern %S;",
+							"extern %S;\n",
 							common_arr_decl
 						);
 
@@ -337,6 +500,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 	finish_generation:;
 
 	str8_list_concat_in_place(&h_file_enums, &h_file_arrays);
+	str8_list_concat_in_place(&h_file_enums, &h_file_embeds);
 	// REVIEW: right now there's two newlines after @expand contents, because of this, should I remove it?
 	StringJoin join = {
 		.sep = str8_lit("\n"),

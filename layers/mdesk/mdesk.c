@@ -369,7 +369,9 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 	return result;
 }
 
-// REVIEW: for unclosed delimiter errors, set location to the opening delimiter?
+// REVIEW:
+//  for unclosed delimiter errors, set location to the opening delimiter?
+//  for last token errors, what should the message's token point to?
 internal MD_AST*
 md_parse_root(MD_ParseState *parser)
 {
@@ -381,33 +383,40 @@ md_parse_root(MD_ParseState *parser)
 
 	while (parser->token < parser->tokens_one_past_last)
 	{
-		switch (parser->token->kind)
+		const local_persist MD_ASTKind
+		md_token_to_ast_kind_table[MD_TokenKind_COUNT] = {
+			[MD_TokenKind_IntLit              ] = MD_ASTKind_IntLit,
+			[MD_TokenKind_FloatLit            ] = MD_ASTKind_FloatLit,
+			[MD_TokenKind_StringLit           ] = MD_ASTKind_StringLit,
+			[MD_TokenKind_RawStringLit        ] = MD_ASTKind_RawStringLit,
+
+			[MD_TokenKind_DirectiveTable      ] = MD_ASTKind_DirectiveTable,
+
+			[MD_TokenKind_DirectiveGenH       ] = MD_ASTKind_DirectiveGenH,
+			[MD_TokenKind_DirectiveGenC       ] = MD_ASTKind_DirectiveGenC,
+			[MD_TokenKind_DirectiveEnum       ] = MD_ASTKind_DirectiveEnum,
+			[MD_TokenKind_DirectiveStruct     ] = MD_ASTKind_DirectiveStruct,
+			[MD_TokenKind_DirectiveArray      ] = MD_ASTKind_DirectiveArray,
+			[MD_TokenKind_DirectiveExpand     ] = MD_ASTKind_DirectiveExpand,
+
+			[MD_TokenKind_DirectiveEmbedString] = MD_ASTKind_DirectiveEmbedString,
+			[MD_TokenKind_DirectiveEmbedFile  ] = MD_ASTKind_DirectiveEmbedFile,
+
+			[MD_TokenKind_Ident               ] = MD_ASTKind_Ident,
+		};
+
+		MD_ASTKind global_directive_kind = md_token_to_ast_kind_table[parser->token->kind];
+		switch (global_directive_kind)
 		{
-			case MD_TokenKind_DirectiveGenH:
-			case MD_TokenKind_DirectiveGenC:
-			case MD_TokenKind_DirectiveTable:
-			case MD_TokenKind_DirectiveEnum:
-			case MD_TokenKind_DirectiveStruct:
-			case MD_TokenKind_DirectiveArray: {
-				const local_persist MD_ASTKind
-				md_token_to_ast_kind_table[MD_TokenKind_COUNT] = {
-					[MD_TokenKind_IntLit         ] = MD_ASTKind_IntLit,
-					[MD_TokenKind_FloatLit       ] = MD_ASTKind_FloatLit,
-					[MD_TokenKind_StringLit      ] = MD_ASTKind_StringLit,
-
-					[MD_TokenKind_DirectiveTable ] = MD_ASTKind_DirectiveTable,
-
-					[MD_TokenKind_DirectiveGenH  ] = MD_ASTKind_DirectiveGenH,
-					[MD_TokenKind_DirectiveGenC  ] = MD_ASTKind_DirectiveGenC,
-					[MD_TokenKind_DirectiveEnum  ] = MD_ASTKind_DirectiveEnum,
-					[MD_TokenKind_DirectiveStruct] = MD_ASTKind_DirectiveStruct,
-					[MD_TokenKind_DirectiveArray ] = MD_ASTKind_DirectiveArray,
-					[MD_TokenKind_DirectiveExpand] = MD_ASTKind_DirectiveExpand,
-
-					[MD_TokenKind_Ident          ] = MD_ASTKind_Ident,
-				};
-
-				MD_AST *global_directive = md_ast_push_child(parser->arena, root, md_token_to_ast_kind_table[parser->token->kind]), // XXX rename to global_directive
+			case MD_ASTKind_DirectiveEmbedString:
+			case MD_ASTKind_DirectiveEmbedFile:
+			case MD_ASTKind_DirectiveGenH:
+			case MD_ASTKind_DirectiveGenC:
+			case MD_ASTKind_DirectiveTable:
+			case MD_ASTKind_DirectiveEnum:
+			case MD_ASTKind_DirectiveStruct:
+			case MD_ASTKind_DirectiveArray: {
+				MD_AST *global_directive = md_ast_push_child(parser->arena, root, global_directive_kind),
 				       *directive_ident_params = 0; // ident list for @table and @array
 				global_directive->token = parser->token;
 				// REVIEW: allow integer lengths for @array?
@@ -486,12 +495,11 @@ md_parse_root(MD_ParseState *parser)
 					}
 				}
 
-				// REVIEW: in scope where its guaranteed n
-				// for directives with name onlyamed?
 				MD_SymbolTableEntry *directive_symbol = 0;
-				MD_AST *directive_name = 0;
 				switch (global_directive->kind) // check for name on directive
 				{
+					case MD_ASTKind_DirectiveEmbedString:
+					case MD_ASTKind_DirectiveEmbedFile:
 					case MD_ASTKind_DirectiveTable:
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
@@ -518,7 +526,7 @@ md_parse_root(MD_ParseState *parser)
 							goto break_parse_outer_loop;
 						}
 
-						directive_name = md_ast_push_child(
+						MD_AST *directive_name = md_ast_push_child(
 							parser->arena,
 							global_directive,
 							MD_ASTKind_Ident
@@ -554,81 +562,131 @@ md_parse_root(MD_ParseState *parser)
 						}
 						directive_symbol->ast = global_directive;
 
-					} break;
-				}
-				if (global_directive->kind == MD_ASTKind_DirectiveTable)
-				{
-					directive_symbol->table_record.num_cols = directive_ident_params->children_count;
-					if (directive_symbol->table_record.num_cols < 1)
-					{
-						md_messagelist_push(
-							parser->arena,
-							parser->messages,
-							parser->source,
-							global_directive->token->source.buffer,
-							MD_MessageKind_Warning,
-							push_str8f(
-								parser->arena,
-								"@table directive '%S' has no named columns",
-								directive_name->token->source
-							),
-							0, // REVIEW
-							global_directive
-						);
-					}
-					else
-					{
-						// REVIEW XXX: just insert these into the symbol table as the identlist is being built
-						U64 column_number = 0;
-						for (MD_AST *column = directive_ident_params->first; column != 0; column = column->next, column_number++)
+						if (global_directive->kind == MD_ASTKind_DirectiveTable)
 						{
-							MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
-								parser->arena,
-								&directive_symbol->table_record.cols_stab,
-								column->token->source
-							);
-							if (column_symbol->ast != 0)
+							directive_symbol->table_record.num_cols = directive_ident_params->children_count;
+							if (directive_symbol->table_record.num_cols < 1)
 							{
 								md_messagelist_push(
 									parser->arena,
 									parser->messages,
 									parser->source,
-									column->token->source.buffer,
-									MD_MessageKind_Error,
+									global_directive->token->source.buffer,
+									MD_MessageKind_Warning,
 									push_str8f(
 										parser->arena,
-										"duplicate column name '%S' in @table '%S",
-										column->token->source,
+										"@table directive '%S' has no named columns",
 										directive_name->token->source
 									),
-									column->token,
-									global_directive // REVIEW: ast of the name itself?
+									0, // REVIEW
+									global_directive
 								);
 							}
 							else
 							{
-								column_symbol->col_record.col = column_number;
-								column_symbol->ast = column;
+								// REVIEW XXX: just insert these into the symbol table as the identlist is being built
+								U64 column_number = 0;
+								for (MD_AST *column = directive_ident_params->first; column != 0; column = column->next, column_number++)
+								{
+									MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
+										parser->arena,
+										&directive_symbol->table_record.cols_stab,
+										column->token->source
+									);
+									if (column_symbol->ast != 0)
+									{
+										md_messagelist_push(
+											parser->arena,
+											parser->messages,
+											parser->source,
+											column->token->source.buffer,
+											MD_MessageKind_Error,
+											push_str8f(
+												parser->arena,
+												"duplicate column name '%S' in @table '%S",
+												column->token->source,
+												directive_name->token->source
+											),
+											column->token,
+											global_directive // REVIEW: ast of the name itself?
+										);
+									}
+									else
+								{
+										column_symbol->col_record.col = column_number;
+										column_symbol->ast = column;
+									}
+								}
 							}
 						}
-					}
+						else if (global_directive->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
+						{
+							md_messagelist_push(
+								parser->arena,
+								parser->messages,
+								parser->source,
+								global_directive->token->source.buffer,
+								MD_MessageKind_Error,
+								push_str8f(
+									parser->arena,
+									"incorrect number of parameters for @array directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
+									directive_name->token->source
+								),
+								0, // REVIEW
+								global_directive
+							);
+						}
+					} break;
+					default: {
+						Assert(global_directive->kind == MD_ASTKind_DirectiveGenH || global_directive->kind == MD_ASTKind_DirectiveGenC);
+					} break;
 				}
-				else if (global_directive->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
+
+				if (global_directive->kind == MD_ASTKind_DirectiveEmbedString || global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
 				{
-					md_messagelist_push(
-						parser->arena,
-						parser->messages,
-						parser->source,
-						global_directive->token->source.buffer,
-						MD_MessageKind_Error,
-						push_str8f(
+					MD_TokenKind string_kind = MD_TokenKind_StringLit;
+					char *path_or_raw        = "path";
+					if (global_directive->kind == MD_ASTKind_DirectiveEmbedString)
+					{
+						string_kind = MD_TokenKind_RawStringLit;
+						path_or_raw = "raw";
+					}
+					if ((++parser->token) == parser->tokens_one_past_last || parser->token->kind != string_kind)
+					{
+						md_messagelist_push(
 							parser->arena,
-							"incorrect number of parameters for @array directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
-							directive_name->token->source
-						),
-						0, // REVIEW
-						global_directive
-					);
+							parser->messages,
+							parser->source,
+							parser->token == parser->tokens_one_past_last
+								? source_last
+								: parser->token->source.buffer,
+							MD_MessageKind_FatalError, // REVIEW: fatal?
+							push_str8f(
+								parser->arena,
+								"%expected a %s string for %S directive",
+								path_or_raw,
+								global_directive->token->source
+							),
+							parser->token,
+							global_directive
+						);
+						goto break_parse_outer_loop;
+					}
+					else
+					{
+						MD_ASTKind ast_kind = md_token_to_ast_kind_table[string_kind];
+						Assert(ast_kind == MD_ASTKind_StringLit || ast_kind == MD_ASTKind_RawStringLit);
+						MD_AST *string_child = md_ast_push_child(
+							parser->arena,
+							global_directive,
+							ast_kind
+						);
+						string_child->token = parser->token;
+						Unused(string_child);
+						Assert(global_directive->children_count == 2); // name and string
+						parser->token++;
+					}
+					break;
 				}
 
 				if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenBrace)
@@ -940,7 +998,7 @@ md_parse_root(MD_ParseState *parser)
 					parser->source,
 					parser->token->source.buffer,
 					MD_MessageKind_FatalError,
-					push_str8f(parser->arena, "only @enum, @table, or @Array allowed at global scope, got '%S'", parser->token->source),
+					push_str8f(parser->arena, "only @embed_string, @embed_file, @table, @gen_h, @gen_c, @enum, @struct, or @array allowed at global scope, got '%S'", parser->token->source), // REVIEW:
 					parser->token,
 					0
 				);
@@ -963,6 +1021,8 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 	{
 		switch (global_directive->kind)
 		{
+			case MD_ASTKind_DirectiveEmbedString:
+			case MD_ASTKind_DirectiveEmbedFile: break; // nothing to check
 			case MD_ASTKind_DirectiveTable: {
 				MD_AST *table_child = global_directive->first->next;
 				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab, table_child->token->source);

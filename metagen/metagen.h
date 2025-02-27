@@ -10,6 +10,6 @@ struct MG_GenResult
 };
 
 internal MG_GenResult
-mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source);
+mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source);
 
 #endif // METAGEN_H

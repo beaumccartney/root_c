@@ -21,11 +21,11 @@ internal void entry_point(void)
 	      *work_arena = arena_default;
 
 	// <project root>/build/.. i.e. project root
-	String8 search_root = str8_chop_last_slash(g_os_state.process_info.exe_folder);
-	printf("searching '%.*s'\n\n", str8_varg(search_root));
+	String8 project_root = str8_chop_last_slash(g_os_state.process_info.exe_folder);
+	printf("searching '%.*s'\n\n", str8_varg(project_root));
 	OS_FileIter *iter = os_file_iter_begin(
 		iter_arena,
-		search_root,
+		project_root,
 		OS_FileIterFlag_SkipFolders
 		| OS_FileIterFlag_RecurseFolders
 		| OS_FileIterFlag_SkipHidden
@@ -91,7 +91,13 @@ internal void entry_point(void)
 				if (check_messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
 
-				MG_GenResult generated = mg_generate_from_checked(work_arena, parsed.root, parsed.global_stab, source);
+				MG_GenResult generated = mg_generate_from_checked(
+					work_arena,
+					parsed.root,
+					parsed.global_stab,
+					str8(project_root.buffer, project_root.length + 1), // HACK: just giving the slash back rn
+					source
+				);
 
 				for (MD_Message *m = generated.messages.first; m != 0; m = m->next)
 					mg_print_message(info.name, m);
