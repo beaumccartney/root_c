@@ -389,7 +389,6 @@ md_parse_root(MD_ParseState *parser)
 			case MD_TokenKind_DirectiveEnum:
 			case MD_TokenKind_DirectiveStruct:
 			case MD_TokenKind_DirectiveArray: {
-				Assert(parser->token->kind != MD_TokenKind_DirectiveStruct); // not implemented
 				const local_persist MD_ASTKind
 				md_token_to_ast_kind_table[MD_TokenKind_COUNT] = {
 					[MD_TokenKind_IntLit         ] = MD_ASTKind_IntLit,
@@ -497,7 +496,6 @@ md_parse_root(MD_ParseState *parser)
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
-						Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 						if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_Ident)
 						{
 							String8 message_str = push_str8f(
@@ -758,7 +756,6 @@ md_parse_root(MD_ParseState *parser)
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
-						Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 						while (parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 						{
 							switch (parser->token->kind)
@@ -993,7 +990,6 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveArray:
 			case MD_ASTKind_DirectiveStruct: {
-				Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 				MD_AST *global_directive_child = global_directive->first;
 				switch (global_directive->kind)
 				{

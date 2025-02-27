@@ -19,7 +19,6 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveStruct:
 			case MD_ASTKind_DirectiveArray: {
-				Assert(global_directive->kind != MD_ASTKind_DirectiveStruct); // not implemented
 				MD_AST *directive_child = global_directive->first;
 				String8List *target_file = 0;
 				String8 enum_name = zero_struct; // 0 if not @enum // TODO: type name for enum and struct
@@ -31,18 +30,34 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					case MD_ASTKind_DirectiveGenC: {
 						target_file = &c_file; // REVIEW:
 					} break;
-					case MD_ASTKind_DirectiveEnum: {
+					case MD_ASTKind_DirectiveEnum:
+					case MD_ASTKind_DirectiveStruct: {
 						target_file = &h_file_enums;
 						Assert(directive_child->kind == MD_ASTKind_Ident);
-						enum_name = push_str8f(
-							scratch.arena,
-							" %S",
-							directive_child->token->source
-						);
-						str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
-					} break;
-					case MD_ASTKind_DirectiveStruct: {
-						NotImplemented;
+						String8Node *decl = 0;
+						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
+						{
+							enum_name = push_str8f(
+								scratch.arena,
+								" %S",
+								directive_child->token->source
+							);
+							decl = str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
+						}
+						else
+						{
+							Assert(global_directive->kind == MD_ASTKind_DirectiveStruct);
+							decl = str8_list_pushf(
+								scratch.arena,
+								target_file,
+								"typedef struct %S %S;\nstruct %S",
+								directive_child->token->source,
+								directive_child->token->source,
+								directive_child->token->source
+							);
+						}
+						Assert(decl);
+						Unused(decl); // for debugger inspecting
 					} break;
 					case MD_ASTKind_DirectiveArray: {
 						target_file = &c_file;

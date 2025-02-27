@@ -38,3 +38,8 @@ os_key_strings
 {
 	@expand(os_key_table "/*name: %, num: %*/" name val)
 }
+
+@struct TEST_Struct
+{
+	@expand(os_key_table "TEST_Struct *%;" name)
+}
