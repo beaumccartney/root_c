@@ -129,9 +129,9 @@ internal String32 str32_cstring_capped(U32 *cstr, U64 cap)
 	return result;
 }
 
-internal String8  str8_region(U8 *first, U8 *one_past_last)    {return str8(first, (U64)(one_past_last-first));}
-internal String16 str16_region(U16 *first, U16 *one_past_last) {return str16(first, (U64)(one_past_last-first));}
-internal String32 str32_region(U32 *first, U32 *one_past_last) {return str32(first, (U64)(one_past_last-first));}
+internal String8  str8_region(U8 *first, U8 *one_past_last)    {Assert(first <= one_past_last);return str8(first, (U64)(one_past_last-first));}
+internal String16 str16_region(U16 *first, U16 *one_past_last) {Assert(first <= one_past_last);return str16(first, (U64)(one_past_last-first));}
+internal String32 str32_region(U32 *first, U32 *one_past_last) {Assert(first <= one_past_last);return str32(first, (U64)(one_past_last-first));}
 
 internal String8 push_str8(Arena *arena, U64 length)
 {
