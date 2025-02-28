@@ -178,30 +178,11 @@ struct MD_ParseResult
 	MD_SymbolTableEntry *global_stab;
 };
 
-// REVIEW:
-//  should I pass any of this separately?
-//  remove if parsing is done in one function
-typedef struct MD_ParseState MD_ParseState;
-struct MD_ParseState
-{
-	Arena *arena;
-	MD_MessageList *messages;
-	String8 source;
-	MD_Token *tokens_first, // REVIEW: store token array and index instead?
-		 *token,
-		 *tokens_one_past_last;
-	MD_SymbolTableEntry **global_stab;
-};
-
 internal MD_TokenizeResult
 md_tokens_from_source(Arena *arena, String8 source);
 
 internal MD_ParseResult
 md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source);
-
-// NOTE: recursive descent parsing apis only used for generating the AST
-internal MD_AST*
-md_parse_root(MD_ParseState *parser);
 
 // TODO: change param name stab to stab_root
 
