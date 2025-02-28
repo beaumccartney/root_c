@@ -295,7 +295,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						//  static? put everything in header file?
 						str8_list_pushf(
 							scratch.arena,
-							target_location,
+							&h_file_arrays,
 							"extern %S;\n\n",
 							common_arr_decl
 						);
