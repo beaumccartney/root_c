@@ -42,19 +42,16 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 				if (gen_string.length == 0)
 				{
-					md_messagelist_push(
+					md_messagelist_pushf(
 						arena,
 						&result.messages,
 						source,
 						gen_string.buffer,
-						MD_MessageKind_Warning,
-						push_str8f(
-							arena,
-							"empty argument to %S",
-							global_directive->token->source
-						),
 						child->token,
-						global_directive
+						global_directive,
+						MD_MessageKind_Warning,
+						"empty argument to %S",
+						global_directive->token->source
 					);
 					break;
 				}
@@ -97,19 +94,16 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					if (message_kind != MD_MessageKind_NULL)
 					{
 						Assert(message_format);
-						md_messagelist_push(
+						md_messagelist_pushf(
 							arena,
 							&result.messages,
 							source,
 							child->token->source.buffer, // opening '"' of the string literal
-							message_kind,
-							push_str8f(
-								arena,
-								message_format,
-								filepath
-							),
 							child->token,
-							global_directive
+							global_directive,
+							message_kind,
+							message_format,
+							filepath
 						);
 						if (message_kind >= MD_MessageKind_Error) // still generate data for empty files
 							break; // REVIEW: needed?
@@ -238,9 +232,9 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						String8Node *decl = 0;
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
 						{
-							enum_name = push_str8f(
+							enum_name = push_str8_cat(
 								scratch.arena,
-								" %S",
+								str8_lit(" "),
 								directive_child->token->source
 							);
 							decl = str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
@@ -300,14 +294,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							common_arr_decl
 						);
 
-						str8_list_push(
+						str8_list_pushf(
 							scratch.arena,
 							&c_file,
-							push_str8f(
-								scratch.arena,
-								"%S =",
-								common_arr_decl
-							)
+							"%S =",
+							common_arr_decl
 						);
 					} break;
 					default: {
@@ -379,10 +370,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								&result.messages,
 								source,
 								format_string.buffer, // REVIEW
-								MD_MessageKind_Warning,
-								str8_lit("empty @expand format string"),
 								format_string_token,
-								directive_child
+								directive_child,
+								MD_MessageKind_Warning,
+								str8_lit("empty @expand format string")
 							);
 							continue;
 						}
@@ -426,20 +417,17 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						U64 num_format_args = directive_child->children_count - 2; // first two children of @expand are the table and the format string
 						if (num_format_specifiers != num_format_args)
 						{
-							md_messagelist_push(
+							md_messagelist_pushf(
 								arena,
 								&result.messages,
 								source,
 								format_string.buffer, // REVIEW
-								MD_MessageKind_FatalError,
-								push_str8f(
-									arena,
-									"@expand format-arg mismatch - %llu format specifiers and %llu format arguments", // REVIEW: make better
-									num_format_specifiers,
-									num_format_args
-								),
 								format_string_token,
-								directive_child
+								directive_child,
+								MD_MessageKind_FatalError,
+								"@expand format-arg mismatch - %llu format specifiers and %llu format arguments", // REVIEW: make better
+								num_format_specifiers,
+								num_format_args
 							);
 							goto finish_generation;
 						}
@@ -450,10 +438,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								&result.messages,
 								source,
 								format_string.buffer, // REVIEW
-								MD_MessageKind_Warning,
-								str8_lit("@expand with no formatting"), // REVIEW
 								format_string_token,
-								directive_child
+								directive_child,
+								MD_MessageKind_Warning,
+								str8_lit("@expand with no formatting") // REVIEW
 							);
 						}
 
@@ -466,10 +454,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							: 0;
 						Assert(after_last_spec_ix <= format_string.length);
 						String8 *elem_row = table_symbol->table_record.elem_matrix,
-							 after_last_spec_string = push_str8f(
+							 after_last_spec_string = push_str8_cat(
 							scratch.arena,
-							"%S\n",
-							str8_substr(format_string, r1u64(after_last_spec_ix, format_string.length))
+							str8_substr(format_string, r1u64(after_last_spec_ix, format_string.length)),
+							str8_lit("\n")
 
 						);
 						for (U64 row = 0; row < table_symbol->table_record.num_rows; row++, elem_row += table_symbol->table_record.num_cols)

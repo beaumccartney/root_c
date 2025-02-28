@@ -154,7 +154,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 							default: {
 								message_kind = MD_MessageKind_FatalError;
 								message_string = push_str8f(
-									arena,
+									scratch.arena,
 									"unrecognized escape sequence - '\\x%x'",
 									*c // TODO: print not in hex and make it nice
 								);
@@ -435,21 +435,18 @@ md_parse_root(MD_ParseState *parser)
 				{
 					if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenParen)
 					{
-						md_messagelist_push(
+						md_messagelist_pushf(
 							parser->arena,
 							parser->messages,
 							parser->source,
 							parser->token == parser->tokens_one_past_last
 								? source_last
 								: parser->token->source.buffer,
-							MD_MessageKind_FatalError,
-							push_str8f(
-								parser->arena,
-								"expected '(' after %S",
-								global_directive->token->source
-							),
 							parser->token,
-							global_directive
+							global_directive,
+							MD_MessageKind_FatalError,
+							"expected '(' after %S",
+							global_directive->token->source
 						);
 						goto break_parse_outer_loop;
 					}
@@ -463,20 +460,17 @@ md_parse_root(MD_ParseState *parser)
 					{
 						if (parser->token->kind != MD_TokenKind_Ident)
 						{
-							md_messagelist_push(
+							md_messagelist_pushf(
 								parser->arena,
 								parser->messages,
 								parser->source,
 								parser->token->source.buffer,
-								MD_MessageKind_FatalError,
-								push_str8f(
-									parser->arena,
-									"non-ident argument to %S directive: '%S' - perhaps a closing ')' is missing?", // REVIEW: better message
-									global_directive->token->source,
-									parser->token->source
-								),
 								parser->token,
-								global_directive
+								global_directive,
+								MD_MessageKind_FatalError,
+								"non-ident argument to %S directive: '%S' - perhaps a closing ')' is missing?", // REVIEW: better message
+								global_directive->token->source,
+								parser->token->source
 							);
 							goto break_parse_outer_loop;
 						}
@@ -490,19 +484,16 @@ md_parse_root(MD_ParseState *parser)
 					}
 					if (parser->token == parser->tokens_one_past_last)
 					{
-						md_messagelist_push(
+						md_messagelist_pushf(
 							parser->arena,
 							parser->messages,
 							parser->source,
 							source_last,
-							MD_MessageKind_FatalError,
-							push_str8f(
-								parser->arena,
-								"unclosed argument list for %S - missing ')'",
-								global_directive->token->source
-							),
 							parser->token,
-							global_directive
+							global_directive,
+							MD_MessageKind_FatalError,
+							"unclosed argument list for %S - missing ')'",
+							global_directive->token->source
 						);
 						goto break_parse_outer_loop;
 					}
@@ -519,22 +510,18 @@ md_parse_root(MD_ParseState *parser)
 					case MD_ASTKind_DirectiveArray: {
 						if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_Ident)
 						{
-							String8 message_str = push_str8f(
-								parser->arena,
-								"missing name for %S directive",
-								global_directive->token->source
-							);
-							md_messagelist_push(
+							md_messagelist_pushf(
 								parser->arena,
 								parser->messages,
 								parser->source,
 								parser->token == parser->tokens_one_past_last
 								? source_last
 								: parser->token->source.buffer,
-								MD_MessageKind_FatalError,
-								message_str,
 								parser->token,
-								global_directive
+								global_directive,
+								MD_MessageKind_FatalError,
+								"missing name for %S directive",
+								global_directive->token->source
 							);
 							goto break_parse_outer_loop;
 						}
@@ -557,19 +544,16 @@ md_parse_root(MD_ParseState *parser)
 							// symbol, use it to find the position
 							// of the original declaration and
 							// report in the error message
-							md_messagelist_push(
+							md_messagelist_pushf(
 								parser->arena,
 								parser->messages,
 								parser->source,
 								directive_name->token->source.buffer,
-								MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
-								push_str8f(
-									parser->arena,
-									"redeclaration of '%S'",
-									directive_name->token->source
-								),
 								directive_name->token,
-								global_directive // REVIEW: the directive_name instead?
+								global_directive, // REVIEW: the directive_name instead?
+								MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
+								"redeclaration of '%S'",
+								directive_name->token->source
 							);
 							goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
 						}
@@ -580,19 +564,16 @@ md_parse_root(MD_ParseState *parser)
 							directive_symbol->table_record.num_cols = directive_ident_params->children_count;
 							if (directive_symbol->table_record.num_cols < 1)
 							{
-								md_messagelist_push(
+								md_messagelist_pushf(
 									parser->arena,
 									parser->messages,
 									parser->source,
 									global_directive->token->source.buffer,
-									MD_MessageKind_Warning,
-									push_str8f(
-										parser->arena,
-										"@table directive '%S' has no named columns",
-										directive_name->token->source
-									),
 									0, // REVIEW
-									global_directive
+									global_directive,
+									MD_MessageKind_Warning,
+									"@table directive '%S' has no named columns",
+									directive_name->token->source
 								);
 							}
 							else
@@ -608,20 +589,17 @@ md_parse_root(MD_ParseState *parser)
 									);
 									if (column_symbol->ast != 0)
 									{
-										md_messagelist_push(
+										md_messagelist_pushf(
 											parser->arena,
 											parser->messages,
 											parser->source,
 											column->token->source.buffer,
-											MD_MessageKind_Error,
-											push_str8f(
-												parser->arena,
-												"duplicate column name '%S' in @table '%S",
-												column->token->source,
-												directive_name->token->source
-											),
 											column->token,
-											global_directive // REVIEW: ast of the name itself?
+											global_directive, // REVIEW: ast of the name itself?
+											MD_MessageKind_Error,
+											"duplicate column name '%S' in @table '%S",
+											column->token->source,
+											directive_name->token->source
 										);
 									}
 									else
@@ -634,19 +612,16 @@ md_parse_root(MD_ParseState *parser)
 						}
 						else if (global_directive->kind == MD_ASTKind_DirectiveArray && (directive_ident_params->children_count < 1 || directive_ident_params->children_count > 2))
 						{
-							md_messagelist_push(
+							md_messagelist_pushf(
 								parser->arena,
 								parser->messages,
 								parser->source,
 								global_directive->token->source.buffer,
-								MD_MessageKind_Error,
-								push_str8f(
-									parser->arena,
-									"incorrect number of parameters for @array directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
-									directive_name->token->source
-								),
 								0, // REVIEW
-								global_directive
+								global_directive,
+								MD_MessageKind_Error,
+								"incorrect number of parameters for @array directive '%S' - at least one identifier is required for the type of the array, and one more identifier is allowed to refer to the length of the array",
+								directive_name->token->source
 							);
 						}
 					} break;
@@ -666,22 +641,19 @@ md_parse_root(MD_ParseState *parser)
 					}
 					if ((++parser->token) == parser->tokens_one_past_last || parser->token->kind != string_kind)
 					{
-						md_messagelist_push(
+						md_messagelist_pushf(
 							parser->arena,
 							parser->messages,
 							parser->source,
 							parser->token == parser->tokens_one_past_last
 								? source_last
 								: parser->token->source.buffer,
-							MD_MessageKind_FatalError, // REVIEW: fatal?
-							push_str8f(
-								parser->arena,
-								"%expected a %s string for %S directive",
-								path_or_raw,
-								global_directive->token->source
-							),
 							parser->token,
-							global_directive
+							global_directive,
+							MD_MessageKind_FatalError, // REVIEW: fatal?
+							"%expected a %s string for %S directive",
+							path_or_raw,
+							global_directive->token->source
 						);
 						goto break_parse_outer_loop;
 					}
@@ -704,21 +676,18 @@ md_parse_root(MD_ParseState *parser)
 
 				if (++parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_OpenBrace)
 				{
-					md_messagelist_push(
+					md_messagelist_pushf(
 						parser->arena,
 						parser->messages,
 						parser->source,
 						parser->token == parser->tokens_one_past_last
 							? source_last
 							: parser->token->source.buffer,
-						MD_MessageKind_FatalError,
-						push_str8f(
-							parser->arena,
-							"%S directive missing missing opening '{'",
-							global_directive->token->source
-						),
 						parser->token,
-						global_directive
+						global_directive,
+						MD_MessageKind_FatalError,
+						"%S directive missing missing opening '{'",
+						global_directive->token->source
 					);
 					goto break_parse_outer_loop;
 				}
@@ -736,10 +705,10 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									parser->source,
 									parser->token->source.buffer,
-									MD_MessageKind_FatalError,
-									str8_lit("expected '{' to open @table's row"),
 									parser->token,
-									global_directive
+									global_directive,
+									MD_MessageKind_FatalError,
+									str8_lit("expected '{' to open @table's row")
 								);
 								goto break_parse_outer_loop;
 							}
@@ -757,19 +726,16 @@ md_parse_root(MD_ParseState *parser)
 										Unused(table_entry);
 									} break;
 									default: {
-										md_messagelist_push(
+										md_messagelist_pushf(
 											parser->arena,
 											parser->messages,
 											parser->source,
 											parser->token->source.buffer,
-											MD_MessageKind_FatalError, // REVIEW: fatal?
-											push_str8f(
-												parser->arena,
-												"illegal @table entry: '%S' - perhaps closing '}' is missing?",
-												parser->token->source
-											),
 											parser->token,
-											table_row
+											table_row,
+											MD_MessageKind_FatalError, // REVIEW: fatal?
+											"illegal @table entry: '%S' - perhaps closing '}' is missing?",
+											parser->token->source
 										);
 										goto break_parse_outer_loop;
 									} break;
@@ -782,42 +748,43 @@ md_parse_root(MD_ParseState *parser)
 									parser->messages,
 									parser->source,
 									source_last,
-									MD_MessageKind_FatalError,
-									str8_lit("expected '}' to close @table's row"),
 									parser->token,
-									global_directive
+									global_directive,
+									MD_MessageKind_FatalError,
+									str8_lit("expected '}' to close @table's row")
 								);
 								goto break_parse_outer_loop;
 							}
 							if (table_row->children_count == 0 || table_row->children_count != directive_ident_params->children_count)
 							{
-								MD_MessageKind message_kind = 0;
-								String8 message = zero_struct;
 								if (table_row->children_count == 0 && directive_ident_params->children_count == 0)
 								{
-									message_kind = MD_MessageKind_Warning;
-									message = str8_lit("empty @table row");
+									md_messagelist_push(
+										parser->arena,
+										parser->messages,
+										parser->source,
+										table_row->token->source.buffer, // row's opening '{' REVIEW: closing '}'
+										0, // REVIEW: row's opening '{'?
+										table_row,
+										MD_MessageKind_Warning,
+										str8_lit("empty @table row")
+									);
 								}
 								else
 								{
-									message_kind = MD_MessageKind_Error;
-									message = push_str8f(
+									md_messagelist_pushf(
 										parser->arena,
+										parser->messages,
+										parser->source,
+										table_row->token->source.buffer, // row's opening '{' REVIEW: closing '}'
+										0, // REVIEW: row's opening '{'?
+										table_row,
+										MD_MessageKind_Error,
 										"@table row element number mismatch: expected %d, got %d",
 										directive_ident_params->children_count,
 										table_row->children_count
 									);
 								}
-								md_messagelist_push(
-									parser->arena,
-									parser->messages,
-									parser->source,
-									table_row->token->source.buffer, // row's opening '{' REVIEW: closing '}'
-									message_kind,
-									message,
-									0, // REVIEW: row's opening '{'?
-									table_row
-								);
 							}
 						}
 					} break;
@@ -851,10 +818,10 @@ md_parse_root(MD_ParseState *parser)
 											parser->token == parser->tokens_one_past_last
 												? source_last
 												: parser->token->source.buffer,
-											MD_MessageKind_FatalError,
-											str8_lit("expected '(' to open @expand's argument list"),
 											parser->token,
-											directive_expand
+											directive_expand,
+											MD_MessageKind_FatalError,
+											str8_lit("expected '(' to open @expand's argument list")
 										);
 										goto break_parse_outer_loop;
 									}
@@ -867,10 +834,10 @@ md_parse_root(MD_ParseState *parser)
 											parser->token == parser->tokens_one_past_last
 												? source_last
 												: parser->token->source.buffer,
-											MD_MessageKind_FatalError, // REVIEW: fatal?
-											str8_lit("expected identifier for @expand's first argument"),
 											parser->token,
-											directive_expand
+											directive_expand,
+											MD_MessageKind_FatalError, // REVIEW: fatal?
+											str8_lit("expected identifier for @expand's first argument")
 										);
 										goto break_parse_outer_loop;
 									}
@@ -887,10 +854,10 @@ md_parse_root(MD_ParseState *parser)
 											parser->token == parser->tokens_one_past_last
 												? source_last
 												: parser->token->source.buffer,
-											MD_MessageKind_FatalError, // REVIEW: fatal?
-											str8_lit("expected format string for @expand's second argument"),
 											parser->token,
-											directive_expand
+											directive_expand,
+											MD_MessageKind_FatalError, // REVIEW: fatal?
+											str8_lit("expected format string for @expand's second argument")
 										);
 										goto break_parse_outer_loop;
 									}
@@ -903,19 +870,16 @@ md_parse_root(MD_ParseState *parser)
 									{
 										if (parser->token->kind != MD_TokenKind_Ident)
 										{
-											md_messagelist_push(
+											md_messagelist_pushf(
 												parser->arena,
 												parser->messages,
 												parser->source,
 												parser->token->source.buffer,
-												MD_MessageKind_Error, // REVIEW: fatal?
-												push_str8f(
-													parser->arena,
-													"illegal format string argument: '%S' - only identifiers are allowed",
-													parser->token->source
-												),
 												parser->token,
-												directive_expand
+												directive_expand,
+												MD_MessageKind_Error, // REVIEW: fatal?
+												"illegal format string argument: '%S' - only identifiers are allowed",
+												parser->token->source
 											);
 											continue;
 										}
@@ -930,30 +894,27 @@ md_parse_root(MD_ParseState *parser)
 											parser->messages,
 											parser->source,
 											source_last,
-											MD_MessageKind_FatalError,
-											str8_lit("expected ')' to close @expand"),
 											parser->token,
-											directive_expand
+											directive_expand,
+											MD_MessageKind_FatalError,
+											str8_lit("expected ')' to close @expand")
 										);
 										goto break_parse_outer_loop;
 									}
 									parser->token++;
 								} break;
 								default: {
-									md_messagelist_push(
+									md_messagelist_pushf(
 										parser->arena,
 										parser->messages,
 										parser->source,
 										parser->token->source.buffer,
-										MD_MessageKind_FatalError, // REVIEW: fatal?
-										push_str8f(
-											parser->arena,
-											"expected string literal or @expand for entry in %S, got '%S'",
-											global_directive->token->source,
-											parser->token->source
-										),
 										parser->token,
-										global_directive // REVIEW: push the token instead of the AST?
+										global_directive, // REVIEW: push the token instead of the AST?
+										MD_MessageKind_FatalError, // REVIEW: fatal?
+										"expected string literal or @expand for entry in %S, got '%S'",
+										global_directive->token->source,
+										parser->token->source
 									);
 									goto break_parse_outer_loop;
 								} break;
@@ -966,17 +927,18 @@ md_parse_root(MD_ParseState *parser)
 				}
 				if (parser->token == parser->tokens_one_past_last || parser->token->kind != MD_TokenKind_CloseBrace)
 				{
-					md_messagelist_push(
+					md_messagelist_pushf(
 						parser->arena,
 						parser->messages,
 						parser->source,
 						parser->token == parser->tokens_one_past_last
 							? source_last
 							: parser->token->source.buffer,
-						MD_MessageKind_FatalError,
-						push_str8f(parser->arena, "%S directive missing closing '}'", parser->token->source),
 						parser->token,
-						global_directive
+						global_directive,
+						MD_MessageKind_FatalError,
+						"%S directive missing closing '}'",
+						parser->token->source
 					);
 					goto break_parse_outer_loop;
 				}
@@ -987,33 +949,31 @@ md_parse_root(MD_ParseState *parser)
 
 				if (children_before_body == global_directive->children_count)
 				{
-					md_messagelist_push(
+					md_messagelist_pushf(
 						parser->arena,
 						parser->messages,
 						parser->source,
 						global_directive->token->source.buffer,
-						MD_MessageKind_Warning,
-						push_str8f(
-							parser->arena,
-							"empty %S directive",
-							global_directive->token->source
-						),
 						0, // REVIEW
-						global_directive
+						global_directive,
+						MD_MessageKind_Warning,
+						"empty %S directive",
+						global_directive->token->source
 					);
 				}
 				parser->token++;
 			} break;
 			default: {
-				md_messagelist_push(
+				md_messagelist_pushf(
 					parser->arena,
 					parser->messages,
 					parser->source,
 					parser->token->source.buffer,
-					MD_MessageKind_FatalError,
-					push_str8f(parser->arena, "only @embed_string, @embed_file, @table, @gen_h, @gen_c, @enum, @struct, or @array allowed at global scope, got '%S'", parser->token->source), // REVIEW:
 					parser->token,
-					0
+					0,
+					MD_MessageKind_FatalError,
+					"only @embed_string, @embed_file, @table, @gen_h, @gen_c, @enum, @struct, or @array allowed at global scope, got '%S'", // REVIEW
+					parser->token->source
 				);
 			} break;
 		}
@@ -1094,16 +1054,16 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 						char* format = target_symbol
 							? "@expand-ing a non-@table symbol '%S'"
 							: "@expand-ing an undefined symbol '%S'";
-						String8 message = push_str8f(arena, format, expand_arg->token->source);
-						md_messagelist_push(
+						md_messagelist_pushf(
 							arena,
 							&result,
 							source,
 							expand_arg->token->source.buffer,
-							MD_MessageKind_Error,
-							message,
 							expand_arg->token,
-							global_directive_child
+							global_directive_child,
+							MD_MessageKind_Error,
+							format,
+							expand_arg->token->source
 						);
 						continue;
 					}
@@ -1120,20 +1080,17 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 						);
 						if (!format_arg_symbol)
 						{
-							md_messagelist_push(
+							md_messagelist_pushf(
 								arena,
 								&result,
 								source,
 								expand_arg->token->source.buffer,
-								MD_MessageKind_Error,
-								push_str8f(
-									arena,
-									"undefined format arg to @expand - '%S' is not a column of %S",
-									expand_arg->token->source,
-									target_symbol->key
-								),
 								expand_arg->token,
-								global_directive_child
+								global_directive_child,
+								MD_MessageKind_Error,
+								"undefined format arg to @expand - '%S' is not a column of %S",
+								expand_arg->token->source,
+								target_symbol->key
 							);
 						}
 					}
@@ -1199,11 +1156,23 @@ md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source
 }
 
 internal void
-md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast)
+md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_Token *token, MD_AST *ast, MD_MessageKind kind, String8 string)
 {
 	MD_Message *result = md_messagelist_push_inner(arena, messages, source, source_loc, kind, string);
 	result->token = token;
 	result->ast = ast;
+}
+
+internal void
+md_messagelist_pushf(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_Token *token, MD_AST *ast, MD_MessageKind kind, char *fmt, ...)
+{
+	Temp scratch = scratch_begin(&arena, 1);
+	va_list args;
+	va_start(args, fmt);
+	String8 formatted = push_str8fv(scratch.arena, fmt, args);
+	md_messagelist_push(arena, messages, source, source_loc, token, ast, kind, formatted);
+	va_end(args);
+	scratch_end(scratch);
 }
 
 internal U64 md_hash_ident(String8 ident)

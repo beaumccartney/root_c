@@ -217,7 +217,10 @@ internal inline MD_Message*
 md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source, U8* source_loc, MD_MessageKind kind, String8 string);
 
 internal void
-md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_MessageKind kind, String8 string, MD_Token *token, MD_AST *ast);
+md_messagelist_push(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_Token *token, MD_AST *ast, MD_MessageKind kind, String8 string);
+
+internal void
+md_messagelist_pushf(Arena *arena, MD_MessageList *messages, String8 source, U8 *source_loc, MD_Token *token, MD_AST *ast, MD_MessageKind kind, char *fmt, ...);
 
 internal U64 md_hash_ident(String8 ident);
 
