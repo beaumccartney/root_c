@@ -7,7 +7,34 @@
 @embed_file embedded_file "scratch/embed.txt"
 @embed_string embedded_string
 """
+
+
+
 asdf foo bar
+
+
+
+
+
+
+working?
+
+
+
+sadfjklsajdfoasufioejas;lkj
+
+
+
+
+
+
+
+jkjnvmvcnhj
+
+
+
+
+
 """
 
 @table(name val string)

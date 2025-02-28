@@ -4,20 +4,16 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 {
 	MG_GenResult result = zero_struct;
 
-	String8List h_file_begin           = zero_struct,
-		    h_file_enums           = zero_struct,
+	String8List h_file_enums           = zero_struct,
 		    h_file_structs         = zero_struct,
 		    h_file_functions       = zero_struct,
 		    h_file_arrays          = zero_struct,
 		    h_file_embeddedstrings = zero_struct,
 		    h_file_embeddedfiles   = zero_struct,
 		    h_file_default         = zero_struct,
-		    h_file_end             = zero_struct,
-		    c_file_begin           = zero_struct,
 		    c_file_functions       = zero_struct,
 		    c_file_arrays          = zero_struct,
-		    c_file_default         = zero_struct,
-		    c_file_end             = zero_struct;
+		    c_file_default         = zero_struct;
 
 	Temp scratch = scratch_begin(&arena, 1);
 
@@ -59,6 +55,8 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					    && child->token->kind     == MD_TokenKind_RawStringLit
 					    && gen_string.length      >= 6 // room for delimiting triple-quotes
 					);
+
+					// REVIEW: don't trim whitespace? perhaps there's somewhere where leading/trailing whitespace is significant?
 					gen_string = str8_trim_whitespace(str8(gen_string.buffer + 3, gen_string.length - 6)); // trim delimiting """ and any whitespace
 				}
 
@@ -141,7 +139,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					str8_list_pushf(
 						scratch.arena,
 						target_location,
-						"const global U8 %S[] =\n{",
+						"const global U8 %S[] =\n{\n",
 						bytes_varname
 					);
 					if (props.size > 0)
@@ -149,7 +147,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						#define MG_BYTELIT_STRLEN 5 // strlen("0xXX,")
 						#define MG_BYTELITS_PER_LINE 40
 						Assert(props.size > 0);
-						U64 num_newlines = (props.size - 1) / MG_BYTELITS_PER_LINE;
+						U64 num_newlines = (props.size - 1) / MG_BYTELITS_PER_LINE + 1;
 						String8 c_byte_lits = push_str8_nt(scratch.arena, props.size * MG_BYTELIT_STRLEN + num_newlines);
 						U8 *copy_target = c_byte_lits.buffer;
 						for (U8 *c = gen_string.buffer, *one_past_last = gen_string.buffer + gen_string.length; c < one_past_last; c++)
@@ -167,7 +165,8 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								num_newlines--;
 							}
 						}
-						Assert(copy_target == c_byte_lits.buffer + c_byte_lits.length && num_newlines == 0);
+						*copy_target++ = '\n';
+						Assert(copy_target == c_byte_lits.buffer + c_byte_lits.length && --num_newlines == 0);
 						#undef MG_BYTELIT_STRLEN
 						#undef MG_BYTELITS_PER_LINE
 
@@ -180,7 +179,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					str8_list_pushf(
 						scratch.arena,
 						target_location,
-						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n",
+						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n\n",
 						embedded_varname,
 						bytes_varname,
 						bytes_varname
@@ -188,11 +187,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				}
 				else
 				{
-					String8List lines = zero_struct;
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString);
 					str8_list_pushf(
 						scratch.arena,
-						&lines,
+						target_location,
 						"const global String8 %S = str8_lit(\n",
 						embedded_varname
 					);
@@ -201,7 +199,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					{
 						str8_list_push(
 							scratch.arena,
-							&lines,
+							target_location,
 							str8_lit("\"")
 						);
 						U8 *line_end = line_begin;
@@ -209,26 +207,18 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						String8 line = str8_region(line_begin, line_end);
 						String8Node *line_node = str8_list_pushf(
 							scratch.arena,
-							&lines,
-							"%S\"\n",
+							target_location,
+							"%S\\n\"\n",
 							line
 						);
 						Unused(line_node); // inspect in debugger
 						line_begin = line_end;
-						if (line_begin != one_past_last)
-							line_begin++;
 					}
 					str8_list_push(
 						scratch.arena,
-						&lines,
-						str8_lit(");")
-					);
-					String8Node * embedded_cstring_lit = str8_list_push(
-						scratch.arena,
 						target_location,
-						str8_list_join(scratch.arena, lines, 0) // XXX: remove once auto-newlines are gone
+						str8_lit(");\n\n")
 					);
-					Unused(embedded_cstring_lit); // inspect in debugger
 				}
 			} break;
 			case MD_ASTKind_DirectiveGenH:
@@ -246,6 +236,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					case MD_ASTKind_DirectiveStruct: {
 						Assert(directive_child->kind == MD_ASTKind_Ident);
 						String8Node *decl = 0;
+						str8_list_push(scratch.arena, target_location, str8_lit("typedef "));
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
 						{
 							enum_name = push_str8_cat(
@@ -253,7 +244,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								str8_lit(" "),
 								directive_child->token->source
 							);
-							decl = str8_list_push(scratch.arena, target_location, str8_lit("typedef enum"));
+							decl = str8_list_push(scratch.arena, target_location, str8_lit("enum"));
 						}
 						else
 						{
@@ -305,7 +296,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						str8_list_pushf(
 							scratch.arena,
 							target_location,
-							"extern %S;\n",
+							"extern %S;\n\n",
 							common_arr_decl
 						);
 
@@ -328,7 +319,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					str8_list_push(
 						scratch.arena,
 						target_location,
-						str8_lit("{")
+						str8_lit("\n{\n")
 					);
 					Assert(directive_child->kind = MD_ASTKind_Ident);
 					directive_child = directive_child->next; // advance past name
@@ -351,9 +342,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							directive_child->token->source.buffer + 1,
 							directive_child->token->source.length - 2
 						);
-						str8_list_push(
+						str8_list_pushf(
 							scratch.arena,
 							target_location,
+							"%S\n",
 							to_write
 						);
 					}
@@ -461,7 +453,6 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						}
 
 						Assert(num_format_specifiers == num_format_args && expand_child == 0); // is the number of format args correct and have we used each format arg
-						String8List expand_list = zero_struct; // instead of pushing directly to target_file for debugging purposes
 
 						// REVIEW: number of specifiers is checked elsewhere, initialize there?
 						U64 after_last_spec_ix = specifiers < specifiers_one_past_last
@@ -481,7 +472,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							{
 								String8Node *format_pushed = str8_list_push(
 									scratch.arena,
-									&expand_list,
+									target_location,
 									str8_substr(format_string, pref_spec->range)
 								);
 								Unused(format_pushed); // to inspect in debugger
@@ -490,7 +481,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								    && elem_string->length > 0);
 								String8Node *elem_pushed = str8_list_push(
 									scratch.arena,
-									&expand_list,
+									target_location,
 									*(elem_row + pref_spec->col)
 								);
 								Unused(elem_pushed); // to inspect in debugger
@@ -499,16 +490,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							// push part of format string that comes after last format specifier
 							String8Node *after_last_specifier = str8_list_push(
 								scratch.arena,
-								&expand_list,
+								target_location,
 								after_last_spec_string
 							);
 							Unused(after_last_specifier); // inspect of debugger
 						}
-
-						// XXX: use string array instead of list?
-						// REVIEW: use join param to add comma at the end?
-						String8 expanded = str8_list_join(scratch.arena, expand_list, 0); // instead of concat because not all nodes want a newline after
-						str8_list_push(scratch.arena, target_location, expanded);
 					}
 				}
 
@@ -540,26 +526,17 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	finish_generation:;
 
-	str8_list_concat_in_place(&h_file_begin, &h_file_enums          );
-	str8_list_concat_in_place(&h_file_begin, &h_file_structs        );
-	str8_list_concat_in_place(&h_file_begin, &h_file_functions      );
-	str8_list_concat_in_place(&h_file_begin, &h_file_arrays         );
-	str8_list_concat_in_place(&h_file_begin, &h_file_embeddedstrings);
-	str8_list_concat_in_place(&h_file_begin, &h_file_embeddedfiles  );
-	str8_list_concat_in_place(&h_file_begin, &h_file_default        );
-	str8_list_concat_in_place(&h_file_begin, &h_file_end            );
-	str8_list_concat_in_place(&c_file_begin, &c_file_begin          );
-	str8_list_concat_in_place(&c_file_begin, &c_file_functions      );
-	str8_list_concat_in_place(&c_file_begin, &c_file_arrays         );
-	str8_list_concat_in_place(&c_file_begin, &c_file_default        );
-	str8_list_concat_in_place(&c_file_begin, &c_file_end            );
+	str8_list_concat_in_place(&h_file_enums,     &h_file_structs        );
+	str8_list_concat_in_place(&h_file_enums,     &h_file_functions      );
+	str8_list_concat_in_place(&h_file_enums,     &h_file_arrays         );
+	str8_list_concat_in_place(&h_file_enums,     &h_file_embeddedstrings);
+	str8_list_concat_in_place(&h_file_enums,     &h_file_embeddedfiles  );
+	str8_list_concat_in_place(&h_file_enums,     &h_file_default        );
+	str8_list_concat_in_place(&c_file_functions, &c_file_arrays         );
+	str8_list_concat_in_place(&c_file_functions, &c_file_default        );
 
-	// REVIEW: right now there's two newlines after @expand contents, because of this, should I remove it?
-	StringJoin join = {
-		.sep = str8_lit("\n"), // XXX: get rid of this its stupid
-	};
-	result.h_file = str8_list_join(arena, h_file_begin, &join);
-	result.c_file = str8_list_join(arena, c_file_begin, &join);
+	result.h_file = str8_list_join(arena, h_file_enums,     0);
+	result.c_file = str8_list_join(arena, c_file_functions, 0);
 
 	scratch_end(scratch);
 
