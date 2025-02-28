@@ -264,7 +264,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					case MD_ASTKind_DirectiveArray: {
 						Assert(
 							  global_directive->kind == MD_ASTKind_DirectiveArray
-							&& directive_child->kind == MD_ASTKind_IdentList
+							&& directive_child->kind == MD_ASTKind_List
 							&& 0 < directive_child->children_count
 							&& directive_child->children_count <= 2
 							&& directive_child->first->kind == MD_ASTKind_Ident);

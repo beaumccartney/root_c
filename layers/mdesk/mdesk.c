@@ -453,7 +453,7 @@ md_parse_root(MD_ParseState *parser)
 					directive_ident_params = md_ast_push_child(
 						parser->arena,
 						global_directive,
-						MD_ASTKind_IdentList,
+						MD_ASTKind_List,
 						parser->token
 					);
 					while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseParen)
@@ -712,7 +712,7 @@ md_parse_root(MD_ParseState *parser)
 								);
 								goto break_parse_outer_loop;
 							}
-							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_TableRow, parser->token);
+							MD_AST *table_row = md_ast_push_child(parser->arena, global_directive, MD_ASTKind_List, parser->token);
 							while (++parser->token != parser->tokens_one_past_last && parser->token->kind != MD_TokenKind_CloseBrace)
 							{
 								MD_ASTKind kind = md_token_to_ast_kind_table[parser->token->kind];
@@ -1002,7 +1002,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 				String8List table_elems = zero_struct;
 				for (table_child = table_child->next; table_child != 0; table_child = table_child->next)
 				{
-					Assert(table_child->kind == MD_ASTKind_TableRow);
+					Assert(table_child->kind == MD_ASTKind_List);
 					for (MD_AST *table_elem = table_child->first; table_elem != 0; table_elem = table_elem->next)
 					{
 						Assert(

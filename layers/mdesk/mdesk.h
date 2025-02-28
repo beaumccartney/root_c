@@ -130,9 +130,7 @@ typedef enum
 	MD_ASTKind_DirectiveEmbedString,
 	MD_ASTKind_DirectiveEmbedFile,
 
-	// REVIEW: one list kind with flags for allowed node kinds?
-	MD_ASTKind_IdentList,
-	MD_ASTKind_TableRow,
+	MD_ASTKind_List, // container for children, with the children count
 
 	MD_ASTKind_COUNT,
 } MD_ASTKind;
