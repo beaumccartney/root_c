@@ -4,19 +4,41 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 {
 	MG_GenResult result = zero_struct;
 
-	String8List h_file_enums  = zero_struct,
-	            h_file_arrays = zero_struct, // arrays will always be put after enums so any ident lengths in the arrays are already declared
-	            h_file_embeds = zero_struct,
-	            c_file        = zero_struct;
+	String8List h_file_begin           = zero_struct,
+		    h_file_enums           = zero_struct,
+		    h_file_structs         = zero_struct,
+		    h_file_functions       = zero_struct,
+		    h_file_arrays          = zero_struct,
+		    h_file_embeddedstrings = zero_struct,
+		    h_file_embeddedfiles   = zero_struct,
+		    h_file_default         = zero_struct,
+		    h_file_end             = zero_struct,
+		    c_file_begin           = zero_struct,
+		    c_file_functions       = zero_struct,
+		    c_file_arrays          = zero_struct,
+		    c_file_default         = zero_struct,
+		    c_file_end             = zero_struct;
 
 	Temp scratch = scratch_begin(&arena, 1);
 
 	for (MD_AST *global_directive = root->first; global_directive != 0; global_directive = global_directive->next)
 	{
+		String8List *const md_ast_to_target_location_table[MD_ASTKind_COUNT] = {
+			[MD_ASTKind_DirectiveGenH       ] = &h_file_default,
+			[MD_ASTKind_DirectiveGenC       ] = &c_file_default,
+			[MD_ASTKind_DirectiveEnum       ] = &h_file_enums,
+			[MD_ASTKind_DirectiveStruct     ] = &h_file_structs,
+			[MD_ASTKind_DirectiveArray      ] = &c_file_arrays,
+			[MD_ASTKind_DirectiveEmbedString] = &h_file_embeddedstrings,
+			[MD_ASTKind_DirectiveEmbedFile  ] = &h_file_embeddedfiles,
+		};
+
+		String8List *target_location = md_ast_to_target_location_table[global_directive->kind];
+		Assert(global_directive->kind == MD_ASTKind_DirectiveTable || target_location);
 		switch (global_directive->kind)
 		{
-			case MD_ASTKind_DirectiveEmbedFile:
-			case MD_ASTKind_DirectiveEmbedString: {
+			case MD_ASTKind_DirectiveEmbedString:
+			case MD_ASTKind_DirectiveEmbedFile: {
 				MD_AST *child = global_directive->first;
 				Assert(child->kind == MD_ASTKind_Ident && child->token->kind == MD_TokenKind_Ident);
 				String8 embedded_varname = child->token->source;
@@ -118,7 +140,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					);
 					str8_list_pushf(
 						scratch.arena,
-						&h_file_embeds,
+						target_location,
 						"const global U8 %S[] =\n{",
 						bytes_varname
 					);
@@ -151,13 +173,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 						str8_list_push(
 							scratch.arena,
-							&h_file_embeds,
+							target_location,
 							c_byte_lits
 						);
 					}
 					str8_list_pushf(
 						scratch.arena,
-						&h_file_embeds,
+						target_location,
 						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n",
 						embedded_varname,
 						bytes_varname,
@@ -203,7 +225,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					);
 					String8Node * embedded_cstring_lit = str8_list_push(
 						scratch.arena,
-						&h_file_embeds,
+						target_location,
 						str8_list_join(scratch.arena, lines, 0) // XXX: remove once auto-newlines are gone
 					);
 					Unused(embedded_cstring_lit); // inspect in debugger
@@ -215,19 +237,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 			case MD_ASTKind_DirectiveStruct:
 			case MD_ASTKind_DirectiveArray: {
 				MD_AST *directive_child = global_directive->first;
-				String8List *target_file = 0;
 				String8 enum_name = zero_struct; // 0 if not @enum // TODO: type name for enum and struct
 				switch (global_directive->kind)
 				{
-					case MD_ASTKind_DirectiveGenH: {
-						target_file = &h_file_enums; // REVIEW:
-					} break;
-					case MD_ASTKind_DirectiveGenC: {
-						target_file = &c_file; // REVIEW:
-					} break;
+					case MD_ASTKind_DirectiveGenH:
+					case MD_ASTKind_DirectiveGenC: break;
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct: {
-						target_file = &h_file_enums;
 						Assert(directive_child->kind == MD_ASTKind_Ident);
 						String8Node *decl = 0;
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
@@ -237,14 +253,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								str8_lit(" "),
 								directive_child->token->source
 							);
-							decl = str8_list_push(scratch.arena, target_file, str8_lit("typedef enum"));
+							decl = str8_list_push(scratch.arena, target_location, str8_lit("typedef enum"));
 						}
 						else
 						{
 							Assert(global_directive->kind == MD_ASTKind_DirectiveStruct);
 							decl = str8_list_pushf(
 								scratch.arena,
-								target_file,
+								target_location,
 								"typedef struct %S %S;\nstruct %S",
 								directive_child->token->source,
 								directive_child->token->source,
@@ -255,7 +271,6 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Unused(decl); // for debugger inspecting
 					} break;
 					case MD_ASTKind_DirectiveArray: {
-						target_file = &c_file;
 						Assert(
 							  global_directive->kind == MD_ASTKind_DirectiveArray
 							&& directive_child->kind == MD_ASTKind_IdentList
@@ -289,14 +304,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						//  static? put everything in header file?
 						str8_list_pushf(
 							scratch.arena,
-							&h_file_arrays,
+							target_location,
 							"extern %S;\n",
 							common_arr_decl
 						);
 
 						str8_list_pushf(
 							scratch.arena,
-							&c_file,
+							target_location,
 							"%S =",
 							common_arr_decl
 						);
@@ -312,7 +327,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					    || global_directive->kind == MD_ASTKind_DirectiveArray);
 					str8_list_push(
 						scratch.arena,
-						target_file,
+						target_location,
 						str8_lit("{")
 					);
 					Assert(directive_child->kind = MD_ASTKind_Ident);
@@ -338,7 +353,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						);
 						str8_list_push(
 							scratch.arena,
-							target_file,
+							target_location,
 							to_write
 						);
 					}
@@ -493,7 +508,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						// XXX: use string array instead of list?
 						// REVIEW: use join param to add comma at the end?
 						String8 expanded = str8_list_join(scratch.arena, expand_list, 0); // instead of concat because not all nodes want a newline after
-						str8_list_push(scratch.arena, target_file, expanded);
+						str8_list_push(scratch.arena, target_location, expanded);
 					}
 				}
 
@@ -506,7 +521,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					case MD_ASTKind_DirectiveEnum: {
 						str8_list_pushf(
 							scratch.arena,
-							target_file,
+							target_location,
 							"}%S;\n\n",
 							enum_name
 						);
@@ -525,14 +540,26 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	finish_generation:;
 
-	str8_list_concat_in_place(&h_file_enums, &h_file_arrays);
-	str8_list_concat_in_place(&h_file_enums, &h_file_embeds);
+	str8_list_concat_in_place(&h_file_begin, &h_file_enums          );
+	str8_list_concat_in_place(&h_file_begin, &h_file_structs        );
+	str8_list_concat_in_place(&h_file_begin, &h_file_functions      );
+	str8_list_concat_in_place(&h_file_begin, &h_file_arrays         );
+	str8_list_concat_in_place(&h_file_begin, &h_file_embeddedstrings);
+	str8_list_concat_in_place(&h_file_begin, &h_file_embeddedfiles  );
+	str8_list_concat_in_place(&h_file_begin, &h_file_default        );
+	str8_list_concat_in_place(&h_file_begin, &h_file_end            );
+	str8_list_concat_in_place(&c_file_begin, &c_file_begin          );
+	str8_list_concat_in_place(&c_file_begin, &c_file_functions      );
+	str8_list_concat_in_place(&c_file_begin, &c_file_arrays         );
+	str8_list_concat_in_place(&c_file_begin, &c_file_default        );
+	str8_list_concat_in_place(&c_file_begin, &c_file_end            );
+
 	// REVIEW: right now there's two newlines after @expand contents, because of this, should I remove it?
 	StringJoin join = {
 		.sep = str8_lit("\n"), // XXX: get rid of this its stupid
 	};
-	result.h_file = str8_list_join(arena, h_file_enums, &join);
-	result.c_file = str8_list_join(arena, c_file, &join);
+	result.h_file = str8_list_join(arena, h_file_begin, &join);
+	result.c_file = str8_list_join(arena, c_file_begin, &join);
 
 	scratch_end(scratch);
 
