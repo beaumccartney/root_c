@@ -1,4 +1,3 @@
-// REVIEW: move to mdesk - useful functionality to include with the file format in general
 internal MG_GenResult
 mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source)
 {
@@ -265,17 +264,30 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Assert(
 							  global_directive->kind == MD_ASTKind_DirectiveArray
 							&& directive_child->kind == MD_ASTKind_List
-							&& 0 < directive_child->children_count
+							&& 1 <= directive_child->children_count
 							&& directive_child->children_count <= 2
-							&& directive_child->first->kind == MD_ASTKind_Ident);
-						String8 type = directive_child->first->token->source,
+							&& (directive_child->first->kind == MD_ASTKind_Ident || directive_child->first->kind == MD_ASTKind_StringLit));
+						String8 array_type = directive_child->first->token->source,
 							array_count = zero_struct,
 							name = zero_struct;
 
+						if (directive_child->first->kind == MD_ASTKind_StringLit)
+						{
+							Assert(array_type.length > 2);
+							array_type = str8(array_type.buffer + 1, array_type.length - 2);
+						}
+						Assert(array_type.length > 0);
+
 						if (directive_child->children_count == 2)
 						{
-							Assert(directive_child->last->kind == MD_ASTKind_Ident);
+							Assert(directive_child->last->kind == MD_ASTKind_Ident || directive_child->last->kind == MD_ASTKind_StringLit);
 							array_count = directive_child->last->token->source;
+							if (directive_child->last->kind == MD_ASTKind_StringLit)
+							{
+								Assert(array_count.length > 2);
+								array_count = str8(array_count.buffer + 1, array_count.length - 2);
+							}
+							Assert(array_count.length > 0);
 						}
 
 						directive_child = directive_child->next;
@@ -285,7 +297,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						String8 common_arr_decl = push_str8f(
 							scratch.arena,
 							"const %S %S[%S]",
-							type,
+							array_type,
 							name,
 							array_count
 						);
