@@ -3,33 +3,35 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 {
 	MG_GenResult result = zero_struct;
 
-	String8List h_file_enums           = zero_struct,
-		    h_file_structs         = zero_struct,
-		    h_file_functions       = zero_struct,
-		    h_file_arrays          = zero_struct,
-		    h_file_embeddedstrings = zero_struct,
-		    h_file_embeddedfiles   = zero_struct,
-		    h_file_default         = zero_struct,
-		    c_file_functions       = zero_struct,
-		    c_file_arrays          = zero_struct,
-		    c_file_default         = zero_struct;
+	String8List gen_lists[MD_GenFile_COUNT][MD_GenLocation_COUNT] = zero_struct;
 
 	Temp scratch = scratch_begin(&arena, 1);
 
 	for (MD_AST *global_directive = root->first; global_directive != 0; global_directive = global_directive->next)
 	{
-		String8List *const md_ast_to_target_location_table[MD_ASTKind_COUNT] = {
-			[MD_ASTKind_DirectiveGenH       ] = &h_file_default,
-			[MD_ASTKind_DirectiveGenC       ] = &c_file_default,
-			[MD_ASTKind_DirectiveEnum       ] = &h_file_enums,
-			[MD_ASTKind_DirectiveStruct     ] = &h_file_structs,
-			[MD_ASTKind_DirectiveArray      ] = &c_file_arrays,
-			[MD_ASTKind_DirectiveEmbedString] = &h_file_embeddedstrings,
-			[MD_ASTKind_DirectiveEmbedFile  ] = &h_file_embeddedfiles,
+		const local_persist struct {
+			MD_GenFile     gen_file;
+			MD_GenLocation gen_loc;
+		} md_ast_to_gen_info_table[MD_ASTKind_COUNT] = {
+			[MD_ASTKind_DirectiveGen        ] = {MD_GenFile_H, MD_GenLocation_Default        },
+			[MD_ASTKind_DirectiveEnum       ] = {MD_GenFile_H, MD_GenLocation_Enums          },
+			[MD_ASTKind_DirectiveStruct     ] = {MD_GenFile_H, MD_GenLocation_Structs        },
+			[MD_ASTKind_DirectiveArray      ] = {MD_GenFile_C, MD_GenLocation_Arrays         },
+			[MD_ASTKind_DirectiveEmbedString] = {MD_GenFile_H, MD_GenLocation_EmbeddedStrings},
+			[MD_ASTKind_DirectiveEmbedFile  ] = {MD_GenFile_H, MD_GenLocation_EmbeddedFiles  },
 		};
 
-		String8List *target_location = md_ast_to_target_location_table[global_directive->kind];
-		Assert(global_directive->kind == MD_ASTKind_DirectiveTable || target_location);
+		MD_GenFile     gen_file = global_directive->gen_file;
+		MD_GenLocation gen_loc  = global_directive->gen_loc;
+
+		if (gen_file == MD_GenFile_NULL)
+			gen_file = md_ast_to_gen_info_table[global_directive->kind].gen_file;
+
+		if (gen_loc == MD_GenLocation_NULL)
+			gen_loc = md_ast_to_gen_info_table[global_directive->kind].gen_loc;
+
+		Assert(global_directive->kind == MD_ASTKind_DirectiveTable || (gen_file != MD_GenFile_NULL && gen_loc != MD_GenLocation_NULL));
+		String8List *gen_target = &gen_lists[gen_file][gen_loc];
 		switch (global_directive->kind)
 		{
 			case MD_ASTKind_DirectiveEmbedString:
@@ -137,7 +139,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					);
 					str8_list_pushf(
 						scratch.arena,
-						target_location,
+						gen_target,
 						"const global U8 %S[] =\n{\n",
 						bytes_varname
 					);
@@ -171,13 +173,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 						str8_list_push(
 							scratch.arena,
-							target_location,
+							gen_target,
 							c_byte_lits
 						);
 					}
 					str8_list_pushf(
 						scratch.arena,
-						target_location,
+						gen_target,
 						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n\n",
 						embedded_varname,
 						bytes_varname,
@@ -189,7 +191,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString);
 					str8_list_pushf(
 						scratch.arena,
-						target_location,
+						gen_target,
 						"const global String8 %S = str8_lit(\n",
 						embedded_varname
 					);
@@ -198,7 +200,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					{
 						str8_list_push(
 							scratch.arena,
-							target_location,
+							gen_target,
 							str8_lit("\"")
 						);
 						U8 *line_end = line_begin;
@@ -206,7 +208,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						String8 line = str8_region(line_begin, line_end);
 						String8Node *line_node = str8_list_pushf(
 							scratch.arena,
-							target_location,
+							gen_target,
 							"%S\\n\"\n",
 							line
 						);
@@ -215,13 +217,12 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					}
 					str8_list_push(
 						scratch.arena,
-						target_location,
+						gen_target,
 						str8_lit(");\n\n")
 					);
 				}
 			} break;
-			case MD_ASTKind_DirectiveGenH:
-			case MD_ASTKind_DirectiveGenC:
+			case MD_ASTKind_DirectiveGen:
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveStruct:
 			case MD_ASTKind_DirectiveArray: {
@@ -229,13 +230,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				String8 enum_name = zero_struct; // 0 if not @enum // TODO: type name for enum and struct
 				switch (global_directive->kind)
 				{
-					case MD_ASTKind_DirectiveGenH:
-					case MD_ASTKind_DirectiveGenC: break;
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct: {
 						Assert(directive_child->kind == MD_ASTKind_Ident);
 						String8Node *decl = 0;
-						str8_list_push(scratch.arena, target_location, str8_lit("typedef "));
+						str8_list_push(scratch.arena, gen_target, str8_lit("typedef "));
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
 						{
 							enum_name = push_str8_cat(
@@ -243,14 +242,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								str8_lit(" "),
 								directive_child->token->source
 							);
-							decl = str8_list_push(scratch.arena, target_location, str8_lit("enum"));
+							decl = str8_list_push(scratch.arena, gen_target, str8_lit("enum"));
 						}
 						else
 						{
 							Assert(global_directive->kind == MD_ASTKind_DirectiveStruct);
 							decl = str8_list_pushf(
 								scratch.arena,
-								target_location,
+								gen_target,
 								"typedef struct %S %S;\nstruct %S",
 								directive_child->token->source,
 								directive_child->token->source,
@@ -258,7 +257,6 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							);
 						}
 						Assert(decl);
-						Unused(decl); // for debugger inspecting
 					} break;
 					case MD_ASTKind_DirectiveArray: {
 						Assert(
@@ -294,43 +292,57 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Assert(directive_child->kind == MD_ASTKind_Ident);
 						name = directive_child->token->source;
 
+						// make static if in header file
+						if (gen_file == MD_GenFile_H)
+						{
+							str8_list_push(
+								scratch.arena,
+								&gen_lists[MD_GenFile_H][gen_loc],
+								str8_lit("global ")
+							);
+						}
+
 						String8 common_arr_decl = push_str8f(
 							scratch.arena,
-							"const %S %S[%S]",
+							"read_only %S %S[%S]", // NOTE: read_only instead of const because if its an array of pointers its hard to make the array constant instead of the type of the pointer in the array
 							array_type,
 							name,
 							array_count
 						);
 
-						// REVIEW:
-						//  is extern needed?
-						//  static? put everything in header file?
-						str8_list_pushf(
-							scratch.arena,
-							&h_file_arrays,
-							"extern %S;\n\n",
-							common_arr_decl
-						);
+						if (gen_file == MD_GenFile_C)
+						{
+							// REVIEW:
+							//  is extern needed?
+							//  static? put everything in header file?
+							str8_list_pushf(
+								scratch.arena,
+								&gen_lists[MD_GenFile_H][MD_GenLocation_Arrays],
+								"extern %S;\n\n",
+								common_arr_decl
+							);
+						}
 
 						str8_list_pushf(
 							scratch.arena,
-							target_location,
+							gen_target,
 							"%S =",
 							common_arr_decl
 						);
 					} break;
+					case MD_ASTKind_DirectiveGen: break; // no symbol
 					default: {
 						Unreachable;
 					} break;
 				}
-				if (global_directive->kind != MD_ASTKind_DirectiveGenH && global_directive->kind != MD_ASTKind_DirectiveGenC)
+				if (global_directive->kind != MD_ASTKind_DirectiveGen)
 				{
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEnum
 					    || global_directive->kind == MD_ASTKind_DirectiveStruct
 					    || global_directive->kind == MD_ASTKind_DirectiveArray);
 					str8_list_push(
 						scratch.arena,
-						target_location,
+						gen_target,
 						str8_lit("\n{\n")
 					);
 					Assert(directive_child->kind = MD_ASTKind_Ident);
@@ -356,7 +368,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						);
 						str8_list_pushf(
 							scratch.arena,
-							target_location,
+							gen_target,
 							"%S\n",
 							to_write
 						);
@@ -432,7 +444,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						}
 						Assert(specifier == specifiers + num_format_specifiers);
 
-						Assert(directive_child->children_count >= 2); // @expand should always have a target table and a format string as children
+						Assert(directive_child->children_count >= 2); // @expand should always have a gen_target table and a format string as children
 						U64 num_format_args = directive_child->children_count - 2; // first two children of @expand are the table and the format string
 						if (num_format_specifiers != num_format_args)
 						{
@@ -484,7 +496,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							{
 								String8Node *format_pushed = str8_list_push(
 									scratch.arena,
-									target_location,
+									gen_target,
 									str8_substr(format_string, pref_spec->range)
 								);
 								Unused(format_pushed); // to inspect in debugger
@@ -493,7 +505,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								    && elem_string->length > 0);
 								String8Node *elem_pushed = str8_list_push(
 									scratch.arena,
-									target_location,
+									gen_target,
 									*(elem_row + pref_spec->col)
 								);
 								Unused(elem_pushed); // to inspect in debugger
@@ -502,7 +514,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							// push part of format string that comes after last format specifier
 							String8Node *after_last_specifier = str8_list_push(
 								scratch.arena,
-								target_location,
+								gen_target,
 								after_last_spec_string
 							);
 							Unused(after_last_specifier); // inspect of debugger
@@ -512,14 +524,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 				switch (global_directive->kind)
 				{
-					case MD_ASTKind_DirectiveGenH:
-					case MD_ASTKind_DirectiveGenC: break; // do nothing
+					case MD_ASTKind_DirectiveGen: break; // do nothing
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray:
 					case MD_ASTKind_DirectiveEnum: {
 						str8_list_pushf(
 							scratch.arena,
-							target_location,
+							gen_target,
 							"}%S;\n\n",
 							enum_name
 						);
@@ -538,17 +549,14 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	finish_generation:;
 
-	str8_list_concat_in_place(&h_file_enums,     &h_file_structs        );
-	str8_list_concat_in_place(&h_file_enums,     &h_file_functions      );
-	str8_list_concat_in_place(&h_file_enums,     &h_file_arrays         );
-	str8_list_concat_in_place(&h_file_enums,     &h_file_embeddedstrings);
-	str8_list_concat_in_place(&h_file_enums,     &h_file_embeddedfiles  );
-	str8_list_concat_in_place(&h_file_enums,     &h_file_default        );
-	str8_list_concat_in_place(&c_file_functions, &c_file_arrays         );
-	str8_list_concat_in_place(&c_file_functions, &c_file_default        );
+	for EachNonZeroEnumVal(MD_GenLocation, i)
+	{
+		str8_list_concat_in_place(&gen_lists[MD_GenFile_H][MD_GenFile_NULL], &gen_lists[MD_GenFile_H][i]);
+		str8_list_concat_in_place(&gen_lists[MD_GenFile_C][MD_GenFile_NULL], &gen_lists[MD_GenFile_C][i]);
+	}
 
-	result.h_file = str8_list_join(arena, h_file_enums,     0);
-	result.c_file = str8_list_join(arena, c_file_functions, 0);
+	result.h_file = str8_list_join(arena, gen_lists[MD_GenFile_H][MD_GenFile_NULL], 0);
+	result.c_file = str8_list_join(arena, gen_lists[MD_GenFile_C][MD_GenFile_NULL], 0);
 
 	scratch_end(scratch);
 

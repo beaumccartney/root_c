@@ -77,16 +77,27 @@ md_tokens_from_source(Arena *arena, String8 source)
 				};
 				// REVIEW: if this gets large, some kind of hash table?
 				const local_persist MD_Directive_StringToken_Map directive_table[] = {
-					{str8_lit_comp("table"),        MD_TokenKind_DirectiveTable      },
-					{str8_lit_comp("gen_c"),        MD_TokenKind_DirectiveGenC       },
-					{str8_lit_comp("gen_h"),        MD_TokenKind_DirectiveGenH       },
-					{str8_lit_comp("enum"),         MD_TokenKind_DirectiveEnum       },
-					{str8_lit_comp("struct"),       MD_TokenKind_DirectiveStruct     },
-					{str8_lit_comp("array"),        MD_TokenKind_DirectiveArray      },
-					{str8_lit_comp("expand"),       MD_TokenKind_DirectiveExpand     },
+					{str8_lit_comp("h_file"),          MD_TokenKind_DirectiveHFile          },
+					{str8_lit_comp("c_file"),          MD_TokenKind_DirectiveCFile          },
 
-					{str8_lit_comp("embed_file"),   MD_TokenKind_DirectiveEmbedFile  },
-					{str8_lit_comp("embed_string"), MD_TokenKind_DirectiveEmbedString},
+					{str8_lit_comp("top"),             MD_TokenKind_DirectiveTop            },
+					{str8_lit_comp("enums"),           MD_TokenKind_DirectiveEnums          },
+					{str8_lit_comp("structs"),         MD_TokenKind_DirectiveStructs        },
+					{str8_lit_comp("functions"),       MD_TokenKind_DirectiveFunctions      },
+					{str8_lit_comp("arrays"),          MD_TokenKind_DirectiveArrays         },
+					{str8_lit_comp("embedded_strings"), MD_TokenKind_DirectiveEmbeddedStrings},
+					{str8_lit_comp("embedded_files"),   MD_TokenKind_DirectiveEmbeddedFiles  },
+					{str8_lit_comp("bottom"),          MD_TokenKind_DirectiveBottom         },
+
+					{str8_lit_comp("table"),           MD_TokenKind_DirectiveTable          },
+					{str8_lit_comp("gen"),             MD_TokenKind_DirectiveGen            },
+					{str8_lit_comp("enum"),            MD_TokenKind_DirectiveEnum           },
+					{str8_lit_comp("struct"),          MD_TokenKind_DirectiveStruct         },
+					{str8_lit_comp("array"),           MD_TokenKind_DirectiveArray          },
+					{str8_lit_comp("expand"),          MD_TokenKind_DirectiveExpand         },
+
+					{str8_lit_comp("embed_file"),      MD_TokenKind_DirectiveEmbedFile      },
+					{str8_lit_comp("embed_string"),    MD_TokenKind_DirectiveEmbedString    },
 				};
 				do c++; while (c < one_past_last && (*c == '_' || char_is_alpha(*c)));
 				String8 directive_name = str8_region(tok_start + 1, c);
@@ -374,6 +385,10 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 
 	U8 *source_last = source.buffer + source.length - 1;
 
+	// accumulators for directives specifying where code is generated
+	// remember to clear when its used
+	MD_GenFile gen_file    = MD_GenFile_NULL;
+	MD_GenLocation gen_loc = MD_GenLocation_NULL;
 	while (token < tokens_one_past_last)
 	{
 		const local_persist MD_ASTKind
@@ -385,8 +400,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 
 			[MD_TokenKind_DirectiveTable      ] = MD_ASTKind_DirectiveTable,
 
-			[MD_TokenKind_DirectiveGenH       ] = MD_ASTKind_DirectiveGenH,
-			[MD_TokenKind_DirectiveGenC       ] = MD_ASTKind_DirectiveGenC,
+			[MD_TokenKind_DirectiveGen        ] = MD_ASTKind_DirectiveGen,
 			[MD_TokenKind_DirectiveEnum       ] = MD_ASTKind_DirectiveEnum,
 			[MD_TokenKind_DirectiveStruct     ] = MD_ASTKind_DirectiveStruct,
 			[MD_TokenKind_DirectiveArray      ] = MD_ASTKind_DirectiveArray,
@@ -398,20 +412,77 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 			[MD_TokenKind_Ident               ] = MD_ASTKind_Ident,
 		};
 
-		MD_ASTKind global_directive_kind = md_token_to_ast_kind_table[token->kind];
-		switch (global_directive_kind)
+		switch (token->kind)
 		{
-			case MD_ASTKind_DirectiveEmbedString:
-			case MD_ASTKind_DirectiveEmbedFile:
-			case MD_ASTKind_DirectiveGenH:
-			case MD_ASTKind_DirectiveGenC:
-			case MD_ASTKind_DirectiveTable:
-			case MD_ASTKind_DirectiveEnum:
-			case MD_ASTKind_DirectiveStruct:
-			case MD_ASTKind_DirectiveArray: {
-				MD_AST *global_directive = md_ast_push_child(arena, result.root, global_directive_kind, token),
+			case MD_TokenKind_DirectiveHFile:
+			case MD_TokenKind_DirectiveCFile:
+			case MD_TokenKind_DirectiveTop:
+			case MD_TokenKind_DirectiveEnums:
+			case MD_TokenKind_DirectiveStructs:
+			case MD_TokenKind_DirectiveFunctions:
+			case MD_TokenKind_DirectiveArrays:
+			case MD_TokenKind_DirectiveEmbeddedStrings:
+			case MD_TokenKind_DirectiveEmbeddedFiles:
+			case MD_TokenKind_DirectiveBottom: {
+				U64 val = 0, null = 0;
+				String8 message = zero_struct;
+				if (token->kind == MD_TokenKind_DirectiveHFile || token->kind == MD_TokenKind_DirectiveCFile)
+				{
+					val  = gen_file;
+					null = MD_GenFile_NULL;
+					message = str8_lit("overriding previously specified generation file");
+					gen_file = token->kind == MD_TokenKind_DirectiveHFile ? MD_GenFile_H : MD_GenFile_C;
+				}
+				else
+				{
+					val  = gen_loc;
+					switch (token->kind)
+					{
+						case MD_TokenKind_DirectiveTop:             gen_loc = MD_GenLocation_Top;             break;
+						case MD_TokenKind_DirectiveEnums:           gen_loc = MD_GenLocation_Enums;           break;
+						case MD_TokenKind_DirectiveStructs:         gen_loc = MD_GenLocation_Structs;         break;
+						case MD_TokenKind_DirectiveFunctions:       gen_loc = MD_GenLocation_Functions;       break;
+						case MD_TokenKind_DirectiveArrays:          gen_loc = MD_GenLocation_Arrays;          break;
+						case MD_TokenKind_DirectiveEmbeddedStrings: gen_loc = MD_GenLocation_EmbeddedStrings; break;
+						case MD_TokenKind_DirectiveEmbeddedFiles:   gen_loc = MD_GenLocation_EmbeddedFiles;   break;
+						case MD_TokenKind_DirectiveBottom:          gen_loc = MD_GenLocation_Bottom;          break;
+						default: {
+							Unreachable;
+						} break;
+					}
+					null = MD_GenLocation_NULL;
+					message = str8_lit("overriding previously specified generation location");
+				}
+				Assert(message.length > 0);
+				if (val != null)
+				{
+					md_messagelist_push(
+						arena,
+						&result.messages,
+						source,
+						token->source.buffer,
+						token,
+						0,
+						MD_MessageKind_Warning,
+						message
+					);
+				}
+				token++;
+				continue;
+			} break;
+			case MD_TokenKind_DirectiveEmbedString:
+			case MD_TokenKind_DirectiveEmbedFile:
+			case MD_TokenKind_DirectiveGen:
+			case MD_TokenKind_DirectiveTable:
+			case MD_TokenKind_DirectiveEnum:
+			case MD_TokenKind_DirectiveStruct:
+			case MD_TokenKind_DirectiveArray: {
+				MD_AST *global_directive = md_ast_push_child(arena, result.root, md_token_to_ast_kind_table[token->kind], token),
 				       *directive_params = 0; // ident list for @table and @array
-				// REVIEW: allow integer lengths for @array?
+				global_directive->gen_file = gen_file;
+				global_directive->gen_loc  = gen_loc;
+				gen_file                   = MD_GenFile_NULL;
+				gen_loc                    = MD_GenLocation_NULL;
 				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
 				{
 					if (++token == tokens_one_past_last || token->kind != MD_TokenKind_OpenParen)
@@ -641,8 +712,9 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 							}
 						}
 					} break;
+					case MD_ASTKind_DirectiveGen: break; // no name or symbol for @gen
 					default: {
-						Assert(global_directive->kind == MD_ASTKind_DirectiveGenH || global_directive->kind == MD_ASTKind_DirectiveGenC);
+						Unreachable;
 					} break;
 				}
 
@@ -804,8 +876,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 							}
 						}
 					} break;
-					case MD_ASTKind_DirectiveGenH:
-					case MD_ASTKind_DirectiveGenC:
+					case MD_ASTKind_DirectiveGen:
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
@@ -1032,8 +1103,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 				String8Array table_matrix = str8_array_from_list(arena, table_elems);
 				table_symbol->table_record.elem_matrix = table_matrix.v;
 			} break;
-			case MD_ASTKind_DirectiveGenH:
-			case MD_ASTKind_DirectiveGenC:
+			case MD_ASTKind_DirectiveGen:
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveArray:
 			case MD_ASTKind_DirectiveStruct: {
@@ -1047,8 +1117,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 					case MD_ASTKind_DirectiveStruct: {
 						global_directive_child = global_directive_child->next; // skip the enum name
 					} // fallthrough
-					case MD_ASTKind_DirectiveGenH:
-					case MD_ASTKind_DirectiveGenC: break; // already at the gen children
+					case MD_ASTKind_DirectiveGen: break; // already at the gen children
 					default: {
 						Unreachable;
 					} break;

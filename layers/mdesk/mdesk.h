@@ -19,10 +19,21 @@ typedef enum
 	MD_TokenKind_StringLit,
 	MD_TokenKind_RawStringLit,
 
+	MD_TokenKind_DirectiveHFile,
+	MD_TokenKind_DirectiveCFile,
+
+	MD_TokenKind_DirectiveTop,
+	MD_TokenKind_DirectiveEnums, // REVIEW: do I need enums and structs in header and c files?
+	MD_TokenKind_DirectiveStructs,
+	MD_TokenKind_DirectiveFunctions,
+	MD_TokenKind_DirectiveArrays,
+	MD_TokenKind_DirectiveEmbeddedStrings,
+	MD_TokenKind_DirectiveEmbeddedFiles,
+	MD_TokenKind_DirectiveBottom,
+
 	MD_TokenKind_DirectiveTable,
 
-	MD_TokenKind_DirectiveGenH,
-	MD_TokenKind_DirectiveGenC,
+	MD_TokenKind_DirectiveGen,
 	MD_TokenKind_DirectiveEnum,
 	MD_TokenKind_DirectiveStruct,
 	MD_TokenKind_DirectiveArray,
@@ -119,8 +130,7 @@ typedef enum
 
 	MD_ASTKind_DirectiveTable,
 
-	MD_ASTKind_DirectiveGenH,
-	MD_ASTKind_DirectiveGenC,
+	MD_ASTKind_DirectiveGen,
 	MD_ASTKind_DirectiveEnum,
 	MD_ASTKind_DirectiveStruct,
 	MD_ASTKind_DirectiveArray,
@@ -135,6 +145,30 @@ typedef enum
 	MD_ASTKind_COUNT,
 } MD_ASTKind;
 
+// REVIEW: in c layer or something else? this should be common
+typedef enum
+{
+	MD_GenFile_NULL, // REVIEW: just set to COUNT by default?
+	MD_GenFile_H,
+	MD_GenFile_C,
+	MD_GenFile_COUNT,
+} MD_GenFile;
+
+typedef enum
+{
+	MD_GenLocation_NULL, // REVIEW: just set to COUNT by default?
+	MD_GenLocation_Top,
+	MD_GenLocation_Enums,
+	MD_GenLocation_Structs,
+	MD_GenLocation_Functions,
+	MD_GenLocation_Arrays,
+	MD_GenLocation_EmbeddedStrings,
+	MD_GenLocation_EmbeddedFiles,
+	MD_GenLocation_Default,
+	MD_GenLocation_Bottom,
+	MD_GenLocation_COUNT,
+} MD_GenLocation;
+
 typedef struct MD_AST MD_AST;
 struct MD_AST
 {
@@ -146,6 +180,8 @@ struct MD_AST
 	U64 children_count;
 	MD_Token *token; // REVIEW: just the token string instead? or the string containing the entire tree?
 	MD_ASTKind kind;
+	MD_GenFile gen_file;
+	MD_GenLocation gen_loc;
 };
 
 typedef struct MD_SymbolTableEntry MD_SymbolTableEntry;
@@ -203,6 +239,7 @@ md_messagelist_pushf(Arena *arena, MD_MessageList *messages, String8 source, U8 
 
 internal U64 md_hash_ident(String8 ident);
 
+// REVIEW: there will be other string hash tables, if they're all backed by the same scheme then factor this into a macro
 internal MD_SymbolTableEntry*
 md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident);
 
