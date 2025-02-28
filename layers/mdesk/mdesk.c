@@ -1124,7 +1124,7 @@ internal inline MD_Message*
 md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source, U8* source_loc, MD_MessageKind kind, String8 string)
 {
 	const local_persist
-	char *msg_kind_prefix_table[MD_MessageKind_COUNT] = {
+	char *const msg_kind_prefix_table[MD_MessageKind_COUNT] = {
 		[MD_MessageKind_Warning   ] = "warning",
 		[MD_MessageKind_Error     ] = "error",
 		[MD_MessageKind_FatalError] = "error",
