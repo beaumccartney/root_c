@@ -510,6 +510,20 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 					);
 					if (global_directive->kind == MD_ASTKind_DirectiveTable)
 					{
+						if (global_directive->gen_file != MD_GenFile_NULL || global_directive->gen_loc != MD_GenLocation_NULL)
+						{
+							md_messagelist_push(
+								arena,
+								&result.messages,
+								source,
+								global_directive->token->source.buffer,
+								global_directive->token,
+								global_directive,
+								MD_MessageKind_Warning,
+								str8_lit("location or file specifier(s) used on @table - tables are not generated directly so these have no effect") // REVIEW
+							);
+						}
+							// TODO: warn gen locaiton
 						while (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
 						{
 							if (token->kind != MD_TokenKind_Ident)
