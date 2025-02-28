@@ -1029,8 +1029,6 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 	{
 		switch (global_directive->kind)
 		{
-			case MD_ASTKind_DirectiveEmbedString:
-			case MD_ASTKind_DirectiveEmbedFile: break; // nothing to check
 			case MD_ASTKind_DirectiveTable: {
 				MD_AST *table_child = global_directive->first->next;
 				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab, table_child->token->source);
@@ -1137,6 +1135,8 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 					}
 				}
 			} break;
+			case MD_ASTKind_DirectiveEmbedString:
+			case MD_ASTKind_DirectiveEmbedFile: break; // nothing to check
 			default: {
 				Unreachable; // REVIEW: print an internal error?
 			} break;
