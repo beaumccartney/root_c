@@ -357,10 +357,11 @@ md_tokens_from_source(Arena *arena, String8 source)
 	}
 
 	MD_TokenizeResult result = {
-		.tokens.v = push_array_no_zero(arena, MD_Token, toklist.count),
-		.tokens.count  = toklist.count,
-		.messages      = messages,
+		.tokens.v     = push_array_no_zero(arena, MD_Token, toklist.count + 1),
+		.tokens.count = toklist.count,
+		.messages     = messages,
 	};
+	result.tokens.v[result.tokens.count] = (MD_Token) zero_struct; // null terminate to catch after end bugs
 	MD_Token *dst = result.tokens.v;
 	for (MD_TokenNode *n = toklist.first; n != 0; n = n->next, dst++)
 	{
