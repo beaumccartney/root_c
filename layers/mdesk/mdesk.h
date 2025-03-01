@@ -47,8 +47,6 @@ typedef enum
 	MD_TokenKind_COUNT,
 } MD_TokenKind;
 
-// REVIEW: broken flag for things that weren't terminated correctly?
-// will broken and the kind be enough to know what went wrong?
 typedef struct MD_Token MD_Token;
 struct MD_Token
 {
@@ -73,7 +71,7 @@ struct MD_TokenList
 typedef struct MD_TokenArray MD_TokenArray;
 struct MD_TokenArray
 {
-	MD_Token *tokens; // REVIEW: rename to something better
+	MD_Token *v;
 	U64 count;
 };
 
@@ -187,7 +185,7 @@ struct MD_AST
 typedef struct MD_SymbolTableEntry MD_SymbolTableEntry;
 struct MD_SymbolTableEntry
 {
-	String8 key;
+	String8 ident;
 	MD_AST *ast;
 	MD_SymbolTableEntry *slots[4];
 	union
@@ -228,12 +226,13 @@ internal MD_TokenizeResult
 md_tokens_from_source(Arena *arena, String8 source);
 
 internal MD_ParseResult
-md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source);
+md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source);
 
 // TODO: change param name stab to stab_root
 
+// TODO: rename to something more clear, and possibly factor operations that don't belong here to parsing
 internal MD_MessageList
-md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 source);
+md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source);
 
 internal MD_AST*
 md_ast_push_child(Arena *arena, MD_AST *parent, MD_ASTKind kind, MD_Token *token);
@@ -251,6 +250,6 @@ internal U64 md_hash_ident(String8 ident);
 
 // REVIEW: there will be other string hash tables, if they're all backed by the same scheme then factor this into a macro
 internal MD_SymbolTableEntry*
-md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident);
+md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab_root, String8 ident);
 
 #endif // MDESK_H

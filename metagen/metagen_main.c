@@ -58,14 +58,14 @@ internal void entry_point(void)
 
 				for (MD_Message *m = tokenize.messages.first; m != 0; m = m->next)
 				{
-					m->token = &tokenize.tokens.tokens[m->tokens_ix]; // XXX: nothing is done with the token ix
+					m->token = &tokenize.tokens.v[m->tokens_ix]; // XXX: nothing is done with the token ix
 					mg_print_message(info.name, m);
 				}
 
 				if (tokenize.messages.worst_message >= MD_MessageKind_Error)
 					goto meta_fail;
 
-				MD_ParseResult parsed = md_parse_from_tokens_source(
+				MD_ParseResult parsed = md_parse_from_tokens(
 					work_arena,
 					tokenize.tokens,
 					source

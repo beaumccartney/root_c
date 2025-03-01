@@ -56,7 +56,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 			case MD_ASTKind_DirectiveEmbedString:
 			case MD_ASTKind_DirectiveEmbedFile: {
 				MD_Token *gen_string_token = directive_symbol->named_gen_record.token1;
-				String8 embedded_varname   = directive_symbol->key,
+				String8 embedded_varname   = directive_symbol->ident,
 					gen_string         = gen_string_token->source;
 				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
 				{
@@ -251,7 +251,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							enum_name = push_str8_cat(
 								scratch.arena,
 								str8_lit(" "),
-								directive_symbol->key
+								directive_symbol->ident
 							);
 							decl = str8_list_push(scratch.arena, gen_target, str8_lit("enum"));
 						}
@@ -262,9 +262,9 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								scratch.arena,
 								gen_target,
 								"typedef struct %S %S;\nstruct %S",
-								directive_symbol->key,
-								directive_symbol->key,
-								directive_symbol->key
+								directive_symbol->ident,
+								directive_symbol->ident,
+								directive_symbol->ident
 							);
 						}
 						Assert(decl);
@@ -308,7 +308,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							scratch.arena,
 							"read_only %S %S[%S]", // NOTE: read_only instead of const because if its an array of pointers its hard to make the array constant instead of the type of the pointer in the array
 							array_type,
-							directive_symbol->key,
+							directive_symbol->ident,
 							array_count
 						);
 

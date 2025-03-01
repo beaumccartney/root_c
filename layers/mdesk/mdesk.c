@@ -357,28 +357,28 @@ md_tokens_from_source(Arena *arena, String8 source)
 	}
 
 	MD_TokenizeResult result = {
-		.tokens.tokens = push_array_no_zero(arena, MD_Token, toklist.count),
+		.tokens.v = push_array_no_zero(arena, MD_Token, toklist.count),
 		.tokens.count  = toklist.count,
 		.messages      = messages,
 	};
-	MD_Token *dst = result.tokens.tokens;
+	MD_Token *dst = result.tokens.v;
 	for (MD_TokenNode *n = toklist.first; n != 0; n = n->next, dst++)
 	{
 		MD_Token src = n->token;
 		*dst = src;
 	}
-	Assert(dst == result.tokens.tokens + result.tokens.count);
+	Assert(dst == result.tokens.v + result.tokens.count);
 	scratch_end(scratch);
 	return result;
 }
 
 internal MD_ParseResult
-md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
+md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 {
 	MD_ParseResult result = zero_struct;
 
-	MD_Token *token = tokens.tokens,
-		 *tokens_one_past_last = tokens.tokens + tokens.count;
+	MD_Token *token = tokens.v,
+		 *tokens_one_past_last = tokens.v + tokens.count;
 
 	result.root = push_array(arena, MD_AST, 1);
 	result.root->kind = MD_ASTKind_Root;
@@ -533,7 +533,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								global_directive, // REVIEW: the directive_name instead?
 								MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
 								"redeclaration of '%S'",
-								directive_symbol->key
+								directive_symbol->ident
 							);
 							goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
 						}
@@ -619,7 +619,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 									MD_MessageKind_Error,
 									"duplicate column name '%S' in @table '%S",
 									token->source,
-									directive_symbol->key
+									directive_symbol->ident
 								);
 							}
 							else
@@ -639,7 +639,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								global_directive,
 								MD_MessageKind_Warning,
 								"@table directive '%S' has no named columns",
-								directive_symbol->key
+								directive_symbol->ident
 							);
 						}
 					}
@@ -673,7 +673,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								global_directive,
 								MD_MessageKind_Error,
 								"empty type specifier for @array %S",
-								directive_symbol->key
+								directive_symbol->ident
 							);
 						}
 						MD_ASTKind kind = md_token_to_ast_kind_table[token->kind];
@@ -708,7 +708,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 									global_directive,
 									MD_MessageKind_Error,
 									"empty length specifier for @array %S",
-									directive_symbol->key
+									directive_symbol->ident
 								);
 							}
 							kind = md_token_to_ast_kind_table[token->kind];
@@ -1081,7 +1081,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 }
 
 internal MD_MessageList
-md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 source)
+md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source)
 {
 	MD_MessageList result = zero_struct;
 	Temp scratch = scratch_begin(&arena, 1);
@@ -1093,7 +1093,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 			case MD_ASTKind_DirectiveTable: {
 				MD_AST *table_child = global_directive->first;
 				Assert(table_child->kind == MD_ASTKind_Ident);
-				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab, table_child->token->source);
+				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab_root, table_child->token->source);
 				String8List table_elems = zero_struct;
 				for (table_child = table_child->next; table_child != 0; table_child = table_child->next)
 				{
@@ -1140,7 +1140,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 						continue;
 					Assert(global_directive_child->kind == MD_ASTKind_DirectiveExpand && global_directive_child->children_count >= 2);
 					MD_AST *expand_arg = global_directive_child->first;
-					MD_SymbolTableEntry *target_symbol = md_symbol_from_ident(0, &stab, expand_arg->token->source);
+					MD_SymbolTableEntry *target_symbol = md_symbol_from_ident(0, &stab_root, expand_arg->token->source);
 					if (!target_symbol || target_symbol->ast->kind != MD_ASTKind_DirectiveTable)
 					{
 						Assert(!target_symbol
@@ -1189,7 +1189,7 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 								MD_MessageKind_Error,
 								"undefined format arg to @expand - '%S' is not a column of %S",
 								expand_arg->token->source,
-								target_symbol->key
+								target_symbol->ident
 							);
 						}
 					}
@@ -1284,12 +1284,13 @@ internal U64 md_hash_ident(String8 ident)
 
 // TODO: check that its not just a linked list degredation every time
 internal MD_SymbolTableEntry*
-md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
+md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab_root, String8 ident)
 {
+	MD_SymbolTableEntry **stab = stab_root;
 	Assert(ident.length > 0);
 	for (U64 hash = md_hash_ident(ident); *stab != 0; hash <<=2)
 	{
-		if (str8_match((*stab)->key, ident, 0))
+		if (str8_match((*stab)->ident, ident, 0))
 			goto finish;
 		stab = &(*stab)->slots[hash >> 62];
 	}
@@ -1297,7 +1298,7 @@ md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab, String8 ident)
 	{
 		*stab = push_array_no_zero(arena, MD_SymbolTableEntry, 1);
 		**stab = (MD_SymbolTableEntry) {
-			.key = ident,
+			.ident = ident,
 		};
 	}
 
