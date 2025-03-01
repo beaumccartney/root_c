@@ -630,8 +630,8 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								&result.messages,
 								source,
 								token == tokens_one_past_last
-								? source_last
-								: token->source.buffer,
+									? source_last
+									: token->source.buffer,
 								token,
 								global_directive,
 								MD_MessageKind_FatalError,
