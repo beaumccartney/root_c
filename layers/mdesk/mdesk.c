@@ -826,7 +826,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 				switch (global_directive->kind)
 				{
 					case MD_ASTKind_DirectiveTable: {
-						for (; token != tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace; token++)
+						for (; token < tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace; token++)
 						{
 							if (token->kind != MD_TokenKind_OpenBrace)
 							{
@@ -843,7 +843,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 								goto break_parse_outer_loop;
 							}
 							MD_AST *table_row = md_ast_push_child(arena, global_directive, MD_ASTKind_List, token);
-							while (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace)
+							while (++token < tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace)
 							{
 								MD_ASTKind kind = md_token_to_ast_kind_table[token->kind];
 								switch (kind)
@@ -922,7 +922,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray: {
-						while (token != tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace)
+						while (token < tokens_one_past_last && token->kind != MD_TokenKind_CloseBrace)
 						{
 							switch (token->kind)
 							{
@@ -995,7 +995,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 										Unused(format_string);
 									}
 
-									while (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
+									while (++token < tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
 									{
 										if (token->kind != MD_TokenKind_Ident)
 										{
