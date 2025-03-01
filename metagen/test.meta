@@ -8,33 +8,17 @@
 @embed_string embedded_string
 """
 
-
-
 asdf foo bar
 
 
-
-
-
-
 working?
-
 
 
 sadfjklsajdfoasufioejas;lkj
 
 
 
-
-
-
-
 jkjnvmvcnhj
-
-
-
-
-
 """
 
 @table os_key_table

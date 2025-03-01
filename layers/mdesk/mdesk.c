@@ -769,9 +769,6 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 						Assert(directive_symbol->named_gen_record.token1);
 					Assert(global_directive->kind != MD_ASTKind_DirectiveEnum || !directive_symbol->named_gen_record.token2);
 				}
-				{
-				}
-
 				if (global_directive->kind == MD_ASTKind_DirectiveEmbedString || global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
 				{
 					MD_TokenKind string_kind = MD_TokenKind_StringLit;
