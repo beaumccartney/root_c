@@ -203,6 +203,16 @@ struct MD_SymbolTableEntry
 		{
 			U64 col; // this ident names the nth column of the table
 		} col_record;
+
+		// NOTE:
+		//  @enum         - points to  the type specifier
+		//  @embed_file   - points to the filename string
+		//  @embed_string - points to the embedded string
+		//  @array        - holds the type specifier and an optional length specifier
+		struct
+		{
+			MD_Token *token1, *token2;
+		} named_gen_record;
 	};
 };
 

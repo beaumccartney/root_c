@@ -477,15 +477,79 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 			case MD_TokenKind_DirectiveEnum:
 			case MD_TokenKind_DirectiveStruct:
 			case MD_TokenKind_DirectiveArray: {
-				MD_AST *global_directive = md_ast_push_child(arena, result.root, md_token_to_ast_kind_table[token->kind], token),
-				       *directive_params = 0; // ident list for @table and @array
+				MD_AST *global_directive = md_ast_push_child(arena, result.root, md_token_to_ast_kind_table[token->kind], token);
 				global_directive->gen_file = gen_file;
 				global_directive->gen_loc  = gen_loc;
 				gen_file                   = MD_GenFile_NULL;
 				gen_loc                    = MD_GenLocation_NULL;
+				token++;
+
+				MD_SymbolTableEntry *directive_symbol = 0;
+				switch (global_directive->kind) // check for name on directive
+				{
+					case MD_ASTKind_DirectiveEmbedString:
+					case MD_ASTKind_DirectiveEmbedFile:
+					case MD_ASTKind_DirectiveTable:
+					case MD_ASTKind_DirectiveEnum:
+					case MD_ASTKind_DirectiveStruct:
+					case MD_ASTKind_DirectiveArray: {
+						if (token == tokens_one_past_last || token->kind != MD_TokenKind_Ident)
+						{
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								token == tokens_one_past_last
+									? source_last
+									: token->source.buffer,
+								token,
+								global_directive,
+								MD_MessageKind_FatalError,
+								"missing name for %S directive",
+								global_directive->token->source
+							);
+							goto break_parse_outer_loop;
+						}
+
+						Assert(token->kind == MD_TokenKind_Ident);
+						directive_symbol = md_symbol_from_ident(
+							arena,
+							&result.global_stab,
+							token->source
+						);
+						if (directive_symbol->ast != 0)
+						{
+							// TODO: directive_symbol->key points
+							// to the original declaration of the
+							// symbol, use it to find the position
+							// of the original declaration and
+							// report in the error message
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								token->source.buffer,
+								token,
+								global_directive, // REVIEW: the directive_name instead?
+								MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
+								"redeclaration of '%S'",
+								directive_symbol->key
+							);
+							goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
+						}
+						directive_symbol->ast = global_directive;
+						md_ast_push_child(arena, global_directive, MD_ASTKind_Ident, token);
+						token++;
+					} break;
+					case MD_ASTKind_DirectiveGen: break; // no name or symbol for @gen
+					default: {
+						Unreachable;
+					} break;
+				}
+
 				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
 				{
-					if (++token == tokens_one_past_last || token->kind != MD_TokenKind_OpenParen)
+					if (token == tokens_one_past_last || token->kind != MD_TokenKind_OpenParen)
 					{
 						md_messagelist_pushf(
 							arena,
@@ -497,17 +561,12 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 							token,
 							global_directive,
 							MD_MessageKind_FatalError,
-							"expected '(' after %S",
+							"expected '(' to open %S param list", // REVIEW
 							global_directive->token->source
 						);
 						goto break_parse_outer_loop;
 					}
-					directive_params = md_ast_push_child(
-						arena,
-						global_directive,
-						MD_ASTKind_List,
-						token
-					);
+					token++;
 					if (global_directive->kind == MD_ASTKind_DirectiveTable)
 					{
 						if (global_directive->gen_file != MD_GenFile_NULL || global_directive->gen_loc != MD_GenLocation_NULL)
@@ -523,8 +582,8 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								str8_lit("location or file specifier(s) used on @table - tables are not generated directly so these have no effect") // REVIEW
 							);
 						}
-							// TODO: warn gen locaiton
-						while (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
+						U64 col_num = 0;
+						for (; token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen; col_num++, token++)
 						{
 							if (token->kind != MD_TokenKind_Ident)
 							{
@@ -542,19 +601,52 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								);
 								goto break_parse_outer_loop;
 							}
-							MD_AST *ident_node = md_ast_push_child(
+
+							MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
 								arena,
-								directive_params,
-								MD_ASTKind_Ident,
-								token
+								&directive_symbol->table_record.cols_stab,
+								token->source
 							);
-							Unused(ident_node);
+							if (column_symbol->ast != 0)
+							{
+								md_messagelist_pushf(
+									arena,
+									&result.messages,
+									source,
+									token->source.buffer,
+									token,
+									global_directive, // REVIEW: ast of the name itself?
+									MD_MessageKind_Error,
+									"duplicate column name '%S' in @table '%S",
+									token->source,
+									directive_symbol->key
+								);
+							}
+							else
+							{
+								column_symbol->col_record.col = col_num;
+								// REVIEW: pointer to the token that names the column?
+							}
+						}
+						if ((directive_symbol->table_record.num_cols = col_num) < 1)
+						{
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								global_directive->token->source.buffer,
+								0, // REVIEW
+								global_directive,
+								MD_MessageKind_Warning,
+								"@table directive '%S' has no named columns",
+								directive_symbol->key
+							);
 						}
 					}
 					else
 					{
 						Assert(global_directive->kind == MD_ASTKind_DirectiveArray);
-						if (++token == tokens_one_past_last || (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit))
+						if (token == tokens_one_past_last || (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit))
 						{
 							md_messagelist_pushf(
 								arena,
@@ -569,9 +661,24 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 							);
 							goto break_parse_outer_loop;
 						}
+						else if (token->kind == MD_TokenKind_StringLit && token->source.length == 2)
+						{
+							Assert(token->source.buffer[0] == '"' && token->source.buffer[1] == '"');
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								token->source.buffer,
+								token,
+								global_directive,
+								MD_MessageKind_Error,
+								"empty type specifier for @array %S",
+								directive_symbol->key
+							);
+						}
 						MD_ASTKind kind = md_token_to_ast_kind_table[token->kind];
 						Assert(kind == MD_ASTKind_StringLit || kind == MD_ASTKind_Ident);
-						md_ast_push_child(arena, directive_params, kind, token);
+						directive_symbol->named_gen_record.token1 = token;
 						if (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
 						{
 							if (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit)
@@ -589,9 +696,24 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								);
 								goto break_parse_outer_loop;
 							}
+							else if (token->kind == MD_TokenKind_StringLit && token->source.length == 2)
+							{
+								Assert(token->source.buffer[0] == '"' && token->source.buffer[1] == '"');
+								md_messagelist_pushf(
+									arena,
+									&result.messages,
+									source,
+									token->source.buffer,
+									token,
+									global_directive,
+									MD_MessageKind_Error,
+									"empty length specifier for @array %S",
+									directive_symbol->key
+								);
+							}
 							kind = md_token_to_ast_kind_table[token->kind];
 							Assert(kind == MD_ASTKind_StringLit || kind == MD_ASTKind_Ident);
-							md_ast_push_child(arena, directive_params, kind, token);
+							directive_symbol->named_gen_record.token2 = token;
 							token++;
 						}
 					}
@@ -610,126 +732,11 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 						);
 						goto break_parse_outer_loop;
 					}
+					token++;
 					Assert(global_directive->kind == MD_ASTKind_DirectiveTable ||
-						(global_directive->kind == MD_ASTKind_DirectiveArray && 1 <= directive_params->children_count && directive_params->children_count <= 2));
+						(global_directive->kind == MD_ASTKind_DirectiveArray && directive_symbol->named_gen_record.token1));
 				}
-
-				MD_SymbolTableEntry *directive_symbol = 0;
-				switch (global_directive->kind) // check for name on directive
 				{
-					case MD_ASTKind_DirectiveEmbedString:
-					case MD_ASTKind_DirectiveEmbedFile:
-					case MD_ASTKind_DirectiveTable:
-					case MD_ASTKind_DirectiveEnum:
-					case MD_ASTKind_DirectiveStruct:
-					case MD_ASTKind_DirectiveArray: {
-						if (++token == tokens_one_past_last || token->kind != MD_TokenKind_Ident)
-						{
-							md_messagelist_pushf(
-								arena,
-								&result.messages,
-								source,
-								token == tokens_one_past_last
-									? source_last
-									: token->source.buffer,
-								token,
-								global_directive,
-								MD_MessageKind_FatalError,
-								"missing name for %S directive",
-								global_directive->token->source
-							);
-							goto break_parse_outer_loop;
-						}
-
-						MD_AST *directive_name = md_ast_push_child(
-							arena,
-							global_directive,
-							MD_ASTKind_Ident,
-							token
-						);
-						directive_symbol = md_symbol_from_ident(
-							arena,
-							&result.global_stab,
-							directive_name->token->source
-						);
-						if (directive_symbol->ast != 0)
-						{
-							// TODO: directive_symbol->key points
-							// to the original declaration of the
-							// symbol, use it to find the position
-							// of the original declaration and
-							// report in the error message
-							md_messagelist_pushf(
-								arena,
-								&result.messages,
-								source,
-								directive_name->token->source.buffer,
-								directive_name->token,
-								global_directive, // REVIEW: the directive_name instead?
-								MD_MessageKind_FatalError, // NOTE: because the symbol table entry holds table columns attempting to parse this directive could add columns to a different directive's column table
-								"redeclaration of '%S'",
-								directive_name->token->source
-							);
-							goto break_parse_outer_loop; // REVIEW: fatal only for @table (either on original or duplicate)? i.e. circumstances where its guaranteed that no symbol taint can happen
-						}
-						directive_symbol->ast = global_directive;
-
-						if (global_directive->kind == MD_ASTKind_DirectiveTable)
-						{
-							directive_symbol->table_record.num_cols = directive_params->children_count;
-							if (directive_symbol->table_record.num_cols < 1)
-							{
-								md_messagelist_pushf(
-									arena,
-									&result.messages,
-									source,
-									global_directive->token->source.buffer,
-									0, // REVIEW
-									global_directive,
-									MD_MessageKind_Warning,
-									"@table directive '%S' has no named columns",
-									directive_name->token->source
-								);
-							}
-							else
-							{
-								// REVIEW XXX: just insert these into the symbol table as the identlist is being built
-								U64 column_number = 0;
-								for (MD_AST *column = directive_params->first; column != 0; column = column->next, column_number++)
-								{
-									MD_SymbolTableEntry *column_symbol = md_symbol_from_ident(
-										arena,
-										&directive_symbol->table_record.cols_stab,
-										column->token->source
-									);
-									if (column_symbol->ast != 0)
-									{
-										md_messagelist_pushf(
-											arena,
-											&result.messages,
-											source,
-											column->token->source.buffer,
-											column->token,
-											global_directive, // REVIEW: ast of the name itself?
-											MD_MessageKind_Error,
-											"duplicate column name '%S' in @table '%S",
-											column->token->source,
-											directive_name->token->source
-										);
-									}
-									else
-									{
-										column_symbol->col_record.col = column_number;
-										column_symbol->ast = column;
-									}
-								}
-							}
-						}
-					} break;
-					case MD_ASTKind_DirectiveGen: break; // no name or symbol for @gen
-					default: {
-						Unreachable;
-					} break;
 				}
 
 				if (global_directive->kind == MD_ASTKind_DirectiveEmbedString || global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
@@ -741,7 +748,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 						string_kind = MD_TokenKind_RawStringLit;
 						path_or_raw = "raw";
 					}
-					if ((++token) == tokens_one_past_last || token->kind != string_kind)
+					if (token == tokens_one_past_last || token->kind != string_kind)
 					{
 						md_messagelist_pushf(
 							arena,
@@ -759,24 +766,12 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 						);
 						goto break_parse_outer_loop;
 					}
-					else
-					{
-						MD_ASTKind ast_kind = md_token_to_ast_kind_table[string_kind];
-						Assert(ast_kind == MD_ASTKind_StringLit || ast_kind == MD_ASTKind_RawStringLit);
-						MD_AST *string_child = md_ast_push_child(
-							arena,
-							global_directive,
-							ast_kind,
-							token
-						);
-						Assert(global_directive->children_count == 2); // name and string
-						Unused(string_child);
-						token++;
-					}
+					directive_symbol->named_gen_record.token1 = token;
+					token++;
 					break;
 				}
 
-				if (++token == tokens_one_past_last || token->kind != MD_TokenKind_OpenBrace)
+				if (token == tokens_one_past_last || token->kind != MD_TokenKind_OpenBrace)
 				{
 					md_messagelist_pushf(
 						arena,
@@ -857,9 +852,9 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 								);
 								goto break_parse_outer_loop;
 							}
-							if (table_row->children_count == 0 || table_row->children_count != directive_params->children_count)
+							if (table_row->children_count == 0 || table_row->children_count != directive_symbol->table_record.num_cols)
 							{
-								if (table_row->children_count == 0 && directive_params->children_count == 0)
+								if (table_row->children_count == 0 && directive_symbol->table_record.num_cols)
 								{
 									md_messagelist_push(
 										arena,
@@ -883,7 +878,7 @@ md_parse_from_tokens_source(Arena *arena, MD_TokenArray tokens, String8 source)
 										table_row,
 										MD_MessageKind_Error,
 										"@table row element number mismatch: expected %d, got %d",
-										directive_params->children_count,
+										directive_symbol->table_record.num_cols,
 										table_row->children_count
 									);
 								}
@@ -1096,7 +1091,8 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab, String8 s
 		switch (global_directive->kind)
 		{
 			case MD_ASTKind_DirectiveTable: {
-				MD_AST *table_child = global_directive->first->next;
+				MD_AST *table_child = global_directive->first;
+				Assert(table_child->kind == MD_ASTKind_Ident);
 				MD_SymbolTableEntry *table_symbol = md_symbol_from_ident(0, &stab, table_child->token->source);
 				String8List table_elems = zero_struct;
 				for (table_child = table_child->next; table_child != 0; table_child = table_child->next)

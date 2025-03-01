@@ -32,28 +32,41 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 		Assert(global_directive->kind == MD_ASTKind_DirectiveTable || (gen_file != MD_GenFile_NULL && gen_loc != MD_GenLocation_NULL));
 		String8List *gen_target = &gen_lists[gen_file][gen_loc];
+		MD_AST *directive_child = global_directive->first;
+		MD_SymbolTableEntry *directive_symbol = 0;
+		if (global_directive->kind == MD_ASTKind_DirectiveStruct
+		 || global_directive->kind == MD_ASTKind_DirectiveEnum
+		 || global_directive->kind == MD_ASTKind_DirectiveArray
+		 || global_directive->kind == MD_ASTKind_DirectiveEmbedString
+		 || global_directive->kind == MD_ASTKind_DirectiveEmbedFile
+		)
+		{
+			Assert(directive_child->kind == MD_ASTKind_Ident && directive_child->token->kind == MD_TokenKind_Ident);
+			directive_symbol = md_symbol_from_ident(0, &stab_root, directive_child->token->source);
+		}
+		if (global_directive->kind == MD_ASTKind_DirectiveEmbedString
+		 || global_directive->kind == MD_ASTKind_DirectiveEmbedFile
+		 || global_directive->kind == MD_ASTKind_DirectiveEnum
+		 || global_directive->kind == MD_ASTKind_DirectiveStruct
+		 || global_directive->kind == MD_ASTKind_DirectiveArray)
+			directive_child = directive_child->next;
+
 		switch (global_directive->kind)
 		{
 			case MD_ASTKind_DirectiveEmbedString:
 			case MD_ASTKind_DirectiveEmbedFile: {
-				MD_AST *child = global_directive->first;
-				Assert(child->kind == MD_ASTKind_Ident && child->token->kind == MD_TokenKind_Ident);
-				String8 embedded_varname = child->token->source;
-
-				child = child->next;
-				String8 gen_string = child->token->source;
+				MD_Token *gen_string_token = directive_symbol->named_gen_record.token1;
+				String8 embedded_varname   = directive_symbol->key,
+					gen_string         = gen_string_token->source;
 				if (global_directive->kind == MD_ASTKind_DirectiveEmbedFile)
 				{
-					Assert(child->kind        == MD_ASTKind_StringLit
-					    && child->token->kind == MD_TokenKind_StringLit
-					    && gen_string.length  >= 2); // string literals should have at least two quotes
-					gen_string = str8(gen_string.buffer + 1, gen_string.length - 2); // trim delmiting quotes
+					Assert(gen_string_token->kind == MD_TokenKind_StringLit);
+					gen_string = mg_trim_quotes(gen_string);
 				}
 				else
 				{
 					Assert(global_directive->kind == MD_ASTKind_DirectiveEmbedString
-					    && child->kind            == MD_ASTKind_RawStringLit
-					    && child->token->kind     == MD_TokenKind_RawStringLit
+					    && gen_string_token->kind == MD_TokenKind_RawStringLit
 					    && gen_string.length      >= 6 // room for delimiting triple-quotes
 					);
 
@@ -68,7 +81,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						&result.messages,
 						source,
 						gen_string.buffer,
-						child->token,
+						directive_child->token,
 						global_directive,
 						MD_MessageKind_Warning,
 						"empty argument to %S",
@@ -119,8 +132,8 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							arena,
 							&result.messages,
 							source,
-							child->token->source.buffer, // opening '"' of the string literal
-							child->token,
+							directive_child->token->source.buffer, // opening '"' of the string literal
+							directive_child->token,
 							global_directive,
 							message_kind,
 							message_format,
@@ -226,13 +239,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 			case MD_ASTKind_DirectiveEnum:
 			case MD_ASTKind_DirectiveStruct:
 			case MD_ASTKind_DirectiveArray: {
-				MD_AST *directive_child = global_directive->first;
 				String8 enum_name = zero_struct; // 0 if not @enum // TODO: type name for enum and struct
 				switch (global_directive->kind)
 				{
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct: {
-						Assert(directive_child->kind == MD_ASTKind_Ident);
 						String8Node *decl = 0;
 						str8_list_push(scratch.arena, gen_target, str8_lit("typedef "));
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
@@ -240,7 +251,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							enum_name = push_str8_cat(
 								scratch.arena,
 								str8_lit(" "),
-								directive_child->token->source
+								directive_symbol->key
 							);
 							decl = str8_list_push(scratch.arena, gen_target, str8_lit("enum"));
 						}
@@ -251,46 +262,37 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								scratch.arena,
 								gen_target,
 								"typedef struct %S %S;\nstruct %S",
-								directive_child->token->source,
-								directive_child->token->source,
-								directive_child->token->source
+								directive_symbol->key,
+								directive_symbol->key,
+								directive_symbol->key
 							);
 						}
 						Assert(decl);
 					} break;
 					case MD_ASTKind_DirectiveArray: {
-						Assert(
-							  global_directive->kind == MD_ASTKind_DirectiveArray
-							&& directive_child->kind == MD_ASTKind_List
-							&& 1 <= directive_child->children_count
-							&& directive_child->children_count <= 2
-							&& (directive_child->first->kind == MD_ASTKind_Ident || directive_child->first->kind == MD_ASTKind_StringLit));
-						String8 array_type = directive_child->first->token->source,
-							array_count = zero_struct,
-							name = zero_struct;
-
-						if (directive_child->first->kind == MD_ASTKind_StringLit)
+						MD_Token *array_type_tok = directive_symbol->named_gen_record.token1,
+							 *array_count_tok  = directive_symbol->named_gen_record.token2;
+						Assert(array_type_tok->kind == MD_TokenKind_Ident || array_type_tok->kind == MD_TokenKind_StringLit);
+						String8 array_type = directive_symbol->named_gen_record.token1->source;
+						if (array_type_tok->kind == MD_TokenKind_StringLit)
 						{
 							Assert(array_type.length > 2);
-							array_type = str8(array_type.buffer + 1, array_type.length - 2);
+							array_type = mg_trim_quotes(array_type);
 						}
 						Assert(array_type.length > 0);
 
-						if (directive_child->children_count == 2)
+						String8 array_count = zero_struct;
+						if (array_count_tok)
 						{
-							Assert(directive_child->last->kind == MD_ASTKind_Ident || directive_child->last->kind == MD_ASTKind_StringLit);
-							array_count = directive_child->last->token->source;
-							if (directive_child->last->kind == MD_ASTKind_StringLit)
+							Assert(array_count_tok->kind == MD_TokenKind_Ident || array_count_tok->kind == MD_TokenKind_StringLit);
+							array_count = array_count_tok->source;
+							if (array_count_tok->kind == MD_TokenKind_StringLit)
 							{
 								Assert(array_count.length > 2);
-								array_count = str8(array_count.buffer + 1, array_count.length - 2);
+								array_count = mg_trim_quotes(array_count);
 							}
 							Assert(array_count.length > 0);
 						}
-
-						directive_child = directive_child->next;
-						Assert(directive_child->kind == MD_ASTKind_Ident);
-						name = directive_child->token->source;
 
 						// make static if in header file
 						if (gen_file == MD_GenFile_H)
@@ -306,7 +308,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							scratch.arena,
 							"read_only %S %S[%S]", // NOTE: read_only instead of const because if its an array of pointers its hard to make the array constant instead of the type of the pointer in the array
 							array_type,
-							name,
+							directive_symbol->key,
 							array_count
 						);
 
@@ -345,33 +347,22 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						gen_target,
 						str8_lit("\n{\n")
 					);
-					Assert(directive_child->kind = MD_ASTKind_Ident);
-					directive_child = directive_child->next; // advance past name
 				}
 
 				for (; directive_child != 0; directive_child = directive_child->next)
 				{
 					Assert(directive_child->kind == MD_ASTKind_StringLit || directive_child->kind == MD_ASTKind_DirectiveExpand);
 
-					// TODO: unify codepath for removing quotes from string literal
 					if (directive_child->kind == MD_ASTKind_StringLit)
 					{
-						Assert(directive_child->token->kind == MD_TokenKind_StringLit
-						    && directive_child->token->source.length >= 2
-						    && directive_child->token->source.buffer[0] == '"'
-						    && directive_child->token->source.buffer[directive_child->token->source.length - 1] == '"'
-						);
-						// don't write delimiting quotes
-						String8 to_write = str8(
-							directive_child->token->source.buffer + 1,
-							directive_child->token->source.length - 2
-						);
-						str8_list_pushf(
+						Assert(directive_child->token->kind == MD_TokenKind_StringLit);
+						String8Node *expand_stringlit = str8_list_pushf(
 							scratch.arena,
 							gen_target,
 							"%S\n",
-							to_write
+							mg_trim_quotes(directive_child->token->source)
 						);
+						Unused(expand_stringlit);
 					}
 					else
 					{
@@ -384,16 +375,9 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 						expand_child = expand_child->next;
 						Assert(expand_child->kind == MD_ASTKind_StringLit
-						    && expand_child->token->kind == MD_TokenKind_StringLit
-						    && expand_child->token->source.length >= 2
-						    && expand_child->token->source.buffer[0] == '"'
-						    && expand_child->token->source.buffer[expand_child->token->source.length - 1] == '"'
-						); // is a format string
+						    && expand_child->token->kind == MD_TokenKind_StringLit); // is a format string
 						MD_Token *format_string_token = expand_child->token;
-						String8 format_string = str8(
-							format_string_token->source.buffer + 1,
-							format_string_token->source.length - 2
-						);
+						String8 format_string = mg_trim_quotes(format_string_token->source);
 						if (format_string.length < 1)
 						{
 							md_messagelist_push(
@@ -500,7 +484,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 									str8_substr(format_string, pref_spec->range)
 								);
 								Unused(format_pushed); // to inspect in debugger
-								String8 *elem_string = elem_row + pref_spec->col;
+							String8 *elem_string = elem_row + pref_spec->col;
 								Assert(elem_string < table_symbol->table_record.elem_matrix + (table_symbol->table_record.num_cols*table_symbol->table_record.num_rows)
 								    && elem_string->length > 0);
 								String8Node *elem_pushed = str8_list_push(
@@ -560,5 +544,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	scratch_end(scratch);
 
+	return result;
+}
+
+internal inline String8
+mg_trim_quotes(String8 string)
+{
+	Assert(string.length >= 2 && *string.buffer == '"' && string.buffer[string.length - 1] == '"'); // is the literal delimited by ""?
+	String8 result = str8(string.buffer + 1, string.length - 2);
 	return result;
 }

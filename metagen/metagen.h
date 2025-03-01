@@ -12,4 +12,8 @@ struct MG_GenResult
 internal MG_GenResult
 mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source);
 
+// REVIEW: name
+internal inline String8
+mg_trim_quotes(String8 string);
+
 #endif // METAGEN_H
