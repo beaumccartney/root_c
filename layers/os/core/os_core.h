@@ -92,7 +92,7 @@ internal String8   os_data_from_file_path(Arena *arena, String8 path);
 internal B32       os_write_data_to_file_path(String8 path, String8 data);
 internal B32       os_write_data_list_to_file_path(String8 path, String8List list);
 internal B32       os_append_data_to_file_path(String8 path, String8 data);
-internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64 range);
+internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64 range); // REVIEW: name better
 
 internal OS_Handle      os_file_open(OS_AccessFlags flags, String8 path);
 internal void           os_file_close(OS_Handle file);
