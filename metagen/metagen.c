@@ -193,7 +193,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					str8_list_pushf(
 						scratch.arena,
 						gen_target,
-						"};\nconst global String8 %S = str8(%S, sizeof(%S));\n\n",
+						"};\nconst global String8 %S = {(U8*)%S, sizeof(%S)};\n\n",
 						embedded_varname,
 						bytes_varname,
 						bytes_varname
@@ -205,7 +205,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 					str8_list_pushf(
 						scratch.arena,
 						gen_target,
-						"const global String8 %S = str8_lit(\n",
+						"const global String8 %S = str8_lit_comp(\n",
 						embedded_varname
 					);
 					U8 *one_past_last = gen_string.buffer + gen_string.length;
