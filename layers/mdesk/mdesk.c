@@ -547,26 +547,52 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 					} break;
 				}
 
-				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
+				if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray || global_directive->kind == MD_ASTKind_DirectiveEnum)
 				{
-					if (token == tokens_one_past_last || token->kind != MD_TokenKind_OpenParen)
+					if (token == tokens_one_past_last)
 					{
-						md_messagelist_pushf(
+						md_messagelist_push(
 							arena,
 							&result.messages,
 							source,
-							token == tokens_one_past_last
-								? source_last
-								: token->source.buffer,
-							token,
+							source_last,
+							0,
 							global_directive,
 							MD_MessageKind_FatalError,
-							"expected '(' to open %S param list", // REVIEW
-							global_directive->token->source
+							str8_lit("unexpected end of input")
 						);
 						goto break_parse_outer_loop;
 					}
-					token++;
+					B8 directive_has_paren_args = 1;
+					if (token->kind != MD_TokenKind_OpenParen)
+					{
+						if (global_directive->kind == MD_ASTKind_DirectiveTable || global_directive->kind == MD_ASTKind_DirectiveArray)
+						{
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								token == tokens_one_past_last
+								? source_last
+								: token->source.buffer,
+								token,
+								global_directive,
+								MD_MessageKind_FatalError,
+								"expected '(' to open %S param list", // REVIEW
+								global_directive->token->source
+							);
+							goto break_parse_outer_loop;
+						}
+						directive_has_paren_args = 0;
+					}
+					if (directive_has_paren_args)
+					{
+						token++;
+					}
+					else
+					{
+						Assert(global_directive->kind == MD_ASTKind_DirectiveEnum);
+					}
 					if (global_directive->kind == MD_ASTKind_DirectiveTable)
 					{
 						if (global_directive->gen_file != MD_GenFile_NULL || global_directive->gen_loc != MD_GenLocation_NULL)
@@ -583,7 +609,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 							);
 						}
 						U64 col_num = 0;
-						for (; token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen; col_num++, token++)
+						for (; token < tokens_one_past_last && token->kind != MD_TokenKind_CloseParen; col_num++, token++)
 						{
 							if (token->kind != MD_TokenKind_Ident)
 							{
@@ -643,9 +669,9 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 							);
 						}
 					}
-					else
+					else if (directive_has_paren_args)
 					{
-						Assert(global_directive->kind == MD_ASTKind_DirectiveArray);
+						Assert(global_directive->kind == MD_ASTKind_DirectiveArray || global_directive->kind == MD_ASTKind_DirectiveEnum);
 						if (token == tokens_one_past_last || (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit))
 						{
 							md_messagelist_pushf(
@@ -656,8 +682,8 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 								token,
 								global_directive,
 								MD_MessageKind_FatalError,
-								"illegal type specifier to @array: '%S' - only identifiers and strings are allowed",
-								token->source
+								"expected type specifier for %S", // REVIEW
+								global_directive->token->source
 							);
 							goto break_parse_outer_loop;
 						}
@@ -672,18 +698,20 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 								token,
 								global_directive,
 								MD_MessageKind_Error,
-								"empty type specifier for @array %S",
+								"empty type specifier for %S %S",
+								global_directive->token->source,
 								directive_symbol->ident
 							);
 						}
 						MD_ASTKind kind = md_token_to_ast_kind_table[token->kind];
 						Assert(kind == MD_ASTKind_StringLit || kind == MD_ASTKind_Ident);
 						directive_symbol->named_gen_record.token1 = token;
-						if (++token != tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
+						token++;
+						if (global_directive->kind == MD_ASTKind_DirectiveArray && token < tokens_one_past_last && token->kind != MD_TokenKind_CloseParen)
 						{
-							if (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit)
+							if (token == tokens_one_past_last || (token->kind != MD_TokenKind_Ident && token->kind != MD_TokenKind_StringLit))
 							{
-								md_messagelist_pushf(
+								md_messagelist_push(
 									arena,
 									&result.messages,
 									source,
@@ -691,8 +719,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 									token,
 									global_directive,
 									MD_MessageKind_FatalError,
-									"illegal length specifier to @array: '%S' - only identifiers and strings are allowed",
-									token->source
+									str8_lit("expected length specifier for @array") // REVIEW:
 								);
 								goto break_parse_outer_loop;
 							}
@@ -717,24 +744,29 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 							token++;
 						}
 					}
-					if (token == tokens_one_past_last || token->kind != MD_TokenKind_CloseParen)
+					if (directive_has_paren_args)
 					{
-						md_messagelist_pushf(
-							arena,
-							&result.messages,
-							source,
-							source_last,
-							token,
-							global_directive,
-							MD_MessageKind_FatalError,
-							"unclosed parameter list for %S - missing ')'",
-							global_directive->token->source
-						);
-						goto break_parse_outer_loop;
+						if (token == tokens_one_past_last || token->kind != MD_TokenKind_CloseParen)
+						{
+							md_messagelist_pushf(
+								arena,
+								&result.messages,
+								source,
+								source_last,
+								token,
+								global_directive,
+								MD_MessageKind_FatalError,
+								"unclosed parameter list for %S - missing ')'",
+								global_directive->token->source
+							);
+							goto break_parse_outer_loop;
+						}
+						token++;
 					}
-					token++;
-					Assert(global_directive->kind == MD_ASTKind_DirectiveTable ||
-						(global_directive->kind == MD_ASTKind_DirectiveArray && directive_symbol->named_gen_record.token1));
+					// TODO: compress
+					if (global_directive->kind == MD_ASTKind_DirectiveArray || (global_directive->kind == MD_ASTKind_DirectiveEnum && directive_has_paren_args))
+						Assert(directive_symbol->named_gen_record.token1);
+					Assert(global_directive->kind != MD_ASTKind_DirectiveEnum || !directive_symbol->named_gen_record.token2);
 				}
 				{
 				}

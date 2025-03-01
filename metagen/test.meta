@@ -56,6 +56,11 @@ jkjnvmvcnhj
 	"OS_Key_RightBracket = OS_Key_RBracket,"
 }
 
+@enum OS_Key2(U8)
+{
+	@expand(os_key_table "%2 = %," name val)
+}
+
 @array os_key_strings
 (String8 "OS_Key_COUNT")
 {

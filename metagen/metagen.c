@@ -248,12 +248,29 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						str8_list_push(scratch.arena, gen_target, str8_lit("typedef "));
 						if (global_directive->kind == MD_ASTKind_DirectiveEnum)
 						{
-							enum_name = push_str8_cat(
+							char *enum_name_format = " %S"; // MUST HAVE ONE FORMAT SPECIFIER OF %S
+							MD_Token *type_spec = directive_symbol->named_gen_record.token1;
+							if (type_spec)
+							{
+								Assert(type_spec->kind == MD_TokenKind_StringLit || type_spec->kind == MD_TokenKind_Ident);
+								String8 type = type_spec->source;
+								if (type_spec->kind == MD_TokenKind_StringLit)
+									mg_trim_quotes(type);
+								str8_list_pushf(
+									scratch.arena,
+									gen_target,
+									"%S %S;\ntypedef ",
+									type,
+									directive_symbol->ident
+								);
+								enum_name_format = " %S__Enum";
+							}
+							decl = str8_list_push(scratch.arena, gen_target, str8_lit("enum"));
+							enum_name = push_str8f(
 								scratch.arena,
-								str8_lit(" "),
+								enum_name_format,
 								directive_symbol->ident
 							);
-							decl = str8_list_push(scratch.arena, gen_target, str8_lit("enum"));
 						}
 						else
 						{
@@ -261,7 +278,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							decl = str8_list_pushf(
 								scratch.arena,
 								gen_target,
-								"typedef struct %S %S;\nstruct %S",
+								"struct %S %S;\nstruct %S",
 								directive_symbol->ident,
 								directive_symbol->ident,
 								directive_symbol->ident
