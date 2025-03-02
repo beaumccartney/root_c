@@ -31,9 +31,7 @@ struct OS_MAC_GFX_State
 };
 
 // NOTE(beau): from some events thing in Carbon.framework
-
-typedef U8 OS_GFX_Mac_kVK;
-enum
+typedef enum
 {
 	OS_MAC_kVK_ANSI_A              = 0x00,
 	OS_MAC_kVK_ANSI_S              = 0x01,
@@ -150,6 +148,7 @@ enum
 	OS_MAC_kVK_DownArrow           = 0x7D,
 	OS_MAC_kVK_UpArrow             = 0x7E,
 	OS_MAC_kVK_COUNT,
-};
+}
+OS_GFX_Mac_kVK;
 
 #endif // OS_GFX_MAC_H
