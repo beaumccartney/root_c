@@ -1,7 +1,8 @@
 #ifndef OS_GFX_H
 #define OS_GFX_H
 
-typedef enum
+typedef U8 OS_Key;
+enum
 {
 	OS_Key_Null,
 
@@ -119,7 +120,7 @@ typedef enum
 	OS_Key_M5,
 
 	OS_Key_COUNT, // REVIEW(beau): cause keys are trying to line up with ascii where possible this isn't actually the count. Perhaps metaprogram could generate this?
-} OS_Key;
+};
 
 // REVIEW(beau): left and right?
 typedef U32 OS_Modifiers;
@@ -130,7 +131,8 @@ enum
 	OS_Modifier_Alt   = (1<<2),
 };
 
-typedef enum
+typedef U8 OS_EventKind;
+enum
 {
 	OS_EventKind_Null,
 	OS_EventKind_Press,
@@ -138,7 +140,7 @@ typedef enum
 	Os_EventKind_MouseMove,
 	OS_EventKind_Quit,
 	OS_EventKind_COUNT,
-} OS_EventKind;
+};
 
 typedef struct OS_Event OS_Event;
 struct OS_Event

@@ -263,7 +263,8 @@ typedef double   F64;
 
 typedef U8 Byte;
 
-typedef enum
+typedef U8 Side;
+enum
 {
 	Side_Min,
 	Side_Left   = Side_Min,
@@ -273,63 +274,66 @@ typedef enum
 	Side_Right  = Side_Max,
 	Side_Top    = Side_Max,
 	Side_COUNT,
-} Side;
+};
 #define side_flip(s) ((Side)(!(s)))
 
-typedef enum
+typedef U8 Axis2;
+enum
 {
 	Axis2_X,
 	Axis2_Y,
 	Axis2_COUNT,
-} Axis2;
+};
 #define axis2_flip(s) ((Axis2)(!(s)))
 
-typedef enum
+typedef U8 Axis3;
+enum
 {
 	Axis3_X,
 	Axis3_Y,
 	Axis3_Z,
 	Axis3_COUNT,
-} Axis3;
+};
 
 
-typedef enum
+typedef U8 Axis4;
+enum
 {
 	Axis4_X,
 	Axis4_Y,
 	Axis4_Z,
 	Axis4_W,
 	Axis4_COUNT,
-} Axis4;
+};
 
-typedef enum OperatingSystem
+typedef U8 OperatingSystem;
+enum
 {
 	OperatingSystem_Null,
 	OperatingSystem_Windows,
 	OperatingSystem_Linux,
 	OperatingSystem_Mac,
 	OperatingSystem_COUNT,
-}
-OperatingSystem;
+};
 
-typedef enum Arch
+typedef U8 Arch;
+enum
 {
 	Arch_Null,
 	Arch_x64,
 	Arch_arm64,
 	Arch_COUNT,
-}
-Arch;
+};
 
-typedef enum Compiler
+typedef U8 Compiler;
+enum
 {
 	Compiler_Null,
 	Compiler_msvc,
 	Compiler_clang,
 	Compiler_gcc,
 	Compiler_COUNT,
-}
-Compiler;
+};
 
 internal OperatingSystem operating_system_from_context(void);
 internal Arch arch_from_context(void);

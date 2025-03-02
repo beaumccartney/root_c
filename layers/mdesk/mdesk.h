@@ -5,7 +5,8 @@
 #ifndef MDESK_H
 #define MDESK_H
 
-typedef enum
+typedef U8 MD_TokenKind;
+enum
 {
 	MD_TokenKind_NULL = 0, // also denotes illegal characters
 	MD_TokenKind_Underscore,
@@ -45,7 +46,7 @@ typedef enum
 
 	MD_TokenKind_Ident,
 	MD_TokenKind_COUNT,
-} MD_TokenKind;
+};
 
 typedef struct MD_Token MD_Token;
 struct MD_Token
@@ -75,14 +76,15 @@ struct MD_TokenArray
 	U64 count;
 };
 
-typedef enum
+typedef U8 MD_MessageKind;
+enum
 {
 	MD_MessageKind_NULL,
 	MD_MessageKind_Warning,
 	MD_MessageKind_Error,
 	MD_MessageKind_FatalError, // REVIEW: remove and use goto if all parsing is done inline
 	MD_MessageKind_COUNT,
-} MD_MessageKind;
+};
 
 typedef struct MD_Message MD_Message;
 struct MD_Message
@@ -115,7 +117,8 @@ struct MD_TokenizeResult
 	MD_MessageList messages;
 };
 
-typedef enum
+typedef U8 MD_ASTKind;
+enum
 {
 	MD_ASTKind_NULL = 0,
 	MD_ASTKind_Root,
@@ -141,18 +144,20 @@ typedef enum
 	MD_ASTKind_List, // container for children, with the children count
 
 	MD_ASTKind_COUNT,
-} MD_ASTKind;
+};
 
 // REVIEW: in c layer or something else? this should be common
-typedef enum
+typedef U8 MD_GenFile;
+enum
 {
 	MD_GenFile_NULL, // REVIEW: just set to COUNT by default?
 	MD_GenFile_H,
 	MD_GenFile_C,
 	MD_GenFile_COUNT,
-} MD_GenFile;
+};
 
-typedef enum
+typedef U8 MD_GenLocation;
+enum
 {
 	MD_GenLocation_NULL, // REVIEW: just set to COUNT by default?
 	MD_GenLocation_Top,
@@ -165,7 +170,7 @@ typedef enum
 	MD_GenLocation_Default,
 	MD_GenLocation_Bottom,
 	MD_GenLocation_COUNT,
-} MD_GenLocation;
+};
 
 typedef struct MD_AST MD_AST;
 struct MD_AST

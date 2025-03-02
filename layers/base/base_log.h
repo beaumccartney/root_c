@@ -1,7 +1,8 @@
 #ifndef BASE_LOG_H
 #define BASE_LOG_H
 
-typedef enum LogMsgKind
+typedef U8 LogMsgKind;
+enum
 {
 	LogMsgKind_Info,
 	LogMsgKind_Warning,
@@ -9,8 +10,7 @@ typedef enum LogMsgKind
 	LogMsgKind_RecoverableError,
 	LogMsgKind_FatalError,
 	LogMsgKind_COUNT,
-}
-LogMsgKind;
+};
 
 typedef struct LogScope LogScope;
 struct LogScope
