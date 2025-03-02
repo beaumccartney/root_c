@@ -337,20 +337,20 @@ internal Compiler compiler_from_context(void);
 
 #define Unused(name) (void)(name)
 
-const global U64 max_U64 = UINT64_MAX;
-const global U32 max_U32 = UINT32_MAX;
-const global U16 max_U16 = UINT16_MAX;
-const global U8  max_U8  = UINT8_MAX;
+#define max_U64 UINT64_MAX
+#define max_U32 UINT32_MAX
+#define max_U16 UINT16_MAX
+#define max_U8  UINT8_MAX
 
-const global S64 max_S64 = INT64_MAX;
-const global S32 max_S32 = INT32_MAX;
-const global S16 max_S16 = INT16_MAX;
-const global S8  max_S8  = INT8_MAX;
+#define max_S64 INT64_MAX
+#define max_S32 INT32_MAX
+#define max_S16 INT16_MAX
+#define max_S8  INT8_MAX
 
-const global S64 min_S64 = INT64_MIN;
-const global S32 min_S32 = INT32_MIN;
-const global S16 min_S16 = INT16_MIN;
-const global S8  min_S8  = INT8_MIN;
+#define min_S64 INT64_MIN
+#define min_S32 INT32_MIN
+#define min_S16 INT16_MIN
+#define min_S8  INT8_MIN
 
 #define bitmask1  0x00000001u
 #define bitmask2  0x00000003u
