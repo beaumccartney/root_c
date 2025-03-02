@@ -33,22 +33,18 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 		String8List *gen_target = &gen_lists[gen_file][gen_loc];
 		MD_AST *directive_child = global_directive->first;
 		MD_SymbolTableEntry *directive_symbol = 0;
-		if (global_directive->kind == MD_ASTKind_DirectiveStruct
-		 || global_directive->kind == MD_ASTKind_DirectiveEnum
-		 || global_directive->kind == MD_ASTKind_DirectiveArray
-		 || global_directive->kind == MD_ASTKind_DirectiveEmbedString
-		 || global_directive->kind == MD_ASTKind_DirectiveEmbedFile
-		)
+		switch (global_directive->kind)
 		{
-			Assert(directive_child->kind == MD_ASTKind_Ident && directive_child->token->kind == MD_TokenKind_Ident);
-			directive_symbol = md_symbol_from_ident(0, &stab_root, directive_child->token->source);
+			case MD_ASTKind_DirectiveStruct:
+			case MD_ASTKind_DirectiveEnum:
+			case MD_ASTKind_DirectiveArray:
+			case MD_ASTKind_DirectiveEmbedString:
+			case MD_ASTKind_DirectiveEmbedFile: {
+				Assert(directive_child->kind == MD_ASTKind_Ident && directive_child->token->kind == MD_TokenKind_Ident);
+				directive_symbol = md_symbol_from_ident(0, &stab_root, directive_child->token->source);
+				directive_child = directive_child->next;
+			} break;
 		}
-		if (global_directive->kind == MD_ASTKind_DirectiveEmbedString
-		 || global_directive->kind == MD_ASTKind_DirectiveEmbedFile
-		 || global_directive->kind == MD_ASTKind_DirectiveEnum
-		 || global_directive->kind == MD_ASTKind_DirectiveStruct
-		 || global_directive->kind == MD_ASTKind_DirectiveArray)
-			directive_child = directive_child->next;
 
 		switch (global_directive->kind)
 		{

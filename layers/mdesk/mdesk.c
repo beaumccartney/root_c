@@ -1150,13 +1150,11 @@ md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, Stri
 				MD_AST *global_directive_child = global_directive->first;
 				switch (global_directive->kind)
 				{
-					case MD_ASTKind_DirectiveArray: {
-						global_directive_child = global_directive_child->next; // skip the identlist and the name
-					} // fallthrough
+					case MD_ASTKind_DirectiveArray:
 					case MD_ASTKind_DirectiveEnum:
 					case MD_ASTKind_DirectiveStruct: {
-						global_directive_child = global_directive_child->next; // skip the enum name
-					} // fallthrough
+						global_directive_child = global_directive_child->next; // skip the name
+					} break;
 					case MD_ASTKind_DirectiveGen: break; // already at the gen children
 					default: {
 						Unreachable;
