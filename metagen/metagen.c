@@ -1,3 +1,5 @@
+// REVIEW:
+//  deduplicate generating strings and arrays, and possibly everything
 internal MG_GenResult
 mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source)
 {
@@ -9,26 +11,23 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 	for (MD_AST *global_directive = root->first; global_directive != 0; global_directive = global_directive->next)
 	{
-		const local_persist struct {
-			MD_GenFile     gen_file;
-			MD_GenLocation gen_loc;
-		} md_ast_to_gen_info_table[MD_ASTKind_COUNT] = {
-			[MD_ASTKind_DirectiveGen        ] = {MD_GenFile_H, MD_GenLocation_Default        },
-			[MD_ASTKind_DirectiveEnum       ] = {MD_GenFile_H, MD_GenLocation_Enums          },
-			[MD_ASTKind_DirectiveStruct     ] = {MD_GenFile_H, MD_GenLocation_Structs        },
-			[MD_ASTKind_DirectiveArray      ] = {MD_GenFile_C, MD_GenLocation_Arrays         },
-			[MD_ASTKind_DirectiveEmbedString] = {MD_GenFile_H, MD_GenLocation_EmbeddedStrings},
-			[MD_ASTKind_DirectiveEmbedFile  ] = {MD_GenFile_H, MD_GenLocation_EmbeddedFiles  },
+		const local_persist MD_GenLocation md_ast_to_gen_info_table[MD_ASTKind_COUNT] = {
+			[MD_ASTKind_DirectiveGen        ] = MD_GenLocation_Default,
+			[MD_ASTKind_DirectiveEnum       ] = MD_GenLocation_Enums,
+			[MD_ASTKind_DirectiveStruct     ] = MD_GenLocation_Structs,
+			[MD_ASTKind_DirectiveArray      ] = MD_GenLocation_Arrays,
+			[MD_ASTKind_DirectiveEmbedString] = MD_GenLocation_EmbeddedStrings,
+			[MD_ASTKind_DirectiveEmbedFile  ] = MD_GenLocation_EmbeddedFiles,
 		};
 
 		MD_GenFile     gen_file = global_directive->gen_file;
 		MD_GenLocation gen_loc  = global_directive->gen_loc;
 
 		if (gen_file == MD_GenFile_NULL)
-			gen_file = md_ast_to_gen_info_table[global_directive->kind].gen_file;
+			gen_file = MD_GenFile_H;
 
 		if (gen_loc == MD_GenLocation_NULL)
-			gen_loc = md_ast_to_gen_info_table[global_directive->kind].gen_loc;
+			gen_loc = md_ast_to_gen_info_table[global_directive->kind];
 
 		Assert(global_directive->kind == MD_ASTKind_DirectiveTable || (gen_file != MD_GenFile_NULL && gen_loc != MD_GenLocation_NULL));
 		String8List *gen_target = &gen_lists[gen_file][gen_loc];
@@ -287,8 +286,8 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Assert(decl);
 					} break;
 					case MD_ASTKind_DirectiveArray: {
-						MD_Token *array_type_tok = directive_symbol->named_gen_record.token1,
-							 *array_count_tok  = directive_symbol->named_gen_record.token2;
+						MD_Token *array_type_tok  = directive_symbol->named_gen_record.token1,
+							 *array_count_tok = directive_symbol->named_gen_record.token2;
 						Assert(array_type_tok->kind == MD_TokenKind_Ident || array_type_tok->kind == MD_TokenKind_StringLit);
 						String8 array_type = directive_symbol->named_gen_record.token1->source;
 						if (array_type_tok->kind == MD_TokenKind_StringLit)
@@ -311,42 +310,13 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							Assert(array_count.length > 0);
 						}
 
-						// make static if in header file
-						if (gen_file == MD_GenFile_H)
-						{
-							str8_list_push(
-								scratch.arena,
-								&gen_lists[MD_GenFile_H][gen_loc],
-								str8_lit("global ")
-							);
-						}
-
-						String8 common_arr_decl = push_str8f(
-							scratch.arena,
-							"read_only %S %S[%S]", // NOTE: read_only instead of const because if its an array of pointers its hard to make the array constant instead of the type of the pointer in the array
-							array_type,
-							directive_symbol->ident,
-							array_count
-						);
-
-						if (gen_file == MD_GenFile_C)
-						{
-							// REVIEW:
-							//  is extern needed?
-							//  static? put everything in header file?
-							str8_list_pushf(
-								scratch.arena,
-								&gen_lists[MD_GenFile_H][MD_GenLocation_Arrays],
-								"extern %S;\n\n",
-								common_arr_decl
-							);
-						}
-
 						str8_list_pushf(
 							scratch.arena,
 							gen_target,
-							"%S =",
-							common_arr_decl
+							"const global %S %S[%S] =",
+							array_type,
+							directive_symbol->ident,
+							array_count
 						);
 					} break;
 					case MD_ASTKind_DirectiveGen: break; // no symbol
