@@ -1,0 +1,125 @@
+@table os_key_table(name string)
+{
+	{ OS_Key_NULL      "null"          }
+
+	{ OS_Key_Backspace "backspace"     }
+	{ OS_Key_Tab       "tab"           }
+
+	{ OS_Key_Return    "return"        }
+
+	{ OS_Key_Esc       "escape"        }
+
+	{ OS_Key_Space     "space"         }
+
+	{ OS_Key_Quote     "quote"         }
+
+	{ OS_Key_Comma     "comma"         }
+	{ OS_Key_Minus     "minus"         }
+	{ OS_Key_Period    "period"        }
+	{ OS_Key_Slash     "slash"         }
+
+	{ OS_Key_0         "0"             }
+	{ OS_Key_1         "1"             }
+	{ OS_Key_2         "2"             }
+	{ OS_Key_3         "3"             }
+	{ OS_Key_4         "4"             }
+	{ OS_Key_5         "5"             }
+	{ OS_Key_6         "6"             }
+	{ OS_Key_7         "7"             }
+	{ OS_Key_8         "8"             }
+	{ OS_Key_9         "9"             }
+
+	{ OS_Key_Semicolon ";"             }
+	{ OS_Key_Equals    "="             }
+
+	{ OS_Key_A         "a"             }
+	{ OS_Key_B         "b"             }
+	{ OS_Key_C         "c"             }
+	{ OS_Key_D         "d"             }
+	{ OS_Key_E         "e"             }
+	{ OS_Key_F         "f"             }
+	{ OS_Key_G         "g"             }
+	{ OS_Key_H         "h"             }
+	{ OS_Key_I         "i"             }
+	{ OS_Key_J         "j"             }
+	{ OS_Key_K         "k"             }
+	{ OS_Key_L         "l"             }
+	{ OS_Key_M         "m"             }
+	{ OS_Key_N         "n"             }
+	{ OS_Key_O         "o"             }
+	{ OS_Key_P         "p"             }
+	{ OS_Key_Q         "q"             }
+	{ OS_Key_R         "r"             }
+	{ OS_Key_S         "s"             }
+	{ OS_Key_T         "t"             }
+	{ OS_Key_U         "u"             }
+	{ OS_Key_V         "v"             }
+	{ OS_Key_W         "w"             }
+	{ OS_Key_X         "x"             }
+	{ OS_Key_Y         "y"             }
+	{ OS_Key_Z         "z"             }
+	{ OS_Key_LBracket  "["             }
+	{ OS_Key_Backslash "\\"            }
+	{ OS_Key_RBracket  "]"             }
+
+	{ OS_Key_Backtick  "`"             }
+
+	{ OS_Key_LShift    "left shift"    }
+	{ OS_Key_RShift    "right shift"   }
+	{ OS_Key_LControl  "left control"  }
+	{ OS_Key_RControl  "right control" }
+	{ OS_Key_LAlt      "left alt"      }
+	{ OS_Key_RAlt      "right alt"     }
+	{ OS_Key_CapsLock  "caps lock"     }
+
+	{ OS_Key_Right     "left"          }
+	{ OS_Key_Left      "right"         }
+	{ OS_Key_Down      "down"          }
+	{ OS_Key_Up        "up"            }
+
+	{ OS_Key_F1        "F1"            }
+	{ OS_Key_F2        "F2"            }
+	{ OS_Key_F3        "F3"            }
+	{ OS_Key_F4        "F4"            }
+	{ OS_Key_F5        "F5"            }
+	{ OS_Key_F6        "F6"            }
+	{ OS_Key_F7        "F7"            }
+	{ OS_Key_F8        "F8"            }
+	{ OS_Key_F9        "F9"            }
+	{ OS_Key_F10       "F10"           }
+	{ OS_Key_F11       "F11"           }
+	{ OS_Key_F12       "F12"           }
+
+	{ OS_Key_M1        "M1"            }
+	{ OS_Key_M2        "M2"            }
+	{ OS_Key_M3        "M3"            }
+	{ OS_Key_M4        "M4"            }
+	{ OS_Key_M5        "M5"            }
+}
+
+@enum OS_Key
+{
+	@expand(os_key_table "%," name)
+	"OS_Key_COUNT,"
+	"OS_Key_Enter             = OS_Key_Return,"
+	"OS_Key_Escape            = OS_Key_Esc,"
+	"OS_Key_Hyphen            = OS_Key_Minus,"
+	"OS_Key_Forwardslash      = OS_Key_Slash,"
+	"OS_Key_LeftBracket       = OS_Key_LBracket,"
+	"OS_Key_RightBracket      = OS_Key_RBracket,"
+	"OS_Key_GraveAccent       = OS_Key_Backtick,"
+	"OS_Key_LeftShift         = OS_Key_LShift,"
+	"OS_Key_RightShift        = OS_Key_RShift,"
+	"OS_Key_LeftControl       = OS_Key_LControl,"
+	"OS_Key_RightControl      = OS_Key_RControl,"
+	"OS_Key_LeftAlt           = OS_Key_LAlt,"
+	"OS_Key_RightAlt          = OS_Key_RAlt,"
+	"OS_Key_LeftMouseButton   = OS_Key_M1,"
+	"OS_Key_RightMouseButton  = OS_Key_M2,"
+	"OS_Key_MiddleMouseButton = OS_Key_M3,"
+}
+
+@array os_key_string_table(String8 OS_Key_COUNT)
+{
+	@expand(os_key_table "[%] = str8_lit_comp(%)," name string)
+}
