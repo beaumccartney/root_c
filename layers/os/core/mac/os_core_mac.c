@@ -40,14 +40,6 @@ internal void os_mac_entity_release(OS_MAC_Entity *entity)
 	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
 }
 
-internal OS_SystemInfo os_get_system_info(void)
-{
-	OS_SystemInfo result = {
-		vm_page_size,
-	};
-	return result;
-}
-
 internal void *os_vmem_reserve(U64 size)
 {
 	void * result = 0;
@@ -462,6 +454,24 @@ internal void os_rw_mutex_drop_w(OS_Handle rw_mutex)
 
 int main(int argc, char *argv[])
 {
+	{
+		g_os_state.system_info.page_size = vm_page_size;
+		g_os_state.arena = arena_default;
+		g_os_state.process_info.initial_working_directory = os_get_current_folder(g_os_state.arena);
+		{
+			char temp = 0, *exe_buf = &temp;
+			uint32_t length = 1;
+			int status = _NSGetExecutablePath(exe_buf, &length);
+			if (status == -1)
+			{
+				exe_buf = push_array_no_zero(g_os_state.arena, char, length);
+				Assert(!_NSGetExecutablePath(exe_buf, &length));
+			}
+			String8 exe_path = str8_cstring_capped(exe_buf, length); // REVIEW: can I use length and not scan the string?
+			g_os_state.process_info.exe_folder = str8_chop_last_slash(exe_path);
+		}
+	}
+
 	{
 		os_mac_state.entity_arena = arena_default;
 		int status = pthread_mutex_init(&os_mac_state.entity_mutex, 0);
