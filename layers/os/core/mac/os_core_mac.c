@@ -312,6 +312,15 @@ internal B32 os_create_folder(String8 path)
 	return result;
 }
 
+internal String8 os_get_current_folder(Arena *arena)
+{
+	char *buf = getcwd(0, 0);
+	String8 string = str8_cstring(buf),
+		result = push_str8_copy(arena, string);
+	free(buf);
+	return result;
+}
+
 internal void os_set_thread_name(String8 name)
 {
 	Temp scratch = scratch_begin(0, 0);
