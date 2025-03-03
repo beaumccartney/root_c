@@ -76,7 +76,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						&result.messages,
 						source,
 						gen_string.buffer,
-						directive_child->token,
+						gen_string_token,
 						global_directive,
 						MD_MessageKind_Warning,
 						"empty argument to %S",
@@ -127,8 +127,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							arena,
 							&result.messages,
 							source,
-							directive_child->token->source.buffer, // opening '"' of the string literal
-							directive_child->token,
+							gen_string_token->source.buffer, gen_string_token,
 							global_directive,
 							message_kind,
 							message_format,
