@@ -27,7 +27,7 @@ StaticAssert(
 );
 StaticAssert(
 	AlignOf(OS_WINDOWS_FileIter) <= AlignOf(OS_FileIter), // HACK(beau): to check the alignment against OS_FileIter->memory
-	break
+	os_windows_file_iter_alignment_check
 );
 
 internal FilePropertyFlags
