@@ -91,29 +91,25 @@ os.makedirs("local", exist_ok=True)
 os.makedirs("build", exist_ok=True)
 os.chdir("build")
 
-build_table = {
-    "metagen":  "metagen/metagen_main.c",
-    "leetcode": "local/leetcode.c",
-    "scratch":  "local/scratch.c",
-    "metal":    "local/metal.c",
+build_targets = options & {
+    "metagen",
+    "scratch",
 }
-
-build_targets = options & set(build_table.keys())
-
-if not build_targets:
-    print("[WARNING] no valid build target specified")
-    exit_code = 1
 
 for target in build_targets:
     print(f"[build {target}]")
     options.remove(target)
-    file_and_out = [f"../{build_table[target]}", "-o", target]
+    file_and_out = [f"../{target}/{target}_main.c", "-o", target]
     this_command = command + file_and_out
     if "verbose" in options:
         print(" ".join(this_command))
     subprocess.run(this_command)
 
 options.discard("verbose")
+
+if not build_targets:
+    print("[WARNING] no valid build target specified")
+    exit_code = 1
 
 if options:
     unused_string = ", ".join([f"'{option}'" for option in options])
