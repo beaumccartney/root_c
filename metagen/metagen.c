@@ -44,6 +44,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 				directive_symbol = md_symbol_from_ident(0, &stab_root, directive_child->token->source);
 				directive_child = directive_child->next;
 			} break;
+			case MD_ASTKind_DirectiveGen:
+			case MD_ASTKind_DirectiveTable: break;
+			default: {
+				Unreachable;
+			} break;
 		}
 
 		switch (global_directive->kind)
@@ -490,7 +495,6 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 
 				switch (global_directive->kind)
 				{
-					case MD_ASTKind_DirectiveGen: break; // do nothing
 					case MD_ASTKind_DirectiveStruct:
 					case MD_ASTKind_DirectiveArray:
 					case MD_ASTKind_DirectiveEnum: {
@@ -500,6 +504,10 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							"}%S;\n\n",
 							enum_name
 						);
+					} break;
+					case MD_ASTKind_DirectiveGen: break; // do nothing
+					default: {
+						Unreachable;
 					} break;
 				}
 
