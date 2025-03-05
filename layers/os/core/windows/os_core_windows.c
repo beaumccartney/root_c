@@ -444,7 +444,7 @@ internal void os_set_thread_name(String8 name)
 	scratch_end(scratch);
 }
 
-internal void windows_entry_point_caller(int args_count, char *args[])
+internal void windows_entry_point_caller(int argc, WCHAR *wargv[])
 {
 	// needed for arenas
 	SYSTEM_INFO system_info = zero_struct;
@@ -476,19 +476,29 @@ internal void windows_entry_point_caller(int args_count, char *args[])
 		scratch_end(scratch);
 	}
 
-	main_thread_base_entry_point(args_count, args);
+	char **argv = push_array_no_zero(g_os_state.arena, char*, argc);
+	for (int i = 0; i < argc; i++)
+	{
+		String16 warg = str16_cstring(wargv[i]);
+		argv[i] = (char *)str8_from_16(g_os_state.arena, warg).buffer;
+	}
+
+	main_thread_base_entry_point(argc, argv);
 	tctx_release();
+	arena_release(g_os_state.arena);
 }
 
 // TODO(beau): wide char versions
 #if OS_FEATURE_GRAPHICAL
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+int WINAPI wWinMain
+(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-	windows_entry_point_caller(__argc, __argv);
+	windows_entry_point_caller(__argc, __wargv);
 	return 0;
 }
 #else
-void main(int argc, char *argv[])
+void wmain
+(int argc, wchar_t *argv[])
 {
 	windows_entry_point_caller(argc, argv);
 }
