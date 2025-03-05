@@ -39,12 +39,11 @@ cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 	}
 	return result;
 }
-internal String8List
+internal String8Array
 cmd_line_strings(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
-	String8List result = zero_struct;
-	if (opt != 0) result = opt->value_strings;
+	String8Array result = opt ? opt->value_strings : (String8Array)zero_struct;
 	return result;
 }
 internal String8
@@ -66,48 +65,53 @@ internal B32
 cmd_line_has_argument(CmdLine *cmd_line, String8 name)
 {
 	CmdLineOpt *opt = cmd_line_opt_from_string(0, cmd_line, name);
-	B32 result = opt != 0 && opt->value_strings.node_count != 0;
+	B32 result = opt != 0 && opt->value_strings.count != 0;
 	return result;
 }
 internal CmdLine* cmd_line_from_argcv(Arena *arena, int argc, char *argv[])
 {
 	CmdLine *result = push_array(arena, CmdLine, 1);
+	Temp scratch = scratch_begin(&arena, 1);
 
-	String8List argcv_list = zero_struct;
+	Assert(argc >= 1); // one for the exe name
+	result->argc = argc;
+	result->argv = argv; // REVIEW: lifetime of argv? should it be copied onto the passed in arena?
+	String8Array argcv = {
+		.v = push_array_no_zero(arena, String8, argc),
+		.count = argc,
+	};
 	for (int i = 0; i < argc; i++)
-	{
-		String8 arg = str8_cstring(argv[i]);
-		str8_list_push(arena, &argcv_list, arg);
-	}
+		argcv.v[i] = str8_cstring(argv[i]);
 
-	result->exe_name = argcv_list.first->string;
-	String8Node *node = argcv_list.first->next;
+	String8 *arg           = argcv.v,
+		*one_past_last = argcv.v + argcv.count;
+	result->exe_name = *arg++;
 
 	// parse options and arguments - next loop will parse passthrough inputs
-	for (; node != 0; node = node->next)
+	for (; arg < one_past_last; arg++)
 	{
 		String8 option_name = zero_struct;
-		if (str8_match(str8_prefix(node->string, 2), str8_lit("--"), 0) &&
-			node->string.length > 2)
+		if (str8_match(str8_prefix(*arg, 2), str8_lit("--"), 0) &&
+			arg->length > 2)
 		{
-			option_name = str8_skip(node->string, 2);
+			option_name = str8_skip(*arg, 2);
 		}
-		else if (str8_match(str8_prefix(node->string, 1), str8_lit("-"), 0) &&
-			node->string.length > 2)
+		else if (str8_match(str8_prefix(*arg, 1), str8_lit("-"), 0) &&
+			arg->length > 2)
 		{
-			option_name = str8_skip(node->string, 1);
+			option_name = str8_skip(*arg, 1);
 		}
 		else if (operating_system_from_context() == OperatingSystem_Windows &&
-			str8_match(str8_prefix(node->string, 1), str8_lit("/"), 0) &&
-			node->string.length > 1)
+			str8_match(str8_prefix(*arg, 1), str8_lit("/"), 0) &&
+			arg->length > 1)
 		{
-			option_name = str8_skip(node->string, 1);
+			option_name = str8_skip(*arg, 1);
 		}
 		// when not an option, its a passthrough option. break to get to the passthrough loop
 		else
 		{
 			// -- is passthrough, not an actual flag. don't push it to command line structure
-			if (str8_match(node->string, str8_lit("--"), 0)) node = node->next;
+			if (str8_match(*arg, str8_lit("--"), 0)) arg++;
 			break;
 		}
 
@@ -124,25 +128,23 @@ internal CmdLine* cmd_line_from_argcv(Arena *arena, int argc, char *argv[])
 			option_name = str8_prefix(option_name, arg_signifier_position);
 
 			U8 splits[] = { ',' };
-			option_args = str8_split(arena, option_args_portion, splits, ArrayCount(splits), 0);
+			option_args = str8_split(scratch.arena, option_args_portion, splits, ArrayCount(splits), 0);
 		}
 
 		// insert option
 		// REVIEW(beau): what if the option is already populated?
 		CmdLineOpt *opt = cmd_line_opt_from_string(arena, result, option_name);
 		StringJoin joinparams = {.sep = str8_lit(",")};
-		opt->value_strings = option_args;
-		opt->value_string = str8_list_join(arena, opt->value_strings, &joinparams);
+		opt->value_strings = str8_array_from_list(arena, option_args);
+		opt->value_string = str8_list_join(arena, option_args, &joinparams);
 	}
 	// passthrough option loop, starts at where option loop left off
-	for (; node != 0; node = node->next)
-		str8_list_push(arena, &result->passthrough_inputs, node->string);
+	result->passthrough_inputs.count = one_past_last - arg;
+	String8 *pass = result->passthrough_inputs.v = push_array_no_zero(arena, String8, result->passthrough_inputs.count);
+	for (; arg < one_past_last; arg++, pass++)
+		*pass = *arg;
+	Assert(pass == result->passthrough_inputs.v + result->passthrough_inputs.count);
 
-	result->argc = argcv_list.node_count;
-	result->argv = push_array_no_zero(arena, char *, result->argc);
-	U64 i = 0;
-	for (String8Node *arg = argcv_list.first; arg != 0; arg = arg->next, i++)
-		result->argv[i] = (char *)arg->string.buffer;
-
+	scratch_end(scratch);
 	return result;
 }
