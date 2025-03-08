@@ -5,17 +5,23 @@
 typedef U32 OS_Modifiers;
 enum
 {
-	OS_Modifier_Shift = (1<<0),
-	OS_Modifier_Ctrl  = (1<<1),
-	OS_Modifier_Alt   = (1<<2),
+	OS_Modifier_Shift    = (1<<0),
+	OS_Modifier_Ctrl     = (1<<1),
+	OS_Modifier_Alt      = (1<<2),
+	OS_Modifier_CapsLock = (1<<3),
+	OS_Modifier_M1       = (1<<4),
+	OS_Modifier_M2       = (1<<5),
+	OS_Modifier_M3       = (1<<6),
+	OS_Modifier_M4       = (1<<7),
+	OS_Modifier_M5       = (1<<8),
 };
 
 typedef enum
 {
-	OS_EventKind_Null,
+	OS_EventKind_NULL,
 	OS_EventKind_Press,
 	OS_EventKind_Release,
-	Os_EventKind_MouseMove,
+	OS_EventKind_MouseMove,
 	OS_EventKind_Quit,
 	OS_EventKind_COUNT,
 } OS_EventKind;
@@ -49,6 +55,6 @@ internal void os_gfx_init(void);
 
 internal OS_EventList os_gfx_get_events(Arena *arena);
 
-internal OS_Event *os_eventlist_push_new(Arena *arena, OS_EventList *list);
+internal OS_Event* os_eventlist_push_new(Arena *arena, OS_EventList *list, OS_EventKind kind);
 
 #endif // OS_GFX_H
