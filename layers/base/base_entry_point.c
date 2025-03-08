@@ -1,10 +1,10 @@
 #if BUILD_ENTRY_DEFINING_UNIT
-internal void main_thread_base_entry_point(int argc, char *argv[])
+internal void main_thread_base_entry_point(String8Array cmdline_args)
 {
 	set_thread_name(str8_lit("[main thread]"));
 	Temp scratch = scratch_begin(0, 0);
 
-	cmdline_global = cmd_line_from_argcv(scratch.arena, argc, argv);
+	g_cmdline = cmd_line_from_args(scratch.arena, cmdline_args);
 
 	#ifdef OS_GFX_H
 	os_gfx_init();

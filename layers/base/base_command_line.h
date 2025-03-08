@@ -17,10 +17,9 @@ typedef struct CmdLine CmdLine;
 struct CmdLine
 {
 	CmdLineOpt option_table[CMD_LINE_OPT_COUNT]; // msi hash table
-	String8Array passthrough_inputs;
+	String8Array passthrough_inputs,
+		     args;
 	String8 exe_name;
-	U64 argc;
-	char **argv;
 	U16 options[CMD_LINE_OPT_COUNT], // indices of option_table in insertion order
 	    opt_count; // number of options
 };
@@ -32,6 +31,6 @@ internal String8Array cmd_line_strings(CmdLine *cmd_line, String8 name);
 internal String8      cmd_line_string(CmdLine *cmd_line, String8 name);
 internal B32          cmd_line_has_flag(CmdLine *cmd_line, String8 name);
 internal B32          cmd_line_has_argument(CmdLine *cmd_line, String8 name);
-internal CmdLine*     cmd_line_from_argcv(Arena *arena, int argc, char *argv[]);
+internal CmdLine*     cmd_line_from_args(Arena *arena, String8Array args);
 
 #endif // BASE_COMMAND_LINE_H

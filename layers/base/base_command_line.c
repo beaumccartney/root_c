@@ -1,5 +1,5 @@
 #if !BUILD_SUPPLEMENTARY_UNIT
-	global CmdLine *cmdline_global = 0;
+	global CmdLine *g_cmdline = 0;
 #endif
 
 internal U64
@@ -68,23 +68,15 @@ cmd_line_has_argument(CmdLine *cmd_line, String8 name)
 	B32 result = opt != 0 && opt->value_strings.count != 0;
 	return result;
 }
-internal CmdLine* cmd_line_from_argcv(Arena *arena, int argc, char *argv[])
+internal CmdLine* cmd_line_from_args(Arena *arena, String8Array args)
 {
 	CmdLine *result = push_array(arena, CmdLine, 1);
-	Temp scratch = scratch_begin(&arena, 1);
+	result->args    = args;
+	Temp scratch    = scratch_begin(&arena, 1);
 
-	Assert(argc >= 1); // one for the exe name
-	result->argc = argc;
-	result->argv = argv; // REVIEW: lifetime of argv? should it be copied onto the passed in arena?
-	String8Array argcv = {
-		.v = push_array_no_zero(arena, String8, argc),
-		.count = argc,
-	};
-	for (int i = 0; i < argc; i++)
-		argcv.v[i] = str8_cstring(argv[i]);
-
-	String8 *arg           = argcv.v,
-		*one_past_last = argcv.v + argcv.count;
+	Assert(args.count >= 1); // one for the exe name
+	String8 *arg           = args.v,
+		*one_past_last = args.v + args.count;
 	result->exe_name = *arg++;
 
 	// parse options and arguments - next loop will parse passthrough inputs

@@ -490,14 +490,17 @@ internal void windows_entry_point_caller(int argc, WCHAR *wargv[])
 		scratch_end(scratch);
 	}
 
-	char **argv = push_array_no_zero(g_os_state.arena, char*, argc);
+	String8Array args = {
+		.v     = push_array_no_zero(g_os_state.arena, String8, argc),
+		.count = argc,
+	};
 	for (int i = 0; i < argc; i++)
 	{
 		String16 warg = str16_cstring(wargv[i]);
-		argv[i] = (char *)str8_from_16(g_os_state.arena, warg).buffer;
+		args.v[i] = str8_from_16(g_os_state.arena, warg);
 	}
 
-	main_thread_base_entry_point(argc, argv);
+	main_thread_base_entry_point(args);
 	tctx_release();
 	arena_release(g_os_state.arena);
 }
