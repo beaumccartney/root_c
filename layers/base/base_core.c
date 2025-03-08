@@ -32,28 +32,36 @@ internal Compiler compiler_from_context(void)
 	#endif
 	return compiler;
 }
-internal U16
-safe_cast_u16(U32 x)
+internal U8
+safe_cast_u8(U64 x)
 {
-  AssertAlways(x <= max_U16);
-  U16 result = (U16)x;
-  return result;
+	AssertAlways(x <= max_U8);
+	U8 result = (U8)x;
+	return result;
 }
 
-internal U32
+internal U16
+safe_cast_u16(U64 x)
+{
+	AssertAlways(x <= max_U16);
+	U16 result = (U16)x;
+	return result;
+}
+
+	internal U32
 safe_cast_u32(U64 x)
 {
-  AssertAlways(x <= max_U32);
-  U32 result = (U32)x;
-  return result;
+	AssertAlways(x <= max_U32);
+	U32 result = (U32)x;
+	return result;
 }
 
-internal S32
+	internal S32
 safe_cast_s32(S64 x)
 {
-  AssertAlways(x <= max_S32);
-  S32 result = (S32)x;
-  return result;
+	AssertAlways(x <= max_S32);
+	S32 result = (S32)x;
+	return result;
 }
 
 internal U32

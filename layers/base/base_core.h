@@ -484,7 +484,8 @@ internal Compiler compiler_from_context(void);
 #define bit63 (1ull<<62ull)
 #define bit64 (1ull<<63ull)
 
-internal U16 safe_cast_u16(U32 x);
+internal U8  safe_cast_u8(U64 x);
+internal U16 safe_cast_u16(U64 x);
 internal U32 safe_cast_u32(U64 x);
 internal S32 safe_cast_s32(S64 x);
 
