@@ -3,6 +3,14 @@
 
 #include <windows.h>
 
+typedef struct OS_WINDOWS_State OS_WINDOWS_State;
+struct OS_WINDOWS_State
+{
+	U64 queryperformancefrequency_resolution;
+};
+
+global OS_WINDOWS_State g_os_windows_state = zero_struct;
+
 // NOTE(beau): info for a directory being traversed, basically a node in a
 // stack to allow depth-first traversal
 typedef struct OS_WINDOWS_FileIterSearchFolder OS_WINDOWS_FileIterSearchFolder;

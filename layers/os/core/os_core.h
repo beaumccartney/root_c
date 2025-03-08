@@ -112,8 +112,10 @@ internal B32          os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_File
 internal void         os_file_iter_end(OS_FileIter *iter);
 
 internal B32 os_create_folder(String8 path);
-
 internal String8 os_get_current_folder(Arena *arena);
+
+internal U64 os_elapsed_microseconds();
+
 internal void os_set_thread_name(String8 name);
 
 internal OS_Handle os_thread_launch(OS_ThreadFunctionType *func, void *params);

@@ -436,6 +436,15 @@ internal String8 os_get_current_folder(Arena *arena)
 	scratch_end(scratch);
 	return result;
 }
+
+internal U64 os_elapsed_microseconds()
+{
+	LARGE_INTEGER perfcount;
+	Assert(QueryPerformanceCounter(&perfcount));
+	U64 result = (perfcount.QuadPart * 1000000) / g_os_windows_state.queryperformancefrequency_resolution;
+	return result;
+}
+
 internal void os_set_thread_name(String8 name)
 {
 	Temp scratch = scratch_begin(0, 0);
@@ -446,6 +455,11 @@ internal void os_set_thread_name(String8 name)
 
 internal void windows_entry_point_caller(int argc, WCHAR *wargv[])
 {
+	{
+		LARGE_INTEGER perffreq;
+		Assert(QueryPerformanceFrequency(&perffreq));
+		g_os_windows_state.queryperformancefrequency_resolution = perffreq.QuadPart;
+	}
 	// needed for arenas
 	SYSTEM_INFO system_info = zero_struct;
 	GetSystemInfo(&system_info);
