@@ -1,6 +1,8 @@
 #ifndef OS_CORE_WINDOWS_H
 #define OS_CORE_WINDOWS_H
 
+#define WIN32_LEAN_AND_MEAN
+#define COBJMACROS
 #include <windows.h>
 
 typedef struct OS_WINDOWS_State OS_WINDOWS_State;
