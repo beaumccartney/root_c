@@ -480,7 +480,15 @@ int main(int argc, char *argv[])
 
 	local_persist TCTX tctx;
 	tctx_init_and_equip(&tctx);
-	main_thread_base_entry_point(argc, argv);
+	{
+		String8Array args = {
+			.count = (U64)argc,
+			.v = push_array_no_zero(g_os_state.arena, String8, (U64)argc),
+		};
+		for (U64 i = 0; i < args.count; i++)
+			args.v[i] = str8_cstring(argv[i]);
+		main_thread_base_entry_point(args);
+	}
 	tctx_release();
 
 	{
