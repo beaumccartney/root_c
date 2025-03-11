@@ -437,7 +437,7 @@ internal String8 os_get_current_folder(Arena *arena)
 	return result;
 }
 
-internal U64 os_elapsed_microseconds()
+internal U64 os_now_microseconds()
 {
 	LARGE_INTEGER perfcount;
 	Assert(QueryPerformanceCounter(&perfcount));

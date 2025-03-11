@@ -6,6 +6,6 @@ os_eventlist_push_new(Arena *arena, OS_EventList *list, OS_EventKind kind)
 	list->count += 1;
 	OS_Event *result = &node->event;
 	result->kind = kind;
-	result->timestamp_us = os_elapsed_microseconds();
+	result->timestamp_us = os_now_microseconds();
 	return result;
 }
