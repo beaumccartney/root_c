@@ -16,6 +16,8 @@
 #include <fts.h>
 #include <sys/types.h>
 
+#include <time.h>
+
 typedef enum
 {
 	OS_MAC_EntityKind_Thread,

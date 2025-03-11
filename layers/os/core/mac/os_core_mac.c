@@ -313,6 +313,14 @@ internal String8 os_get_current_folder(Arena *arena)
 	return result;
 }
 
+internal U64 os_now_microseconds(void)
+{
+	U64 nanoseconds = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+	Assert(nanoseconds);
+	U64 result = nanoseconds / Thousand(1); // NOTE(beau): 2^63 nanoseconds is a little bit less than 300 years
+	return result;
+}
+
 internal void os_set_thread_name(String8 name)
 {
 	Temp scratch = scratch_begin(0, 0);
