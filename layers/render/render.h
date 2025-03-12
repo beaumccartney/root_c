@@ -3,4 +3,4 @@
 
 internal void r_init(void);
 
-#endif // RENDER_CORE_H
+#endif // RENDER_H

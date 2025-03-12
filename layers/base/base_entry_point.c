@@ -10,7 +10,7 @@ internal void main_thread_base_entry_point(String8Array cmdline_args)
 	os_gfx_init();
 	#endif
 
-	#ifdef RENDER_CORE_H
+	#ifdef RENDER_H
 	r_init();
 	#endif
 
