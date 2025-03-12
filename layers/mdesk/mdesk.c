@@ -310,7 +310,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 				}
 			} break;
 			default: {
-				const global
+				const local_persist
 				MD_TokenKind single_char_tok_table[UINT8_MAX] = {
 					['_'] = MD_TokenKind_Underscore,
 					['.'] = MD_TokenKind_Period,
