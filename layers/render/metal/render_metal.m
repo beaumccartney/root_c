@@ -1,26 +1,25 @@
 #if !BUILD_SUPPLEMENTARY_UNIT
-	global R_METAL_State *r_metal_state = 0;
+	global R_METAL_State g_r_metal_state = zero_struct;
 #endif
 
 internal void r_init(void)
 {
-	Arena *arena         = arena_default;
-	r_metal_state        = push_array(arena, R_METAL_State, 1);
-	r_metal_state->arena = arena;
+	Arena *arena           = arena_default;
+	g_r_metal_state.arena = arena;
 
-	r_metal_state->device    = MTLCreateSystemDefaultDevice();
-	r_metal_state->swapchain = CAMetalLayer.layer;
+	g_r_metal_state.device    = MTLCreateSystemDefaultDevice();
+	g_r_metal_state.swapchain = CAMetalLayer.layer;
 
-	r_metal_state->swapchain.device          = r_metal_state->device;
-	r_metal_state->swapchain.pixelFormat     = MTLPixelFormatBGRA8Unorm_sRGB;
-	r_metal_state->swapchain.framebufferOnly = YES;
-	r_metal_state->swapchain.frame           = os_mac_gfx_state->window.frame;
+	g_r_metal_state.swapchain.device          = g_r_metal_state.device;
+	g_r_metal_state.swapchain.pixelFormat     = MTLPixelFormatBGRA8Unorm_sRGB;
+	g_r_metal_state.swapchain.framebufferOnly = YES;
+	g_r_metal_state.swapchain.frame           = os_mac_gfx_state->window.frame;
 
 	{
 		NSView *view    = os_mac_gfx_state->window.contentView;
 		view.wantsLayer = YES;
-		view.layer      = r_metal_state->swapchain;
+		view.layer      = g_r_metal_state.swapchain;
 	}
 
-	r_metal_state->command_queue = r_metal_state->device.newCommandQueue;
+	g_r_metal_state.command_queue = g_r_metal_state.device.newCommandQueue;
 }
