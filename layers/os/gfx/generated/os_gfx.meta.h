@@ -105,7 +105,7 @@ OS_Key_RightMouseButton  = OS_Key_M2,
 OS_Key_MiddleMouseButton = OS_Key_M3,
 } OS_Key;
 
-const global String8 os_key_string_table[OS_Key_COUNT] =
+const global String8 g_os_key_string_table[OS_Key_COUNT] =
 {
 [OS_Key_NULL] = str8_lit_comp("null"),
 [OS_Key_Backspace] = str8_lit_comp("backspace"),
