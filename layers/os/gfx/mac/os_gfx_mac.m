@@ -15,11 +15,6 @@
 
 internal void os_gfx_init(void)
 {
-	{
-		Arena *arena = arena_default;
-		os_mac_gfx_state = push_array(arena, OS_MAC_GFX_State, 1);
-		os_mac_gfx_state->arena = arena;
-	}
 	[MyApp sharedApplication];
 	NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
 	[NSApp finishLaunching];

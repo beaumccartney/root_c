@@ -4,9 +4,6 @@
 
 internal void r_init(void)
 {
-	Arena *arena           = arena_default;
-	g_r_metal_state.arena = arena;
-
 	g_r_metal_state.device    = MTLCreateSystemDefaultDevice();
 	g_r_metal_state.swapchain = CAMetalLayer.layer;
 

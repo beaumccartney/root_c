@@ -7,7 +7,6 @@
 typedef struct R_METAL_State R_METAL_State;
 struct R_METAL_State
 {
-	Arena *arena;
 	id<MTLDevice> device;
 	CAMetalLayer *swapchain; // REVIEW(beau): use an MTKView instead?
 	id<MTLCommandQueue> command_queue;
