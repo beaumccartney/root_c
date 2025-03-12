@@ -119,7 +119,7 @@
 	"OS_Key_MiddleMouseButton = OS_Key_M3,"
 }
 
-@array os_key_string_table(String8 OS_Key_COUNT)
+@array g_os_key_string_table(String8 OS_Key_COUNT)
 {
 	@expand(os_key_table "[%] = str8_lit_comp(%)," name string)
 }

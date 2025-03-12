@@ -13,10 +13,10 @@ internal void r_init(void)
 	g_r_metal_state.swapchain.device          = g_r_metal_state.device;
 	g_r_metal_state.swapchain.pixelFormat     = MTLPixelFormatBGRA8Unorm_sRGB;
 	g_r_metal_state.swapchain.framebufferOnly = YES;
-	g_r_metal_state.swapchain.frame           = os_mac_gfx_state->window.frame;
+	g_r_metal_state.swapchain.frame           = g_os_mac_gfx_state.window.frame;
 
 	{
-		NSView *view    = os_mac_gfx_state->window.contentView;
+		NSView *view    = g_os_mac_gfx_state.window.contentView;
 		view.wantsLayer = YES;
 		view.layer      = g_r_metal_state.swapchain;
 	}

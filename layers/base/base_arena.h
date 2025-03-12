@@ -26,11 +26,11 @@ struct Temp
 	U64 pos;
 };
 
-global U64 arena_default_reserve_size = MB(64);
-global U64 arena_default_commit_size  = KB(64);
+global U64 g_arena_default_reserve_size = MB(64);
+global U64 g_arena_default_commit_size  = KB(64);
 
 internal Arena *arena_alloc(U64 min_reserve, U64 min_commit);
-#define arena_default arena_alloc(arena_default_reserve_size, arena_default_commit_size)
+#define arena_default arena_alloc(g_arena_default_reserve_size, g_arena_default_commit_size)
 internal void arena_release(Arena * arena);
 
 internal void *arena_push(Arena *arena, U64 size, U64 alignment);

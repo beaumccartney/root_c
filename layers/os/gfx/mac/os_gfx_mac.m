@@ -1,11 +1,11 @@
 #if !BUILD_SUPPLEMENTARY_UNIT
-	global OS_MAC_GFX_State *os_mac_gfx_state = 0;
+	global OS_MAC_GFX_State g_os_mac_gfx_state = zero_struct;
 #endif
 
 @implementation MyApp : NSApplication
 - (void)quit_render_loop:(id) sender {
 	// HACK(beau): this is terrible
-	os_mac_gfx_state->private_command_q_should_quit_flag = 1;
+	g_os_mac_gfx_state.private_command_q_should_quit_flag = 1;
 }
 @end
 
@@ -45,19 +45,19 @@ internal void os_gfx_init(void)
 			((screen_rect.size.width - window_size.width) / 2),
 			((screen_rect.size.height - window_size.height) / 2)
 		};
-		os_mac_gfx_state->window = [[MyWindow alloc] initWithContentRect:
+		g_os_mac_gfx_state.window = [[MyWindow alloc] initWithContentRect:
 			(NSRect) {window_origin, window_size}
 			styleMask: NSWindowStyleMaskTitled
 			backing:NSBackingStoreBuffered
 			defer:NO ];
 
-		os_mac_gfx_state->window.title = @"Window title";
-		os_mac_gfx_state->window.isVisible = YES;
+		g_os_mac_gfx_state.window.title = @"Window title";
+		g_os_mac_gfx_state.window.isVisible = YES;
 	}
 	[NSApp activate];
 
-	os_mac_gfx_state->window.opaque = YES;
-	os_mac_gfx_state->window.backgroundColor = 0;
+	g_os_mac_gfx_state.window.opaque = YES;
+	g_os_mac_gfx_state.window.backgroundColor = 0;
 }
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
@@ -65,11 +65,11 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 	OS_EventList result = zero_struct;
 	@autoreleasepool
 	{
-		NSEvent *ns_event = [os_mac_gfx_state->window nextEventMatchingMask:NSEventMaskAny
+		NSEvent *ns_event = [g_os_mac_gfx_state.window nextEventMatchingMask:NSEventMaskAny
 			untilDate:[NSDate distantFuture]
 			inMode:NSDefaultRunLoopMode
 			dequeue:YES];
-		for (; ns_event != 0; ns_event = [os_mac_gfx_state->window
+		for (; ns_event != 0; ns_event = [g_os_mac_gfx_state.window
 				nextEventMatchingMask:NSEventMaskAny
 				untilDate:0
 				inMode:NSDefaultRunLoopMode
@@ -195,11 +195,11 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 			[NSApp sendEvent:ns_event];
 
 			// HACK(beau): this is terrible
-			if (os_mac_gfx_state->private_command_q_should_quit_flag)
+			if (g_os_mac_gfx_state.private_command_q_should_quit_flag)
 			{
 				OS_Event *quitev = os_eventlist_push_new(arena, &result, OS_EventKind_Quit);
 				Unused(quitev);
-				os_mac_gfx_state->private_command_q_should_quit_flag = 0;
+				g_os_mac_gfx_state.private_command_q_should_quit_flag = 0;
 			}
 		}
 	}

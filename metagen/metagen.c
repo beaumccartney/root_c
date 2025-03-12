@@ -167,8 +167,8 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						{
 							*copy_target++ = '0';
 							*copy_target++ = 'x';
-							*copy_target++ = integer_symbols[*c / 16];
-							*copy_target++ = integer_symbols[*c % 16];
+							*copy_target++ = g_integer_symbols[*c / 16];
+							*copy_target++ = g_integer_symbols[*c % 16];
 							*copy_target++ = ',';
 							ptrdiff_t nth_char = (c - gen_string.buffer) + 1;
 							Assert(nth_char > 0);
