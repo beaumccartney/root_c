@@ -67,42 +67,12 @@ OS_Key os_mac_kvk_table[OS_MAC_kVK_COUNT] = {
 	[OS_MAC_kVK_Tab]                 = OS_Key_Tab,
 	[OS_MAC_kVK_Space]               = OS_Key_Space,
 	[OS_MAC_kVK_ANSI_Grave]          = OS_Key_GraveAccent,
-	[OS_MAC_kVK_Delete]              = OS_Key_Null,
 	[OS_MAC_kVK_Escape]              = OS_Key_Escape,
-	[OS_MAC_kVK_RightCommand]        = OS_Key_Null,
-	[OS_MAC_kVK_Command]             = OS_Key_Null,
 	[OS_MAC_kVK_Shift]               = OS_Key_LeftShift,
-	[OS_MAC_kVK_CapsLock]            = OS_Key_Null,
 	[OS_MAC_kVK_Option]              = OS_Key_LeftAlt,
 	[OS_MAC_kVK_Control]             = OS_Key_LeftControl,
 	[OS_MAC_kVK_RightShift]          = OS_Key_RightShift,
 	[OS_MAC_kVK_RightOption]         = OS_Key_RightAlt,
-	[OS_MAC_kVK_RightControl]        = OS_Key_Null,
-	[OS_MAC_kVK_Function]            = OS_Key_Null,
-	[OS_MAC_kVK_F17]                 = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadDecimal]  = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadMultiply] = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadPlus]     = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadClear]    = OS_Key_Null,
-	[OS_MAC_kVK_VolumeUp]            = OS_Key_Null,
-	[OS_MAC_kVK_VolumeDown]          = OS_Key_Null,
-	[OS_MAC_kVK_Mute]                = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadDivide]   = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadEnter]    = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadMinus]    = OS_Key_Null,
-	[OS_MAC_kVK_F18]                 = OS_Key_Null,
-	[OS_MAC_kVK_F19]                 = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_KeypadEquals]   = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad0]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad1]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad2]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad3]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad4]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad5]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad6]        = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad7]        = OS_Key_Null,
-	[OS_MAC_kVK_F20]                 = OS_Key_Null,
-	[OS_MAC_kVK_ANSI_Keypad8]        = OS_Key_Null,
 	[OS_MAC_kVK_ANSI_Keypad9]        = OS_Key_F5,
 	[OS_MAC_kVK_F5]                  = OS_Key_F6,
 	[OS_MAC_kVK_F6]                  = OS_Key_F7,
@@ -111,21 +81,10 @@ OS_Key os_mac_kvk_table[OS_MAC_kVK_COUNT] = {
 	[OS_MAC_kVK_F8]                  = OS_Key_F8,
 	[OS_MAC_kVK_F9]                  = OS_Key_F9,
 	[OS_MAC_kVK_F11]                 = OS_Key_F11,
-	[OS_MAC_kVK_F13]                 = OS_Key_Null,
-	[OS_MAC_kVK_F16]                 = OS_Key_Null,
-	[OS_MAC_kVK_F14]                 = OS_Key_Null,
 	[OS_MAC_kVK_F10]                 = OS_Key_F10,
-	[OS_MAC_kVK_ContextualMenu]      = OS_Key_Null,
 	[OS_MAC_kVK_F12]                 = OS_Key_F12,
-	[OS_MAC_kVK_F15]                 = OS_Key_Null,
-	[OS_MAC_kVK_Help]                = OS_Key_Null,
-	[OS_MAC_kVK_Home]                = OS_Key_Null,
-	[OS_MAC_kVK_PageUp]              = OS_Key_Null,
-	[OS_MAC_kVK_ForwardDelete]       = OS_Key_Null,
 	[OS_MAC_kVK_F4]                  = OS_Key_F4,
-	[OS_MAC_kVK_End]                 = OS_Key_Null,
 	[OS_MAC_kVK_F2]                  = OS_Key_F2,
-	[OS_MAC_kVK_PageDown]            = OS_Key_Null,
 	[OS_MAC_kVK_F1]                  = OS_Key_F1,
 	[OS_MAC_kVK_LeftArrow]           = OS_Key_Left,
 	[OS_MAC_kVK_RightArrow]          = OS_Key_Right,
@@ -214,13 +173,14 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 				case NSEventTypeKeyUp:
 				{
 					OS_Key os_key = os_mac_kvk_table[ns_event.keyCode];
-					OS_Event *os_event = os_eventlist_push_new(arena, &result);
-					if (os_key != OS_Key_Null)
+					if (os_key != OS_Key_NULL)
 					{
+						OS_Event *os_event = os_eventlist_push_new(
+							arena,
+							&result,
+							NSEventTypeKeyDown ? OS_EventKind_Press : OS_EventKind_Release
+						);
 						os_event->key = os_key;
-						os_event->kind = ns_event_type == NSEventTypeKeyDown
-									? OS_EventKind_Press
-									: OS_EventKind_Release;
 						NSEventModifierFlags ns_mods = ns_event.modifierFlags;
 						if (ns_mods & NSEventModifierFlagShift)
 							os_event->modifiers |= OS_Modifier_Shift;
@@ -237,8 +197,8 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 			// HACK(beau): this is terrible
 			if (os_mac_gfx_state->private_command_q_should_quit_flag)
 			{
-				OS_Event *quitev = os_eventlist_push_new(arena, &result);
-				quitev->kind = OS_EventKind_Quit;
+				OS_Event *quitev = os_eventlist_push_new(arena, &result, OS_EventKind_Quit);
+				Unused(quitev);
 				os_mac_gfx_state->private_command_q_should_quit_flag = 0;
 			}
 		}
