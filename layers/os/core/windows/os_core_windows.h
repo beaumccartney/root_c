@@ -8,7 +8,7 @@
 typedef struct OS_WINDOWS_State OS_WINDOWS_State;
 struct OS_WINDOWS_State
 {
-	U64 queryperformancefrequency_resolution;
+	S64 queryperformancefrequency_resolution;
 };
 
 global OS_WINDOWS_State g_os_windows_state = zero_struct;
@@ -21,7 +21,7 @@ struct OS_WINDOWS_FileIterSearchFolder
 	OS_WINDOWS_FileIterSearchFolder *next;
 	HANDLE search_handle;
 	WIN32_FIND_DATAW find_data;
-	U64 dirname_length; // length of OS_WINDOWS_FileIter.working_path for this search folder
+	S64 dirname_length; // length of OS_WINDOWS_FileIter.working_path for this search folder
 };
 
 typedef struct OS_WINDOWS_FileIter OS_WINDOWS_FileIter;
@@ -47,6 +47,6 @@ internal String16
 os_full_path_from_path_windows_inner(Arena *arena, String16 path16);
 
 internal void
-os_windows_file_iter_push(OS_FileIter *iter, U64 path_length);
+os_windows_file_iter_push(OS_FileIter *iter, S64 path_length);
 
 #endif // OS_CORE_WINDOWS_H

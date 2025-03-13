@@ -72,23 +72,23 @@ internal U8 char_to_upper(U8 c)             {if (char_is_lower(c)) c-=('a'-'A');
 internal U8 char_to_forward_slash(U8 c)     {if (char_is_slash(c)) c='/'; return c;}
 internal U8 char_to_back_slash(U8 c)        {if (char_is_slash(c)) c='\\'; return c;}
 
-internal U64 cstring8_length(char *c)
+internal S64 cstring8_length(char *c)
 {
 	char *end = c;
 	for (; *end != 0; end++);
-	return (U64)(end - c);
+	return end - c;
 }
-internal U64 cstring16_length(U16 *c)
+internal S64 cstring16_length(U16 *c)
 {
 	U16 *end = c;
 	for (; *end != 0; end++);
-	return (U64)(end - c);
+	return end - c;
 }
-internal U64 cstring32_length(U32 *c)
+internal S64 cstring32_length(U32 *c)
 {
 	U32 *end = c;
 	for (; *end != 0; end++);
-	return (U64)(end - c);
+	return end - c;
 }
 
 internal String8 str8_cstring(char *cstr)
@@ -107,38 +107,47 @@ internal String32 str32_cstring(U32 *cstr)
 	return result;
 }
 
-internal String8 str8_cstring_capped(char *cstr, U64 cap)
+internal String8 str8_cstring_capped(char *cstr, S64 cap)
 {
-	U64 length = 0;
+	Assert(0 <= cap);
+	S64 length = 0;
 	for (U8 *c = (U8*)cstr; *c != 0 && length < cap; length++, c++);
 	String8 result = {(U8*)cstr, length};
 	return result;
 }
-internal String16 str16_cstring_capped(U16 *cstr, U64 cap)
+internal String16 str16_cstring_capped(U16 *cstr, S64 cap)
 {
-	U64 length = 0;
+	Assert(0 <= cap);
+	S64 length = 0;
 	for (U16 *c = (U16*)cstr; *c != 0 && length < cap; length++, c++);
 	String16 result = {(U16*)cstr, length};
 	return result;
 }
-internal String32 str32_cstring_capped(U32 *cstr, U64 cap)
+internal String32 str32_cstring_capped(U32 *cstr, S64 cap)
 {
-	U64 length = 0;
+	Assert(0 <= cap);
+	S64 length = 0;
 	for (U32 *c = (U32*)cstr; *c != 0 && length < cap; length++, c++);
 	String32 result = {(U32*)cstr, length};
 	return result;
 }
 
-internal String8  str8_region(U8 *first, U8 *one_past_last)    {Assert(first <= one_past_last);return str8(first, (U64)(one_past_last-first));}
-internal String16 str16_region(U16 *first, U16 *one_past_last) {Assert(first <= one_past_last);return str16(first, (U64)(one_past_last-first));}
-internal String32 str32_region(U32 *first, U32 *one_past_last) {Assert(first <= one_past_last);return str32(first, (U64)(one_past_last-first));}
+internal String8  str8_region(U8 *first, U8 *one_past_last)    {Assert(first <= one_past_last);return str8(first, one_past_last-first);}
+internal String16 str16_region(U16 *first, U16 *one_past_last) {Assert(first <= one_past_last);return str16(first, one_past_last-first);}
+internal String32 str32_region(U32 *first, U32 *one_past_last) {Assert(first <= one_past_last);return str32(first, one_past_last-first);}
 
-internal String8 push_str8(Arena *arena, U64 length)
+internal String8 push_str8(Arena *arena, S64 length)
 {
-	return (String8){push_array_no_zero(arena, U8, length), length};
+	Assert(0 <= length);
+	String8 result = {
+		push_array_no_zero(arena, U8, length),
+		length
+	};
+	return result;
 }
-internal String8 push_str8_nt(Arena *arena, U64 length_minus_one)
+internal String8 push_str8_nt(Arena *arena, S64 length_minus_one)
 {
+	Assert(0 <= length_minus_one);
 	String8 result = {
 		push_array_no_zero(arena, U8, length_minus_one + 1),
 		length_minus_one
@@ -147,15 +156,17 @@ internal String8 push_str8_nt(Arena *arena, U64 length_minus_one)
 
 	return result;
 }
-internal String8 push_str8_fill_byte(Arena *arena, U64 length, U8 byte)
+internal String8 push_str8_fill_byte(Arena *arena, S64 length, U8 byte)
 {
+	Assert(0 <= length);
 	String8 result = push_str8(arena, length);
 	MemorySet(result.buffer, byte, length);
 
 	return result;
 }
-internal String8 push_str8_fill_byte_nt(Arena *arena, U64 length_minus_one, U8 byte)
+internal String8 push_str8_fill_byte_nt(Arena *arena, S64 length_minus_one, U8 byte)
 {
+	Assert(0 <= length_minus_one);
 	String8 result = push_str8_nt(arena, length_minus_one);
 	MemorySet(result.buffer, byte, length_minus_one);
 
@@ -163,6 +174,7 @@ internal String8 push_str8_fill_byte_nt(Arena *arena, U64 length_minus_one, U8 b
 }
 internal String8 push_str8_copy(Arena *arena, String8 src)
 {
+	Assert(0 <= src.length);
 	String8 result = push_str8_nt(arena, src.length);
 	MemoryCopy(result.buffer, src.buffer, src.length);
 
@@ -170,7 +182,8 @@ internal String8 push_str8_copy(Arena *arena, String8 src)
 }
 internal String8 push_str8_cat(Arena *arena, String8 s1, String8 s2)
 {
-	U64 newlength = s1.length + s2.length;
+	Assert(0 <= s1.length && 0 <= s2.length);
+	S64 newlength = s1.length + s2.length;
 	String8 result = push_str8_nt(arena, newlength);
 	MemoryCopy(result.buffer, s1.buffer, s1.length);
 	MemoryCopy(result.buffer + s1.length, s2.buffer, s2.length);
@@ -183,9 +196,9 @@ internal String8 push_str8fv(Arena *arena, char *fmt, va_list args)
 	va_list args2;
 	va_copy(args2, args);
 	int needed_bytes = stbsp_vsnprintf(0, 0, fmt, args) + 1;
-	String8 result = push_str8(arena, (U64)needed_bytes);
+	String8 result = push_str8(arena, needed_bytes);
 	int length = stbsp_vsnprintf((char*)result.buffer, needed_bytes, fmt, args2);
-	result.length = (U64)length;
+	result.length = length;
 	if (length > 0)
 		result.buffer[result.length] = 0;
 	va_end(args2);
@@ -201,33 +214,46 @@ internal String8 push_str8f(Arena *arena, char *fmt, ...)
 }
 
 
-internal String8 str8_substr(String8 string, Rng1U64 range)
+internal String8 str8_substr(String8 string, Rng1S64 range)
 {
-	range.min = ClampTop(range.min, string.length);
-	range.max = ClampTop(range.max, string.length);
-	return (String8){string.buffer+range.min, dim_1u64(range)};
+	Assert(0 <= string.length && 0 <= range.min && range.min <= range.max);
+	if (range.min > string.length)
+		range.min = string.length;
+	if (range.max > string.length)
+		range.max = string.length;
+	return (String8){string.buffer+range.min, dim_1s64(range)};
 }
-internal String8 str8_prefix(String8 string, U64 length)
+internal String8 str8_prefix(String8 string, S64 length)
 {
-	return (String8){string.buffer, ClampTop(length, string.length)};
+	Assert(0 <= string.length && 0 <= length);
+	if (length > string.length)
+		length = string.length;
+	return (String8){string.buffer, length};
 }
-internal String8 str8_postfix(String8 string, U64 length)
+internal String8 str8_postfix(String8 string, S64 length)
 {
-	length = ClampTop(length, string.length);
+	Assert(0 <= string.length && 0 <= length);
+	if (length > string.length)
+		length = string.length;
 	return (String8){string.buffer+string.length-length, length};
 }
-internal String8 str8_skip(String8 string, U64 length)
+internal String8 str8_skip(String8 string, S64 length)
 {
-	length = ClampTop(length, string.length);
+	Assert(0 <= string.length && 0 <= length);
+	if (length > string.length)
+		length = string.length;
 	return (String8){string.buffer+length, string.length-length};
 }
-internal String8 str8_chop(String8 string, U64 length)
+internal String8 str8_chop(String8 string, S64 length)
 {
-	length = ClampTop(length, string.length);
+	Assert(0 <= string.length && 0 <= length);
+	if (length > string.length)
+		length = string.length;
 	return (String8){string.buffer, string.length-length};
 }
 internal String8 str8_trim_whitespace(String8 string)
 {
+	Assert(0 <= string.length);
 	U8 *head = string.buffer, *one_past_last = string.buffer + string.length;
 	for (; head < one_past_last && char_is_space(*head); head++);
 	for (; one_past_last > head;)
@@ -246,10 +272,11 @@ internal String8 str8_trim_whitespace(String8 string)
 
 internal String8 upper_from_str8(Arena *arena, String8 string)
 {
+	Assert(0 <= string.length);
 	String8 result = push_str8(arena, string.length);
 
 	U8 *dst = result.buffer, *src = string.buffer;
-	for (U64 i = 0; i < string.length; i++, dst++, src++)
+	for (S64 i = 0; i < string.length; i++, dst++, src++)
 	{
 		*dst = char_to_upper(*src);
 	}
@@ -258,10 +285,11 @@ internal String8 upper_from_str8(Arena *arena, String8 string)
 }
 internal String8 lower_from_str8(Arena *arena, String8 string)
 {
+	Assert(0 <= string.length);
 	String8 result = push_str8(arena, string.length);
 
 	U8 *dst = result.buffer, *src = string.buffer;
-	for (U64 i = 0; i < string.length; i++, dst++, src++)
+	for (S64 i = 0; i < string.length; i++, dst++, src++)
 	{
 		*dst = char_to_lower(*src);
 	}
@@ -271,6 +299,7 @@ internal String8 lower_from_str8(Arena *arena, String8 string)
 
 internal B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
 {
+	Assert(0 <= a.length && 0 <= b.length);
 	B32 result = 0;
 	if (a.length == b.length && flags == 0)
 	{
@@ -278,9 +307,9 @@ internal B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
 	}
 	else if (a.length == b.length || flags & StringMatchFlag_RightSideSloppy)
 	{
-		U64 count = Min(a.length, b.length);
+		S64 count = Min(a.length, b.length);
 		result = 1;
-		for (U64 i = 0; i < count; i++)
+		for (S64 i = 0; i < count; i++)
 		{
 			U8 ac = a.buffer[i], bc = b.buffer[i];
 			if (flags & StringMatchFlag_CaseInsensitive)
@@ -298,17 +327,18 @@ internal B32 str8_match(String8 a, String8 b, StringMatchFlags flags)
 
 	return result;
 }
-internal U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, StringMatchFlags flags)
+internal S64 str8_find_needle(String8 haystack, S64 start_pos, String8 needle, StringMatchFlags flags)
 {
-	U64 result = haystack.length;
+	Assert(0 <= haystack.length && 0 <= start_pos && 0 <= needle.length);
+	S64 result = haystack.length;
 	if (needle.length > 0)
 	{
-		S64 end_ix = (S64)haystack.length + 1 - (S64)needle.length;
-		for (S64 ix = (S64)start_pos; ix < end_ix; ix++)
+		S64 end_ix = haystack.length + 1 - needle.length;
+		for (S64 ix = start_pos; ix < end_ix; ix++)
 		{
 			if (str8_match(str8(haystack.buffer + ix, needle.length), needle, flags))
 			{
-				result = (U64)ix;
+				result = ix;
 				break;
 			}
 		}
@@ -317,12 +347,14 @@ internal U64 str8_find_needle(String8 haystack, U64 start_pos, String8 needle, S
 }
 internal B32 str8_ends_with(String8 string, String8 end, StringMatchFlags flags)
 {
+	Assert(0 <= string.length && 0 <= end.length);
 	String8 postfix = str8_postfix(string, end.length);
 	return str8_match(postfix, end, flags);
 }
 
 internal U8 *str8_last_char(String8 string, U8 c)
 {
+	Assert(0 <= string.length);
 	U8 *last_char = string.buffer + string.length;
 	while (last_char != string.buffer)
 	{
@@ -334,6 +366,7 @@ internal U8 *str8_last_char(String8 string, U8 c)
 }
 internal U8 *str8_one_past_last_char(String8 string, U8 c)
 {
+	Assert(0 <= string.length);
 	U8 *last_char = string.buffer + string.length;
 	while (last_char != string.buffer)
 	{
@@ -348,18 +381,21 @@ internal U8 *str8_one_past_last_char(String8 string, U8 c)
 }
 internal String8 str8_skip_last_char(String8 string, U8 c)
 {
+	Assert(0 <= string.length);
 	U8 *one_past_last_char = str8_one_past_last_char(string, c);
 	String8 result = str8_region(one_past_last_char, string.buffer + string.length);
 	return result;
 }
 internal String8 str8_chop_last_char(String8 string, U8 c)
 {
+	Assert(0 <= string.length);
 	U8 *last_char = str8_last_char(string, c);
 	String8 result = str8_region(string.buffer, last_char);
 	return result;
 }
 internal U8 *str8_last_slash(String8 string)
 {
+	Assert(0 <= string.length);
 	U8 *last_slash = string.buffer + string.length;
 	while (last_slash != string.buffer)
 	{
@@ -371,6 +407,7 @@ internal U8 *str8_last_slash(String8 string)
 }
 internal U8 *str8_one_past_last_slash(String8 string)
 {
+	Assert(0 <= string.length);
 	U8 *last_slash = string.buffer + string.length;
 	while (last_slash != string.buffer)
 	{
@@ -385,21 +422,24 @@ internal U8 *str8_one_past_last_slash(String8 string)
 }
 internal String8 str8_skip_last_slash(String8 string)
 {
+	Assert(0 <= string.length);
 	U8 *one_past_last_slash = str8_one_past_last_slash(string);
 	String8 result = str8_region(one_past_last_slash, string.buffer + string.length);
 	return result;
 }
 internal String8 str8_chop_last_slash(String8 string)
 {
+	Assert(0 <= string.length);
 	U8 *last_slash = str8_last_slash(string);
 	String8 result = str8_region(string.buffer, last_slash);
 	return result;
 }
 
-internal Vec2U64
-str8_pos_from_offset(String8 string, U64 offset)
+internal Vec2S64
+str8_pos_from_offset(String8 string, S64 offset)
 {
-	Vec2U64 result = {1, 1};
+	Assert(0 <= string.length && 0 <= offset);
+	Vec2S64 result = {1, 1};
 	if (string.length < offset)
 		offset = string.length;
 	U8 *one_past_last = string.buffer + offset;
@@ -419,6 +459,7 @@ str8_pos_from_offset(String8 string, U64 offset)
 
 internal String8Node* str8_list_push_node(String8List *list, String8Node *node)
 {
+	Assert(0 <= node->string.length);
 	SLLQueuePush(list->first, list->last, node);
 	list->node_count   += 1;
 	list->total_length += node->string.length;
@@ -426,12 +467,14 @@ internal String8Node* str8_list_push_node(String8List *list, String8Node *node)
 }
 internal String8Node* str8_list_push_node_set_string(String8List *list, String8Node *node, String8 string)
 {
+	Assert(0 <= node->string.length && 0 <= string.length);
 	node->string = string;
 	str8_list_push_node(list, node);
 	return node;
 }
 internal String8Node* str8_list_push_node_front(String8List *list, String8Node *node)
 {
+	Assert(0 <= node->string.length);
 	SLLQueuePushFront(list->first, list->last, node);
 	list->node_count   += 1;
 	list->total_length += node->string.length;
@@ -439,12 +482,14 @@ internal String8Node* str8_list_push_node_front(String8List *list, String8Node *
 }
 internal String8Node* str8_list_push_node_front_set_string(String8List *list, String8Node *node, String8 string)
 {
+	Assert(0 <= node->string.length && 0 <= string.length);
 	node->string = string;
 	str8_list_push_node_front(list, node);
 	return node;
 }
 internal String8Node* str8_list_push(Arena *arena, String8List *list, String8 string)
 {
+	Assert(0 <= string.length);
 	String8Node *node = 0;
 	if (string.length > 0)
 	{
@@ -455,6 +500,7 @@ internal String8Node* str8_list_push(Arena *arena, String8List *list, String8 st
 }
 internal String8Node* str8_list_push_front(Arena *arena, String8List *list, String8 string)
 {
+	Assert(0 <= string.length);
 	String8Node *node = 0;
 	if (string.length > 0)
 	{
@@ -512,8 +558,9 @@ internal String8List str8_list_copy(Arena *arena, String8List list)
 	return result;
 }
 
-internal String8List str8_split(Arena *arena, String8 string, U8 *split_chars, U64 split_char_count, StringSplitFlags flags)
+internal String8List str8_split(Arena *arena, String8 string, U8 *split_chars, S64 split_char_count, StringSplitFlags flags)
 {
+	Assert(0 <= string.length && 0 <= split_char_count);
 	String8List result = zero_struct;
 
 	B32 keep_empties = flags & StringSplitFlag_KeepEmpties;
@@ -539,11 +586,13 @@ internal String8List str8_split(Arena *arena, String8 string, U8 *split_chars, U
 }
 internal String8List str8_split_by_string_chars(Arena *arena, String8 string, String8 split_chars, StringSplitFlags flags)
 {
+	Assert(0 <= string.length && 0 <= split_chars.length);
 	String8List result = str8_split(arena, string, split_chars.buffer, split_chars.length, flags);
 	return result;
 }
-internal String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, U64 split_char_count, StringSplitFlags flags)
+internal String8List str8_list_split(Arena *arena, String8List list, U8 *split_chars, S64 split_char_count, StringSplitFlags flags)
 {
+	Assert(0 <= split_char_count);
 	String8List result = zero_struct;
 	for (String8Node *node = list.first; node != 0; node = node->next)
 	{
@@ -554,16 +603,20 @@ internal String8List str8_list_split(Arena *arena, String8List list, U8 *split_c
 }
 internal String8List str8_list_split_by_string_chars(Arena *arena, String8List list, String8 split_chars, StringSplitFlags flags)
 {
+	Assert(0 <= split_chars.length);
 	String8List result = str8_list_split(arena, list, split_chars.buffer, split_chars.length, flags);
 	return result;
 }
 internal String8 str8_list_join(Arena *arena, String8List list, StringJoin *optional_params)
 {
 	StringJoin params = zero_struct;
-	if (optional_params != 0) params = *optional_params;
+	if (optional_params != 0)
+		params = *optional_params;
 
-	U64 sep_count = list.node_count > 0 ? list.node_count - 1 : 0;
-	U64 total_length = list.total_length
+	Assert(0 <= params.pre.length && 0 <= params.sep.length && 0 <= params.post.length && 0 <= list.node_count && 0 <= list.total_length);
+
+	S64 sep_count = list.node_count > 0 ? list.node_count - 1 : 0,
+	    total_length = list.total_length
 			   + params.pre.length
 			   + params.sep.length * sep_count
 			   + params.post.length;
@@ -593,6 +646,7 @@ internal String8 str8_list_join(Arena *arena, String8List list, StringJoin *opti
 
 internal String8Array str8_array_from_list(Arena *arena, String8List list)
 {
+	Assert(0 <= list.node_count && 0 <= list.total_length);
 	String8Array result = {
 		push_array_no_zero(arena, String8, list.node_count),
 		list.node_count
@@ -613,9 +667,8 @@ internal String8 indented_from_string(Arena *arena, String8 string)
 	Temp scratch = scratch_begin(&arena, 1);
 	const local_persist U8 indentation_bytes[] = "                                                                                                                                ";
 	String8List indented_strings = zero_struct;
-	S64 depth = 0, next_depth = 0;
-	U64 line_begin_offset = 0;
-	for (U64 offset = 0; offset <= string.length; offset++)
+	S64 depth = 0, next_depth = 0, line_begin_offset = 0;
+	for (S64 offset = 0; offset <= string.length; offset++)
 	{
 		U8 byte = offset < string.length ? string.buffer[offset] : 0;
 		switch (byte)
@@ -626,7 +679,7 @@ internal String8 indented_from_string(Arena *arena, String8 string)
 			case '\n':
 			case 0:
 			{
-				String8 line = str8_trim_whitespace(str8_substr(string, r1u64(line_begin_offset, offset)));
+				String8 line = str8_trim_whitespace(str8_substr(string, r1s64(line_begin_offset, offset)));
 				if (line.length > 0)
 					str8_list_pushf(scratch.arena, &indented_strings, "%.*s%S\n", (int)depth*2, indentation_bytes, line);
 				if (line.length == 0 && indented_strings.node_count != 0 && offset < string.length)
@@ -793,14 +846,14 @@ utf16_encode(U16 *str, U32 codepoint)
 internal String8
 str8_from_16(Arena *arena, String16 in)
 {
+	Assert(0 <= in.length);
 	String8 result = str8_zero;
 	if(in.length > 0)
 	{
-		U64 cap = in.length*3;
+		S64 cap = in.length*3, size = 0;
 		U8 *str = push_array_no_zero(arena, U8, cap + 1);
 		U16 *ptr = in.buffer;
 		U16 *one_past_last = ptr + in.length;
-		U64 size = 0;
 		UnicodeDecode consume;
 		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{
@@ -818,14 +871,14 @@ str8_from_16(Arena *arena, String16 in)
 internal String16
 str16_from_8(Arena *arena, String8 in)
 {
+	Assert(0 <= in.length);
 	String16 result = str16_zero;
-	if(in.length)
+	if (in.length > 0)
 	{
-		U64 cap = in.length*2;
+		S64 cap = in.length*2, size = 0;
 		U16 *str = push_array_no_zero(arena, U16, cap + 1);
 		U8 *ptr = in.buffer;
 		U8 *one_past_last = ptr + in.length;
-		U64 size = 0;
 		UnicodeDecode consume;
 		for(;ptr < one_past_last; ptr += consume.num_code_units)
 		{

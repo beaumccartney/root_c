@@ -5,7 +5,7 @@
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s)
 {
 	FileProperties result = zero_struct;
-	result.size = (U64)s->st_size;
+	result.size = s->st_size;
 	if (S_ISDIR(s->st_mode)) result.flags |= FilePropertyFlag_IsFolder;
 	return result;
 }
@@ -40,36 +40,40 @@ internal void os_mac_entity_release(OS_MAC_Entity *entity)
 	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
 }
 
-internal void *os_vmem_reserve(U64 size)
+internal void *os_vmem_reserve(S64 size)
 {
+	Assert(0 <= size);
 	void * result = 0;
 
 	AssertAlways(vm_allocate(
 		mach_task_self(),
 		(vm_address_t *)&result,
-		size,
+		(vm_size_t)size,
 		VM_FLAGS_ANYWHERE
 	) == KERN_SUCCESS);
 
 	return result;
 }
 
-internal B32 os_vmem_commit(void *ptr, U64 size)
+internal B32 os_vmem_commit(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	return 1;
 }
 
-internal void os_vmem_decommit(void *ptr, U64 size)
+internal void os_vmem_decommit(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	// no-op
 }
 
-internal void os_vmem_release(void *ptr, U64 size)
+internal void os_vmem_release(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	AssertAlways(vm_deallocate(
 		mach_task_self(),
 		(vm_address_t)ptr,
-		size
+		(vm_size_t)size
 	) == KERN_SUCCESS);
 }
 
@@ -81,6 +85,7 @@ no_return internal void os_abort(S32 exit_code)
 // REVIEW(beau): file perms based on access flags
 internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path)
 {
+	Assert(0 <= path.length);
 	Temp scratch = scratch_begin(0, 0);
 	String8 path_copy = push_str8_copy(scratch.arena, path); // guarantee null termination
 	int oflag = 0;
@@ -108,35 +113,37 @@ internal void os_file_close(OS_Handle file)
 	int fd = (int)file.u[0];
 	close(fd);
 }
-internal U64 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
+internal S64 os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
 {
+	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
 	int fd = (int)file.u[0];
-	U64 read_bytes = 0,
-	    needed_bytes = dim_1u64(rng);
+	S64 read_bytes = 0,
+	    needed_bytes = dim_1s64(rng);
 	while (read_bytes < needed_bytes)
 	{
 		void *dst           = out_data + read_bytes;
-		U64 start_pos       = rng.min + read_bytes,
+		S64 start_pos       = rng.min + read_bytes,
 		    remaining_bytes = needed_bytes - read_bytes;
-		ssize_t read_this_time  = pread(fd, dst, remaining_bytes, (off_t)start_pos);
+		ssize_t read_this_time  = pread(fd, dst, (size_t)remaining_bytes, (off_t)start_pos);
 		if (read_this_time <= 0) break; // REVIEW(beau): errno?
 		read_bytes += (U64)read_this_time;
 	}
 	return read_bytes;
 }
-internal U64 os_file_write(OS_Handle file, Rng1U64 rng, void *data)
+internal S64 os_file_write(OS_Handle file, Rng1S64 rng, void *data)
 {
+	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
 	int fd = (int)file.u[0];
-	U64 written_bytes = 0,
-	    goal_write_bytes = dim_1u64(rng);
+	S64 written_bytes = 0,
+	    goal_write_bytes = dim_1s64(rng);
 	while (written_bytes < goal_write_bytes)
 	{
 		void *src           = data + written_bytes;
-		U64 start_pos       = rng.min + written_bytes,
+		S64 start_pos       = rng.min + written_bytes,
 		    remaining_bytes = goal_write_bytes - written_bytes;
-		ssize_t written_this_time  = pwrite(fd, src, remaining_bytes, (off_t)start_pos);
+		ssize_t written_this_time  = pwrite(fd, src, (size_t)remaining_bytes, (off_t)start_pos);
 		if (written_this_time <= 0) break; // REVIEW(beau): errno?
 		written_bytes += (U64)written_this_time;
 	}
@@ -156,6 +163,7 @@ internal FileProperties os_properties_from_file(OS_Handle file)
 }
 internal B32 os_delete_file_at_path(String8 path)
 {
+	Assert(0 <= path.length);
 	Temp scratch = scratch_begin(0, 0);
 	String8 copy = push_str8_copy(scratch.arena, path); // guarantee null termination
 	B32 result = unlink((char *)copy.buffer) != -1;
@@ -313,11 +321,11 @@ internal String8 os_get_current_folder(Arena *arena)
 	return result;
 }
 
-internal U64 os_now_microseconds(void)
+internal S64 os_now_microseconds(void)
 {
 	U64 nanoseconds = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-	Assert(nanoseconds);
-	U64 result = nanoseconds / Thousand(1); // NOTE(beau): 2^63 nanoseconds is a little bit less than 300 years
+	Assert(nanoseconds && nanoseconds <= max_S64);
+	S64 result = (S64)nanoseconds / Thousand(1); // NOTE(beau): 2^63 nanoseconds is a little bit less than 300 years
 	return result;
 }
 
@@ -349,7 +357,7 @@ os_thread_launch(OS_ThreadFunctionType *func, void *params)
 	OS_Handle result = {.u[0] = (U64)entity};
 	return result;
 }
-internal B32 os_thread_join(OS_Handle handle, U64 endt_us)
+internal B32 os_thread_join(OS_Handle handle, S64 endt_us)
 {
 	B32 result = 0;
 	if (!os_handle_match(handle, os_handle_zero))
@@ -463,7 +471,7 @@ internal void os_rw_mutex_drop_w(OS_Handle rw_mutex)
 int main(int argc, char *argv[])
 {
 	{
-		g_os_state.system_info.page_size = vm_page_size;
+		g_os_state.system_info.page_size = (S64)vm_page_size;
 		g_os_state.arena = arena_default;
 		g_os_state.process_info.initial_working_directory = os_get_current_folder(g_os_state.arena);
 		{
@@ -490,10 +498,10 @@ int main(int argc, char *argv[])
 	tctx_init_and_equip(&tctx);
 	{
 		String8Array args = {
-			.count = (U64)argc,
-			.v = push_array_no_zero(g_os_state.arena, String8, (U64)argc),
+			.count = argc,
+			.v = push_array_no_zero(g_os_state.arena, String8, argc),
 		};
-		for (U64 i = 0; i < args.count; i++)
+		for (S64 i = 0; i < args.count; i++)
 			args.v[i] = str8_cstring(argv[i]);
 		main_thread_base_entry_point(args);
 	}

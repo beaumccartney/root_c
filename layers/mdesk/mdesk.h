@@ -65,14 +65,14 @@ typedef struct MD_TokenList MD_TokenList;
 struct MD_TokenList
 {
 	MD_TokenNode *first, *last;
-	U64 count;
+	S64 count;
 };
 
 typedef struct MD_TokenArray MD_TokenArray;
 struct MD_TokenArray
 {
 	MD_Token *v;
-	U64 count;
+	S64 count;
 };
 
 typedef enum
@@ -92,7 +92,7 @@ struct MD_Message
 
 	union
 	{
-		U64 tokens_ix;   // md_tokens_from_source() populates this
+		S64 tokens_ix;   // md_tokens_from_source() populates this
 		MD_Token *token; // everything else uses this
 	};
 	struct MD_AST *ast;
@@ -104,7 +104,7 @@ typedef struct MD_MessageList MD_MessageList;
 struct MD_MessageList
 {
 	MD_Message *first, *last;
-	U64 count;
+	S64 count;
 	MD_MessageKind worst_message;
 };
 
@@ -175,7 +175,7 @@ struct MD_AST
 	       *first, // children
 	       *last, // children
 	       *parent; // to traverse the tree iteratively (i.e. without procedure recursion)
-	U64 children_count;
+	S64 children_count;
 	MD_Token *token; // REVIEW: just the token string instead? or the string containing the entire tree?
 	MD_ASTKind kind;
 	MD_GenFile gen_file;
@@ -193,13 +193,13 @@ struct MD_SymbolTableEntry
 		struct
 		{
 			MD_SymbolTableEntry *cols_stab; // symbol table for @table's columns
-			U64 num_cols, num_rows;
+			S64 num_cols, num_rows;
 			String8 *elem_matrix; // array of strings pointing into the source of each of the tables elements, of length num_columns * num_rows i.e. one string per table element
 		} table_record;
 
 		struct
 		{
-			U64 col; // this ident names the nth column of the table
+			S64 col; // this ident names the nth column of the table
 		} col_record;
 
 		// NOTE:

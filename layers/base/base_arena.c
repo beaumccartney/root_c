@@ -5,11 +5,11 @@
 //   inside os_reserve and friends
 
 internal Arena *
-arena_alloc(U64 min_reserve_size, U64 min_commit_size)
+arena_alloc(S64 min_reserve_size, S64 min_commit_size)
 {
-	Assert(min_commit_size <= min_reserve_size && g_os_state.system_info.page_size > 0);
+	Assert(0 <= min_reserve_size && 0 <= min_commit_size && min_commit_size <= min_reserve_size && g_os_state.system_info.page_size > 0);
 
-	U64 reserve = AlignPow2(min_reserve_size, g_os_state.system_info.page_size),
+	S64 reserve = AlignPow2(min_reserve_size, g_os_state.system_info.page_size),
 	    commit  = AlignPow2(min_commit_size, g_os_state.system_info.page_size);
 	void *base  = os_vmem_reserve(reserve);
 	B32 status  = os_vmem_commit(base, commit);
@@ -17,7 +17,7 @@ arena_alloc(U64 min_reserve_size, U64 min_commit_size)
 
 	AsanPoisonMemoryRegion(
 		(U8 *)base + ARENA_HEADER_SIZE,
-		reserve - ARENA_HEADER_SIZE
+		(size_t)(reserve - ARENA_HEADER_SIZE)
 	);
 
 	Arena *arena     = (Arena *)base;
@@ -35,38 +35,40 @@ internal void arena_release(Arena * arena)
 }
 
 // REVIEW(beau): off-by-one bugs?
-internal void *arena_push(Arena *arena, U64 size, U64 alignment)
+internal void *arena_push(Arena *arena, S64 size, S64 alignment)
 {
-	AssertAlways(size <= arena->reserved);
-	U64 basepos = AlignPow2(arena->pos, alignment);
+	AssertAlways(0 <= alignment && 0 <= size && size <= arena->reserved);
+	S64 basepos = AlignPow2(arena->pos, alignment);
 	AssertAlways(basepos <= arena->reserved);
-	U64 endpos = basepos + size;
+	S64 endpos = basepos + size;
 	AssertAlways(endpos <= arena->reserved);
 
-	if (endpos > arena->committed) {
+	if (endpos > arena->committed)
+	{
 		U8 *commit_start  = arena->base + arena->committed;
-		U64 new_commitpos = AlignPow2(endpos, g_os_state.system_info.page_size),
+		S64 new_commitpos = AlignPow2(endpos, g_os_state.system_info.page_size),
 		    commit_size   = new_commitpos - arena->committed;
 		B32 status        = os_vmem_commit(commit_start, commit_size);
 		Assert(status);
-		AsanPoisonMemoryRegion(commit_start, commit_size);
+		AsanPoisonMemoryRegion(commit_start, (size_t)commit_size);
 		arena->committed = new_commitpos;
 	}
 
 	arena->pos = endpos;
 
 	void * result = arena->base + basepos;
-	AsanUnpoisonMemoryRegion(result, size);
+	AsanUnpoisonMemoryRegion(result, (size_t)size);
 
 	return result;
 }
 
-internal void arena_pop_to(Arena *arena, U64 pos)
+internal void arena_pop_to(Arena *arena, S64 pos)
 {
-	AssertAlways(pos <= arena->pos);
-	U64 clampedpos = ClampBot(ARENA_HEADER_SIZE, pos); // arena's memory is in the header
-	AsanPoisonMemoryRegion(arena->base + clampedpos, arena->pos - clampedpos);
-	arena->pos = clampedpos;
+	AssertAlways(0 <= pos && pos <= arena->pos);
+	if (pos < ARENA_HEADER_SIZE)
+		pos = ARENA_HEADER_SIZE;
+	AsanPoisonMemoryRegion(arena->base + pos, (size_t)(arena->pos - pos));
+	arena->pos = pos;
 }
 
 internal void arena_clear(Arena *arena)
@@ -74,8 +76,9 @@ internal void arena_clear(Arena *arena)
 	arena_pop_to(arena, 0);
 }
 
-internal void arena_pop(Arena *arena, U64 amount)
+internal void arena_pop(Arena *arena, S64 amount)
 {
+	Assert(0 <= amount);
 	if (amount > arena->pos) amount = arena->pos;
 	arena_pop_to(arena, arena->pos - amount);
 }

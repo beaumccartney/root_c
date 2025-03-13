@@ -10,7 +10,7 @@ struct OS_State
 	Arena *arena; // REVIEW
 	struct
 	{
-		U64 page_size;
+		S64 page_size;
 	} system_info;
 	struct
 	{
@@ -58,7 +58,7 @@ enum
 typedef struct FileProperties FileProperties;
 struct FileProperties
 {
-	U64 size;
+	S64 size;
 	FilePropertyFlags flags;
 };
 
@@ -78,10 +78,10 @@ struct OS_Handle
 
 typedef void OS_ThreadFunctionType(void *ptr);
 
-internal void *os_vmem_reserve(U64 size);
-internal B32   os_vmem_commit(void *ptr, U64 size);
-internal void  os_vmem_decommit(void *ptr, U64 size);
-internal void  os_vmem_release(void *ptr, U64 size);
+internal void *os_vmem_reserve(S64 size);
+internal B32   os_vmem_commit(void *ptr, S64 size);
+internal void  os_vmem_decommit(void *ptr, S64 size);
+internal void  os_vmem_release(void *ptr, S64 size);
 
 #define os_handle_zero ((OS_Handle) zero_struct)
 internal B32 os_handle_match(OS_Handle a, OS_Handle b);
@@ -92,12 +92,12 @@ internal String8   os_data_from_file_path(Arena *arena, String8 path);
 internal B32       os_write_data_to_file_path(String8 path, String8 data);
 internal B32       os_write_data_list_to_file_path(String8 path, String8List list);
 internal B32       os_append_data_to_file_path(String8 path, String8 data);
-internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1U64 range); // REVIEW: name better
+internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1S64 range); // REVIEW: name better
 
 internal OS_Handle      os_file_open(OS_AccessFlags flags, String8 path);
 internal void           os_file_close(OS_Handle file);
-internal U64            os_file_read(OS_Handle file, Rng1U64 rng, void *out_data);
-internal U64            os_file_write(OS_Handle file, Rng1U64 rng, void *data);
+internal S64            os_file_read(OS_Handle file, Rng1S64 rng, void *out_data);
+internal S64            os_file_write(OS_Handle file, Rng1S64 rng, void *data);
 internal FileProperties os_properties_from_file(OS_Handle file);
 internal B32            os_delete_file_at_path(String8 path);
 internal B32            os_remove_folder_at_path(String8 path);
@@ -114,12 +114,12 @@ internal void         os_file_iter_end(OS_FileIter *iter);
 internal B32 os_create_folder(String8 path);
 internal String8 os_get_current_folder(Arena *arena);
 
-internal U64 os_now_microseconds(void);
+internal S64 os_now_microseconds(void);
 
 internal void os_set_thread_name(String8 name);
 
 internal OS_Handle os_thread_launch(OS_ThreadFunctionType *func, void *params);
-internal B32       os_thread_join(OS_Handle handle, U64 endt_us);
+internal B32       os_thread_join(OS_Handle handle, S64 endt_us);
 internal void      os_thread_detach(OS_Handle handle);
 
 internal OS_Handle os_mutex_alloc(void);

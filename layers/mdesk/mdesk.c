@@ -3,6 +3,7 @@
 internal MD_TokenizeResult
 md_tokens_from_source(Arena *arena, String8 source)
 {
+	Assert(0 <= source.length);
 	MD_TokenList toklist    = zero_struct;
 	MD_MessageList messages = zero_struct;
 	Temp scratch            = scratch_begin(&arena, 1);
@@ -41,7 +42,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 					}
 					else
 					{
-						U64 comment_stack = 1;
+						S64 comment_stack = 1;
 						for (; comment_stack > 0 && c < one_past_last - 1; c++)
 						{
 							if (c[0] == '/' && c[1] == '*')
@@ -376,6 +377,7 @@ md_tokens_from_source(Arena *arena, String8 source)
 internal MD_ParseResult
 md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 {
+	Assert(0 <= tokens.count && 0 <= source.length);
 	MD_ParseResult result = zero_struct;
 
 	MD_Token *token = tokens.v,
@@ -609,7 +611,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 								str8_lit("location or file specifier(s) used on @table - tables are not generated directly so these have no effect") // REVIEW
 							);
 						}
-						U64 col_num = 0;
+						S64 col_num = 0;
 						for (; token < tokens_one_past_last && token->kind != MD_TokenKind_CloseParen; col_num++, token++)
 						{
 							if (token->kind != MD_TokenKind_Ident)
@@ -818,7 +820,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 					);
 					goto break_parse_outer_loop;
 				}
-				U64 children_before_body = global_directive->children_count; // REVIEW: body ast to hold the children count?
+				S64 children_before_body = global_directive->children_count; // REVIEW: body ast to hold the children count?
 				token++;
 				switch (global_directive->kind)
 				{
@@ -1113,6 +1115,7 @@ md_parse_from_tokens(Arena *arena, MD_TokenArray tokens, String8 source)
 internal MD_MessageList
 md_check_parsed(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 source)
 {
+	Assert(0 <= source.length);
 	MD_MessageList result = zero_struct;
 	Temp scratch = scratch_begin(&arena, 1);
 
@@ -1263,7 +1266,7 @@ md_messagelist_push_inner(Arena *arena, MD_MessageList *messages, String8 source
 	Assert(prefix != 0);
 
 	// REVIEW: speed?
-	Vec2U64 pos = str8_pos_from_offset(source, (U64)(source_loc - source.buffer));
+	Vec2S64 pos = str8_pos_from_offset(source, source_loc - source.buffer);
 
 	MD_Message *message = push_array_no_zero(arena, MD_Message, 1);
 	*message = (MD_Message) {
@@ -1314,6 +1317,7 @@ internal U64 md_hash_ident(String8 ident)
 internal MD_SymbolTableEntry*
 md_symbol_from_ident(Arena *arena, MD_SymbolTableEntry** stab_root, String8 ident)
 {
+	Assert(0 <= ident.length);
 	MD_SymbolTableEntry **stab = stab_root;
 	Assert(ident.length > 0);
 	for (U64 hash = md_hash_ident(ident); *stab != 0; hash <<=2)

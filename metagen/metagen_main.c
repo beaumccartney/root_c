@@ -142,27 +142,27 @@ internal void entry_point(void)
 					String8 gen_info = str8_lit("/* GENERATED */\n\n");
 					// write header file
 					FILE *fd = fopen((char *)gen_file.buffer, "w");
-					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
+					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), (size_t)gen_info.length, fd);
 					String8 include_guard = push_str8f(
 						work_arena,
 						"#ifndef %S_META_H\n#define %S_META_H\n\n",
 						gen_file_upper,
 						gen_file_upper
 					);
-					fwrite(include_guard.buffer, sizeof(*include_guard.buffer), include_guard.length, fd);
-					fwrite(generated.h_file.buffer, sizeof(*generated.h_file.buffer), generated.h_file.length, fd);
+					fwrite(include_guard.buffer, sizeof(*include_guard.buffer), (size_t)include_guard.length, fd);
+					fwrite(generated.h_file.buffer, sizeof(*generated.h_file.buffer), (size_t)generated.h_file.length, fd);
 					String8 include_guard_end = push_str8f(
 						work_arena,
 						"\n\n#endif // %S_META_H",
 						gen_file_upper
 					);
-					fwrite(include_guard_end.buffer, sizeof(*include_guard_end.buffer), include_guard_end.length, fd);
+					fwrite(include_guard_end.buffer, sizeof(*include_guard_end.buffer), (size_t)include_guard_end.length, fd);
 					Assert(!fclose(fd));
 
 					gen_file.buffer[gen_file.length - 1] = 'c'; // XXX
 					fd = fopen((char *)gen_file.buffer, "w");
-					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), gen_info.length, fd);
-					fwrite(generated.c_file.buffer, sizeof(*generated.c_file.buffer), generated.c_file.length, fd);
+					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), (size_t)gen_info.length, fd);
+					fwrite(generated.c_file.buffer, sizeof(*generated.c_file.buffer), (size_t)generated.c_file.length, fd);
 					Assert(!fclose(fd));
 				}
 

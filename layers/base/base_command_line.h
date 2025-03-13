@@ -20,7 +20,7 @@ struct CmdLine
 	String8Array passthrough_inputs,
 		     args;
 	String8 exe_name;
-	U16 options[CMD_LINE_OPT_COUNT], // indices of option_table in insertion order
+	S16 options[CMD_LINE_OPT_COUNT], // indices of option_table in insertion order
 	    opt_count; // number of options
 };
 StaticAssert(CMD_LINE_LOG2_OPT_COUNT < 16, cmd_line_keep_16_ix_size);

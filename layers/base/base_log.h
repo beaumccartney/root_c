@@ -16,7 +16,7 @@ typedef struct LogScope LogScope;
 struct LogScope
 {
 	LogScope *next;
-	U64 log_arena_pos;
+	S64 log_arena_pos;
 	String8List strings[LogMsgKind_COUNT];
 };
 

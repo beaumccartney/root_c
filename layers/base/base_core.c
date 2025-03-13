@@ -1,3 +1,19 @@
+inline internal void *MemoryCopy(void *dst, const void* src, S64 length)
+{
+	Assert(0 <= length);
+	return memmove(dst, src, (size_t)length);
+}
+inline internal void *MemorySet(void *dst, int byte, S64 length)
+{
+	Assert(0 <= length);
+	return memset(dst, byte, (size_t)length);
+}
+inline internal int MemoryCompare(const void *a, const void *b, S64 length)
+{
+	Assert(0 <= length);
+	return memcmp(a, b, (size_t)length);
+}
+
 internal OperatingSystem operating_system_from_context(void)
 {
 	OperatingSystem os = OperatingSystem_Null;
@@ -48,7 +64,7 @@ safe_cast_u16(U64 x)
 	return result;
 }
 
-	internal U32
+internal U32
 safe_cast_u32(U64 x)
 {
 	AssertAlways(x <= max_U32);
@@ -56,10 +72,23 @@ safe_cast_u32(U64 x)
 	return result;
 }
 
-	internal S32
+internal S8 safe_cast_s8(S64 x)
+{
+	AssertAlways(min_S8 <= x && x <= max_S8);
+	S8 result = (S8)x;
+	return result;
+}
+internal S16 safe_cast_s16(S64 x)
+{
+	AssertAlways(min_S16 <= x && x <= max_S16);
+	S16 result = (S16)x;
+	return result;
+}
+
+internal S32
 safe_cast_s32(S64 x)
 {
-	AssertAlways(x <= max_S32);
+	AssertAlways(min_S32 <= x && x <= max_S32);
 	S32 result = (S32)x;
 	return result;
 }

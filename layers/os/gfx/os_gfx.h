@@ -29,7 +29,7 @@ typedef enum
 typedef struct OS_Event OS_Event;
 struct OS_Event
 {
-	U64 timestamp_us;
+	S64 timestamp_us;
 	OS_EventKind kind;
 	OS_Modifiers modifiers;
 	OS_Key key;

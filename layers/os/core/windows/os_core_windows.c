@@ -13,6 +13,7 @@ os_windows_file_property_flags_from_dwFileAttributes(DWORD dwFileAttributes)
 internal String16
 os_full_path_from_path_windows_inner(Arena *arena, String16 path16)
 {
+	Assert(0 <= path16.length);
 	DWORD guess_length = safe_cast_u32(Max(MAX_PATH, path16.length) + 1);
 	WCHAR *buf = push_array_no_zero(arena, WCHAR, guess_length);
 	DWORD actual_length = GetFullPathNameW(
@@ -45,8 +46,9 @@ os_full_path_from_path_windows_inner(Arena *arena, String16 path16)
 }
 
 internal void
-os_windows_file_iter_push(OS_FileIter *iter, U64 path_length)
+os_windows_file_iter_push(OS_FileIter *iter, S64 path_length)
 {
+	Assert(0 <= path_length);
 	FINDEX_SEARCH_OPS search_op = iter->flags & OS_FileIterFlag_SkipFiles
 					? FindExSearchLimitToDirectories
 					: FindExSearchNameMatch;
@@ -73,23 +75,27 @@ os_windows_file_iter_push(OS_FileIter *iter, U64 path_length)
 	windows_iter->working_path[result->dirname_length] = 0;
 }
 
-internal void *os_vmem_reserve(U64 size)
+internal void *os_vmem_reserve(S64 size)
 {
+	Assert(0 <= size);
 	return VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
 }
 
-internal B32 os_vmem_commit(void *ptr, U64 size)
+internal B32 os_vmem_commit(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	return VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE) != 0;
 }
 
-internal void os_vmem_decommit(void *ptr, U64 size)
+internal void os_vmem_decommit(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	VirtualFree(ptr, size, MEM_DECOMMIT);
 }
 
-internal void os_vmem_release(void *ptr, U64 size)
+internal void os_vmem_release(void *ptr, S64 size)
 {
+	Assert(0 <= size);
 	VirtualFree(ptr, size, MEM_RELEASE);
 }
 
@@ -101,6 +107,7 @@ no_return internal void os_abort(S32 exit_code)
 internal OS_Handle
 os_file_open(OS_AccessFlags flags, String8 path)
 {
+	Assert(0 <= path.length);
 	DWORD access               = 0,
 	      creation_disposition = OPEN_EXISTING;
 	if (flags & OS_AccessFlag_Read)
@@ -142,17 +149,18 @@ os_file_close(OS_Handle file)
 		Assert(status);
 	}
 }
-internal U64
-os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
+internal S64
+os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
 {
+	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
 	HANDLE win_handle = (HANDLE)file.u[0];
-	U64 read_bytes = 0,
-	    needed_bytes = dim_1u64(rng);
+	S64 read_bytes = 0,
+	    needed_bytes = dim_1s64(rng);
 	while (read_bytes < needed_bytes)
 	{
 		void *dst             = (U8 *)out_data + read_bytes;
-		U64 start_pos         = rng.min + read_bytes;
+		S64 start_pos         = rng.min + read_bytes;
 		DWORD bytes_to_read = u32_from_u64_saturate(needed_bytes - read_bytes),
 		      read_this_time  = 0;
 		OVERLAPPED overlapped = {
@@ -167,21 +175,22 @@ os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 			&overlapped
 		);
 		if (read_this_time != bytes_to_read) break; // REVIEW(beau): why
-		read_bytes += (U64)read_this_time;
+		read_bytes += read_this_time;
 	}
 	return read_bytes;
 }
-internal U64
-os_file_write(OS_Handle file, Rng1U64 rng, void *data)
+internal S64
+os_file_write(OS_Handle file, Rng1S64 rng, void *data)
 {
+	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
 	HANDLE win_handle    = (HANDLE)file.u[0];
-	U64 written_bytes    = 0,
+	S64 written_bytes    = 0,
 	    goal_write_bytes = dim_1u64(rng);
 	while (written_bytes < goal_write_bytes)
 	{
 		void *src               = (U8 *)data + written_bytes;
-		U64 start_pos           = rng.min + written_bytes;
+		S64 start_pos           = rng.min + written_bytes;
 		DWORD bytes_to_write    = u32_from_u64_saturate(goal_write_bytes - written_bytes),
 		      written_this_time = 0;
 		OVERLAPPED overlapped = {
@@ -196,7 +205,7 @@ os_file_write(OS_Handle file, Rng1U64 rng, void *data)
 			&overlapped
 		);
 		if (written_this_time != bytes_to_write) break; // REVIEW(beau): why
-		written_bytes += (U64)written_this_time;
+		written_bytes += written_this_time;
 	}
 	return written_bytes;
 }
@@ -331,7 +340,7 @@ os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
 	OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)iter->memory;
 	B32 status = 0;
 	String16 current_file_name16 = zero_struct;
-	U64 working_path_length = 0;
+	S64 working_path_length = 0;
 	FilePropertyFlags current_file_flags = 0;
 	for (;;)
 	{
@@ -437,11 +446,11 @@ internal String8 os_get_current_folder(Arena *arena)
 	return result;
 }
 
-internal U64 os_now_microseconds(void)
+internal S64 os_now_microseconds(void)
 {
 	LARGE_INTEGER perfcount;
 	Assert(QueryPerformanceCounter(&perfcount));
-	U64 result = (perfcount.QuadPart * 1000000) / g_os_windows_state.queryperformancefrequency_resolution;
+	S64 result = (perfcount.QuadPart * 1000000) / g_os_windows_state.queryperformancefrequency_resolution;
 	return result;
 }
 

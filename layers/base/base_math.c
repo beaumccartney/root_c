@@ -23,6 +23,19 @@ internal F32 length_2f32(Vec2F32 v)                    {return sqrt_f32(length_s
 internal Vec2F32 normalize_2f32(Vec2F32 v)             {return scale_2f32(v, 1.f/length_2f32(v));}
 internal Vec2F32 mix_2f32(Vec2F32 a, Vec2F32 b, F32 t) {return (Vec2F32){mix_1f32(a.x, b.x, t), mix_1f32(a.y, b.y, t)};}
 
+internal Vec2S64 vec_2s64(S64 x, S64 y)                {return (Vec2S64){x, y};}
+internal Vec2S64 splat_2s64(S64 e)                     {return (Vec2S64){e, e};}
+internal Vec2S64 add_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x+b.x, a.y+b.y};}
+internal Vec2S64 sub_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x-b.x, a.y-b.y};}
+internal Vec2S64 mul_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x*b.x, a.y*b.y};}
+internal Vec2S64 div_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x/b.x, a.y/b.y};}
+internal Vec2S64 scale_2s64(Vec2S64 v, S64 s)          {return (Vec2S64){v.x*s,   v.y*s  };}
+internal S64 dot_2s64(Vec2S64 a, Vec2S64 b)            {return a.x*b.x + a.y*b.y;}
+internal S64 length_squared_2s64(Vec2S64 v)            {return v.x*v.x + v.y*v.y;}
+internal S64 length_2s64(Vec2S64 v)                    {return (S64)sqrt_f64((F64)length_squared_2s64(v));}
+internal Vec2S64 normalize_2s64(Vec2S64 v)             {return scale_2s64(v, 1/length_2s64(v));}
+internal Vec2S64 mix_2s64(Vec2S64 a, Vec2S64 b, F32 t) {return (Vec2S64){(S64)mix_1f32((F32)a.x, (F32)b.x, t), (S64)mix_1f32((F32)a.y, (F32)b.y, t)};}
+
 internal Vec2U64 vec_2u64(U64 x, U64 y)                {return (Vec2U64){x, y};}
 internal Vec2U64 splat_2u64(U64 e)                     {return (Vec2U64){e, e};}
 internal Vec2U64 add_2u64(Vec2U64 a, Vec2U64 b)        {return (Vec2U64){a.x+b.x, a.y+b.y};}
@@ -88,6 +101,16 @@ internal Rng1F32 union_1f32(Rng1F32 a, Rng1F32 b)    {return (Rng1F32){Min(a.min
 internal Rng1F32 intersect_1f32(Rng1F32 a, Rng1F32 b){return (Rng1F32){Max(a.min, b.min), Min(a.max, b.max)};}
 internal F32 clamp_1f32(Rng1F32 r, F32 v)            {return Clamp(r.min, v, r.max);}
 
+internal Rng1S64 rng_1s64(S64 min, S64 max)          {if (min > max) Swap(S64, min, max); return (Rng1S64){min, max};}
+internal Rng1S64 shift_1s64(Rng1S64 r, S64 x)        {return (Rng1S64){r.min+x, r.min+x};}
+internal Rng1S64 pad_1s64(Rng1S64 r, S64 x)          {return (Rng1S64){r.min-x, r.min+x};}
+internal S64 center_1s64(Rng1S64 r)                  {return (r.min+r.max)/2;}
+internal B32 contains_1s64(Rng1S64 r, S64 x)         {return r.min <= x && x <= r.max;}
+internal S64 dim_1s64(Rng1S64 r)                     {return r.max>r.min ? r.max-r.min : 0ll;}
+internal Rng1S64 union_1s64(Rng1S64 a, Rng1S64 b)    {return (Rng1S64){Min(a.min, b.min), Max(a.max, b.max)};}
+internal Rng1S64 intersect_1s64(Rng1S64 a, Rng1S64 b){return (Rng1S64){Max(a.min, b.min), Min(a.max, b.max)};}
+internal S64 clamp_1s64(Rng1S64 r, S64 v)            {return Clamp(r.min, v, r.max);}
+
 internal Rng1U64 rng_1u64(U64 min, U64 max)          {if (min > max) Swap(U64, min, max); return (Rng1U64){min, max};}
 internal Rng1U64 shift_1u64(Rng1U64 r, U64 x)        {return (Rng1U64){r.min+x, r.min+x};}
 internal Rng1U64 pad_1u64(Rng1U64 r, U64 x)          {return (Rng1U64){r.min-x, r.min+x};}
@@ -107,6 +130,16 @@ internal Vec2F32 dim_2f32(Rng2F32 r)                 {return (Vec2F32){r.max.x>r
 internal Rng2F32 union_2f32(Rng2F32 a, Rng2F32 b)    {return (Rng2F32){Min(a.min.x, b.min.x), Min(a.min.y, b.min.y), Max(a.max.x, b.max.x), Max(a.max.y, b.max.y)};}
 internal Rng2F32 intersect_2f32(Rng2F32 a, Rng2F32 b){return (Rng2F32){Max(a.max.x, b.max.x), Max(a.max.y, b.max.y), Min(a.min.x, b.min.x), Min(a.min.y, b.min.y)};}
 internal Vec2F32 clamp_2f32(Rng2F32 r, Vec2F32 v)    {return (Vec2F32){Clamp(r.min.x, v.x, r.max.x), Clamp(r.min.y, v.y, r.max.y)};}
+
+internal Rng2S64 rng_2s64(Vec2S64 min, Vec2S64 max)  {return (Rng2S64){min, max};}
+internal Rng2S64 shift_2s64(Rng2S64 r, Vec2S64 x)    {return (Rng2S64){add_2s64(r.min, x), add_2s64(r.max, x)};}
+internal Rng2S64 pad_2s64(Rng2S64 r, S64 x)          {Vec2S64 xv = {x, x}; return (Rng2S64){sub_2s64(r.min, xv), add_2s64(r.max, xv)};}
+internal Vec2S64 center_2s64(Rng2S64 r)              {return (Vec2S64){(r.x0+r.x1)/2ll, (r.y0+r.y1)/2ll};}
+internal B32 contains_2s64(Rng2S64 r, Vec2S64 x)     {return r.min.x <= x.x && x.x <= r.max.x && r.min.y <= x.y && x.y <= r.max.y;}
+internal Vec2S64 dim_2s64(Rng2S64 r)                 {return (Vec2S64){r.max.x>r.min.x?r.max.x-r.min.x:0ll, r.max.y>r.min.y?r.max.y-r.min.y:0ll};}
+internal Rng2S64 union_2s64(Rng2S64 a, Rng2S64 b)    {return (Rng2S64){Min(a.min.x, b.min.x), Min(a.min.y, b.min.y), Max(a.max.x, b.max.x), Max(a.max.y, b.max.y)};}
+internal Rng2S64 intersect_2s64(Rng2S64 a, Rng2S64 b){return (Rng2S64){Max(a.max.x, b.max.x), Max(a.max.y, b.max.y), Min(a.min.x, b.min.x), Min(a.min.y, b.min.y)};}
+internal Vec2S64 clamp_2s64(Rng2S64 r, Vec2S64 v)    {return (Vec2S64){Clamp(r.min.x, v.x, r.max.x), Clamp(r.min.y, v.y, r.max.y)};}
 
 internal Rng2U64 rng_2u64(Vec2U64 min, Vec2U64 max)  {return (Rng2U64){min, max};}
 internal Rng2U64 shift_2u64(Rng2U64 r, Vec2U64 x)    {return (Rng2U64){add_2u64(r.min, x), add_2u64(r.max, x)};}

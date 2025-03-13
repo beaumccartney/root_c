@@ -9,6 +9,23 @@
 #include <string.h>
 #include <stdarg.h>
 
+typedef uint8_t  U8;
+typedef uint16_t U16;
+typedef uint32_t U32;
+typedef uint64_t U64;
+typedef int8_t   S8;
+typedef int16_t  S16;
+typedef int32_t  S32;
+typedef int64_t  S64;
+typedef S8       B8;
+typedef S16      B16;
+typedef S32      B32;
+typedef S64      B64;
+typedef float    F32;
+typedef double   F64;
+
+typedef U8 Byte;
+
 #define internal      static // internal linking for functions
 #define global        static // internal linking for global vars
 #define local_persist static // compile-time allocated and permanent memory for vars in local functions
@@ -60,10 +77,10 @@
 
 #define this_function_name __func__
 
-#define KB(n)  (((U64)(n)) << 10)
-#define MB(n)  (((U64)(n)) << 20)
-#define GB(n)  (((U64)(n)) << 30)
-#define TB(n)  (((U64)(n)) << 40)
+#define KB(n)  (((S64)(n)) << 10)
+#define MB(n)  (((S64)(n)) << 20)
+#define GB(n)  (((S64)(n)) << 30)
+#define TB(n)  (((S64)(n)) << 40)
 #define Thousand(n)   ((n)*1000)
 #define Million(n)    ((n)*1000000)
 #define Billion(n)    ((n)*1000000000)
@@ -82,21 +99,21 @@
 #define MemberFromOffset(T,ptr,off) (T)((((U8 *)ptr)+(off)))
 #define CastFromMember(T,m,ptr)     (T*)(((U8*)ptr) - OffsetOf(T,m))
 
-#define EachIndex(it, count) (U64 it = 0; it < (count); it += 1)
-#define EachElement(it, array) (U64 it = 0; it < ArrayCount(array); it += 1)
+#define EachIndex(it, count) (S64 it = 0; it < (count); it += 1)
+#define EachElement(it, array) (S64 it = 0; it < ArrayCount(array); it += 1)
 #define EachEnumVal(type, it) (type it = (type)0; it < type##_COUNT; it = (type)(it+1))
 #define EachNonZeroEnumVal(type, it) (type it = (type)1; it < type##_COUNT; it = (type)(it+1))
 
-#define MemoryCopy(dst, src, size)    memmove((dst), (src), (size))
-#define MemorySet(dst, byte, size)    memset((dst), (byte), (size))
-#define MemoryCompare(a, b, size)     memcmp((a), (b), (size))
-#define MemoryStrlen(ptr)             strlen(ptr)
+inline internal void *MemoryCopy(void *dst, const void* src, S64 length);
+inline internal void *MemorySet(void *dst, int byte, S64 length);
+inline internal int   MemoryCompare(const void *a, const void *b, S64 length);
+#define        MemoryStrlen(ptr) strlen(ptr)
 
 #define MemoryCopyStruct(d,s)  MemoryCopy((d),(s),sizeof(*(d)))
 #define MemoryCopyArray(d,s)   MemoryCopy((d),(s),sizeof(d))
 #define MemoryCopyTyped(d,s,c) MemoryCopy((d),(s),sizeof(*(d))*(c))
 
-#define MemoryZero(s,z)       memset((s),0,(z))
+#define MemoryZero(s,z)       MemorySet((s),0,(z))
 #define MemoryZeroStruct(s)   MemoryZero((s),sizeof(*(s)))
 #define MemoryZeroArray(a)    MemoryZero((a),sizeof(a))
 #define MemoryZeroTyped(m,c)  MemoryZero((m),sizeof(*(m))*(c))
@@ -224,11 +241,12 @@ CheckNil(nil,p) ? \
 #define Glue_(A,B) A##B
 #define Glue(A,B) Glue_(A,B)
 
-#define ArrayCount(a) (sizeof(a) / sizeof((a)[0]))
+#define Sizeof(s) ((S64)sizeof(s))
+#define ArrayCount(a) (Sizeof(a) / Sizeof((a)[0]))
 
 #define Swap(T,a,b) do{T t__ = a; a = b; b = t__;}while(0)
 
-#define IntFromPtr(ptr) ((U64)(ptr))
+#define IntFromPtr(ptr) ((S64)(ptr))
 #define PtrFromInt(i) (void*)((U8*)0 + (i))
 
 #define Compose64Bit(hi,lo) ((((U64)hi) << 32) | ((U64)lo))
@@ -245,23 +263,6 @@ CheckNil(nil,p) ? \
 #else
 	#define zero_struct {0}
 #endif
-
-typedef uint8_t  U8;
-typedef uint16_t U16;
-typedef uint32_t U32;
-typedef uint64_t U64;
-typedef int8_t   S8;
-typedef int16_t  S16;
-typedef int32_t  S32;
-typedef int64_t  S64;
-typedef S8       B8;
-typedef S16      B16;
-typedef S32      B32;
-typedef S64      B64;
-typedef float    F32;
-typedef double   F64;
-
-typedef U8 Byte;
 
 typedef enum
 {
@@ -331,7 +332,7 @@ typedef enum Compiler
 }
 Compiler;
 
-internal OperatingSystem operating_system_from_context(void);
+internal OperatingSystem operating_system_from_context(void); // TODO: make a constant
 internal Arch arch_from_context(void);
 internal Compiler compiler_from_context(void);
 
@@ -487,6 +488,9 @@ internal Compiler compiler_from_context(void);
 internal U8  safe_cast_u8(U64 x);
 internal U16 safe_cast_u16(U64 x);
 internal U32 safe_cast_u32(U64 x);
+
+internal S8  safe_cast_s8(S64 x);
+internal S16 safe_cast_s16(S64 x);
 internal S32 safe_cast_s32(S64 x);
 
 internal U32 u32_from_u64_saturate(U64 x);

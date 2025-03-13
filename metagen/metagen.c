@@ -3,6 +3,7 @@
 internal MG_GenResult
 mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_root, String8 gen_folder, String8 source)
 {
+	Assert(0 <= gen_folder.length && 0 <= source.length);
 	MG_GenResult result = zero_struct;
 
 	String8List gen_lists[MD_GenFile_COUNT][MD_GenLocation_COUNT] = zero_struct;
@@ -142,7 +143,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							break; // REVIEW: needed?
 					}
 					Assert(!(props.flags & FilePropertyFlag_IsFolder));
-					gen_string = os_string_from_file_range(scratch.arena, file, rng_1u64(0, props.size));
+					gen_string = os_string_from_file_range(scratch.arena, file, rng_1s64(0, props.size));
 
 					String8 bytes_varname = push_str8_cat(
 						scratch.arena,
@@ -160,7 +161,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						#define MG_BYTELIT_STRLEN 5 // strlen("0xXX,")
 						#define MG_BYTELITS_PER_LINE 40
 						Assert(props.size > 0);
-						U64 num_newlines = (props.size - 1) / MG_BYTELITS_PER_LINE + 1;
+						S64 num_newlines = (props.size - 1) / MG_BYTELITS_PER_LINE + 1;
 						String8 c_byte_lits = push_str8_nt(scratch.arena, props.size * MG_BYTELIT_STRLEN + num_newlines);
 						U8 *copy_target = c_byte_lits.buffer;
 						for (U8 *c = gen_string.buffer, *one_past_last = gen_string.buffer + gen_string.length; c < one_past_last; c++)
@@ -380,7 +381,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 							continue;
 						}
 						expand_child = expand_child->next;
-						U64 num_format_specifiers = 0;
+						S64 num_format_specifiers = 0;
 						for (U8 *c = format_string.buffer, *one_past_last = format_string.buffer+format_string.length; c < one_past_last; c++)
 						{
 							if (*c == '\\')
@@ -390,12 +391,12 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						}
 						struct MD_FormatSpecInfo
 						{
-							Rng1U64 range; // .min is index of after last specifier, .max is index of current specifier
-							U64 col; // table column of the current specifier
+							Rng1S64 range; // .min is index of after last specifier, .max is index of current specifier
+							S64 col; // table column of the current specifier
 						} *specifiers               = push_array_no_zero(arena, struct MD_FormatSpecInfo, num_format_specifiers),
 						  *specifier                = specifiers,
 						  *specifiers_one_past_last = specifiers + num_format_specifiers;
-						for (U64 prefix_ix = 0, spec_ix = 0; spec_ix < format_string.length && specifier < specifiers_one_past_last; spec_ix++)
+						for (S64 prefix_ix = 0, spec_ix = 0; spec_ix < format_string.length && specifier < specifiers_one_past_last; spec_ix++)
 						{
 							U8 c = format_string.buffer[spec_ix];
 							// TODO: deduplicate next-format-specifier logic
@@ -406,7 +407,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 								Assert(expand_child->kind == MD_ASTKind_Ident);
 								// NOTE: we've already checked that all format arguments are valid
 								MD_SymbolTableEntry *col_record = md_symbol_from_ident(0, &cols_stab, expand_child->token->source);
-								specifier->range = r1u64(prefix_ix, spec_ix);
+								specifier->range = r1s64(prefix_ix, spec_ix);
 								specifier->col = col_record->col_record.col;
 								prefix_ix = spec_ix + 1; // non-format specifier can't be on this current index
 								specifier++;
@@ -416,7 +417,7 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Assert(specifier == specifiers + num_format_specifiers);
 
 						Assert(directive_child->children_count >= 2); // @expand should always have a gen_target table and a format string as children
-						U64 num_format_args = directive_child->children_count - 2; // first two children of @expand are the table and the format string
+						S64 num_format_args = directive_child->children_count - 2; // first two children of @expand are the table and the format string
 						if (num_format_specifiers != num_format_args)
 						{
 							md_messagelist_pushf(
@@ -450,18 +451,18 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						Assert(num_format_specifiers == num_format_args && expand_child == 0); // is the number of format args correct and have we used each format arg
 
 						// REVIEW: number of specifiers is checked elsewhere, initialize there?
-						U64 after_last_spec_ix = specifiers < specifiers_one_past_last
+						S64 after_last_spec_ix = specifiers < specifiers_one_past_last
 							? (specifiers_one_past_last - 1)->range.max + 1
 							: 0;
 						Assert(after_last_spec_ix <= format_string.length);
 						String8 *elem_row = table_symbol->table_record.elem_matrix,
 							 after_last_spec_string = push_str8_cat(
 							scratch.arena,
-							str8_substr(format_string, r1u64(after_last_spec_ix, format_string.length)),
+							str8_substr(format_string, r1s64(after_last_spec_ix, format_string.length)),
 							str8_lit("\n")
 
 						);
-						for (U64 row = 0; row < table_symbol->table_record.num_rows; row++, elem_row += table_symbol->table_record.num_cols)
+						for (S64 row = 0; row < table_symbol->table_record.num_rows; row++, elem_row += table_symbol->table_record.num_cols)
 						{
 							for (struct MD_FormatSpecInfo *pref_spec = specifiers; pref_spec < specifiers_one_past_last; pref_spec++)
 							{

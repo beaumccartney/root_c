@@ -13,7 +13,7 @@ cmd_line_opt_from_string(Arena *arena, CmdLine *cmd_line, String8 string)
 {
 	U64 hash = cmd_line_hash_from_string(string);
 	CmdLineOpt *result = 0;
-	for (U16 table_idx = (U16)hash;;)
+	for (S16 table_idx = (S16)hash;;)
 	{
 		table_idx = msi_lookup16(hash, CMD_LINE_LOG2_OPT_COUNT, table_idx);
 		CmdLineOpt *opt = &cmd_line->option_table[table_idx];
@@ -107,7 +107,7 @@ internal CmdLine* cmd_line_from_args(Arena *arena, String8Array args)
 			break;
 		}
 
-		U64 arg_signifier_position = Min(
+		S64 arg_signifier_position = Min(
 			str8_find_needle(option_name, 0, str8_lit(":"), 0),
 			str8_find_needle(option_name, 0, str8_lit("="), 0)
 		);
@@ -131,7 +131,7 @@ internal CmdLine* cmd_line_from_args(Arena *arena, String8Array args)
 		opt->value_string = str8_list_join(arena, option_args, &joinparams);
 	}
 	// passthrough option loop, starts at where option loop left off
-	result->passthrough_inputs.count = (U64)(one_past_last - arg);
+	result->passthrough_inputs.count = one_past_last - arg;
 	String8 *pass = result->passthrough_inputs.v = push_array_no_zero(arena, String8, result->passthrough_inputs.count);
 	for (; arg < one_past_last; arg++, pass++)
 		*pass = *arg;
