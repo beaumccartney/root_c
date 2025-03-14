@@ -103,11 +103,11 @@ mg_generate_from_checked(Arena *arena, MD_AST *root, MD_SymbolTableEntry *stab_r
 						gen_folder,
 						gen_string
 					);
-					OS_Handle file = os_file_open(OS_AccessFlag_Read, filepath);
+					OS_File file = os_file_open(OS_AccessFlag_Read, filepath);
 
 					MD_MessageKind message_kind = MD_MessageKind_NULL;
 					char *message_format = 0; // if set MUST HAVE ONE FORMAT SPECIFIER %S
-					if (os_handle_match(file, os_handle_zero))
+					if (file.bits == 0)
 					{
 						message_kind   = MD_MessageKind_Error; // REVIEW: should this stop codegen? perhaps have errors still proceed and fatal errors actually stop. if so then I'll need to do a small refactor to do that
 						message_format = "failed to open @embed_file target %S"; // REVIEW: better message

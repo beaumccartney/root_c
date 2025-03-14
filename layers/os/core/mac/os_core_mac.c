@@ -83,7 +83,7 @@ no_return internal void os_abort(S32 exit_code)
 }
 
 // REVIEW(beau): file perms based on access flags
-internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path)
+internal OS_File os_file_open(OS_AccessFlags flags, String8 path)
 {
 	Assert(0 <= path.length);
 	Temp scratch = scratch_begin(0, 0);
@@ -102,21 +102,21 @@ internal OS_Handle os_file_open(OS_AccessFlags flags, String8 path)
 		oflag |= O_CREAT;
 
 	int fd = open((char *)path_copy.buffer, oflag, 0644);
-	OS_Handle result = zero_struct;
+	OS_File result = zero_struct;
 	if (fd != -1) result.bits = (U64)fd;
 	scratch_end(scratch);
 	return result;
 }
-internal void os_file_close(OS_Handle file)
+internal void os_file_close(OS_File file)
 {
-	if (os_handle_match(file, os_handle_zero)) return;
+	if (file.bits == 0) return;
 	int fd = (int)file.bits;
 	close(fd);
 }
-internal S64 os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
+internal S64 os_file_read(OS_File file, Rng1S64 rng, void *out_data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
-	if (os_handle_match(file, os_handle_zero)) return 0;
+	if (file.bits == 0) return 0;
 	int fd = (int)file.bits;
 	S64 read_bytes = 0,
 	    needed_bytes = dim_1s64(rng);
@@ -131,10 +131,10 @@ internal S64 os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
 	}
 	return read_bytes;
 }
-internal S64 os_file_write(OS_Handle file, Rng1S64 rng, void *data)
+internal S64 os_file_write(OS_File file, Rng1S64 rng, void *data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
-	if (os_handle_match(file, os_handle_zero)) return 0;
+	if (file.bits == 0) return 0;
 	int fd = (int)file.bits;
 	S64 written_bytes = 0,
 	    goal_write_bytes = dim_1s64(rng);
@@ -149,10 +149,10 @@ internal S64 os_file_write(OS_Handle file, Rng1S64 rng, void *data)
 	}
 	return written_bytes;
 }
-internal FileProperties os_properties_from_file(OS_Handle file)
+internal FileProperties os_properties_from_file(OS_File file)
 {
 	FileProperties result = zero_struct;
-	if (!os_handle_match(file, os_handle_zero))
+	if (file.bits != 0)
 	{
 		int fd = (int)file.bits;
 		struct stat s = zero_struct;
@@ -337,7 +337,7 @@ internal void os_set_thread_name(String8 name)
 	scratch_end(scratch);
 }
 
-internal OS_Handle
+internal OS_Thread
 os_thread_launch(OS_ThreadFunctionType *func, void *params)
 {
 	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_Thread);
@@ -354,13 +354,13 @@ os_thread_launch(OS_ThreadFunctionType *func, void *params)
 		os_mac_entity_release(entity);
 		entity = 0;
 	}
-	OS_Handle result = {.bits = (U64)entity};
+	OS_Thread result = {.bits = (U64)entity};
 	return result;
 }
-internal B32 os_thread_join(OS_Handle handle, S64 endt_us)
+internal B32 os_thread_join(OS_Thread handle, S64 endt_us)
 {
 	B32 result = 0;
-	if (!os_handle_match(handle, os_handle_zero))
+	if (handle.bits != 0)
 	{
 		OS_MAC_Entity *entity = (OS_MAC_Entity *)handle.bits;
 		Assert(entity->kind == OS_MAC_EntityKind_Thread);
@@ -370,9 +370,9 @@ internal B32 os_thread_join(OS_Handle handle, S64 endt_us)
 	}
 	return result;
 }
-internal void os_thread_detach(OS_Handle handle)
+internal void os_thread_detach(OS_Thread handle)
 {
-	if (os_handle_match(handle, os_handle_zero)) return;
+	if (handle.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)handle.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_Thread);
 	int status = pthread_detach(entity->thread.pthread_handle);
@@ -380,7 +380,7 @@ internal void os_thread_detach(OS_Handle handle)
 	os_mac_entity_release(entity);
 }
 
-internal OS_Handle os_mutex_alloc(void)
+internal OS_Mutex os_mutex_alloc(void)
 {
 	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_Mutex);
 	int status = pthread_mutex_init(&entity->pthread_mutex_handle, 0);
@@ -389,36 +389,36 @@ internal OS_Handle os_mutex_alloc(void)
 		os_mac_entity_release(entity);
 		entity = 0;
 	}
-	OS_Handle result = {.bits = (U64)entity};
+	OS_Mutex result = {.bits = (U64)entity};
 	return result;
 }
-internal void os_mutex_release(OS_Handle mutex)
+internal void os_mutex_release(OS_Mutex mutex)
 {
-	if (os_handle_match(mutex, os_handle_zero)) return;
+	if (mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
 	int status = pthread_mutex_destroy(&entity->pthread_mutex_handle);
 	Assert(status == 0);
 	os_mac_entity_release(entity);
 }
-internal void os_mutex_take(OS_Handle mutex)
+internal void os_mutex_take(OS_Mutex mutex)
 {
-	if (os_handle_match(mutex, os_handle_zero)) return;
+	if (mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
 	int status = pthread_mutex_lock(&entity->pthread_mutex_handle);
 	Assert(status == 0);
 }
-internal void os_mutex_drop(OS_Handle mutex)
+internal void os_mutex_drop(OS_Mutex mutex)
 {
-	if (os_handle_match(mutex, os_handle_zero)) return;
+	if (mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_Mutex);
 	int status = pthread_mutex_unlock(&entity->pthread_mutex_handle);
 	Assert(status == 0);
 }
 
-internal OS_Handle os_rw_mutex_alloc(void)
+internal OS_RWMutex os_rw_mutex_alloc(void)
 {
 	OS_MAC_Entity *entity = os_mac_entity_alloc(OS_MAC_EntityKind_RWMutex);
 	int status = pthread_rwlock_init(&entity->pthread_rwlock_handle, 0);
@@ -427,43 +427,43 @@ internal OS_Handle os_rw_mutex_alloc(void)
 		os_mac_entity_release(entity);
 		entity = 0;
 	}
-	OS_Handle result = {.bits = (U64)entity};
+	OS_RWMutex result = {.bits = (U64)entity};
 	return result;
 }
-internal void os_rw_mutex_release(OS_Handle rw_mutex)
+internal void os_rw_mutex_release(OS_RWMutex rw_mutex)
 {
-	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	if (rw_mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
 	int status = pthread_rwlock_destroy(&entity->pthread_rwlock_handle);
 	Assert(status == 0);
 	os_mac_entity_release(entity);
 }
-internal void os_rw_mutex_take_r(OS_Handle rw_mutex)
+internal void os_rw_mutex_take_r(OS_RWMutex rw_mutex)
 {
-	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	if (rw_mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
 	int status = pthread_rwlock_rdlock(&entity->pthread_rwlock_handle);
 	Assert(status == 0);
 }
-internal void os_rw_mutex_drop_r(OS_Handle rw_mutex)
+internal void os_rw_mutex_drop_r(OS_RWMutex rw_mutex)
 {
-	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	if (rw_mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
 	int status = pthread_rwlock_unlock(&entity->pthread_rwlock_handle);
 	Assert(status == 0);
 }
-internal void os_rw_mutex_take_w(OS_Handle rw_mutex)
+internal void os_rw_mutex_take_w(OS_RWMutex rw_mutex)
 {
-	if (os_handle_match(rw_mutex, os_handle_zero)) return;
+	if (rw_mutex.bits == 0) return;
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)rw_mutex.bits;
 	Assert(entity->kind == OS_MAC_EntityKind_RWMutex);
 	int status = pthread_rwlock_wrlock(&entity->pthread_rwlock_handle);
 	Assert(status == 0);
 }
-internal void os_rw_mutex_drop_w(OS_Handle rw_mutex)
+internal void os_rw_mutex_drop_w(OS_RWMutex rw_mutex)
 {
 	os_rw_mutex_drop_r(rw_mutex); // in pthreads both kinds of locks are dropped the same way
 }

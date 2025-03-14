@@ -70,11 +70,10 @@ struct OS_FileInfo
 	FileProperties props;
 };
 
-typedef struct OS_Handle OS_Handle;
-struct OS_Handle
-{
-	U64 bits;
-};
+typedef struct OS_File    { U64 bits; } OS_File;
+typedef struct OS_Thread  { U64 bits; } OS_Thread;
+typedef struct OS_Mutex   { U64 bits; } OS_Mutex;
+typedef struct OS_RWMutex { U64 bits; } OS_RWMutex;
 
 typedef void OS_ThreadFunctionType(void *ptr);
 
@@ -83,22 +82,19 @@ internal B32   os_vmem_commit(void *ptr, S64 size);
 internal void  os_vmem_decommit(void *ptr, S64 size);
 internal void  os_vmem_release(void *ptr, S64 size);
 
-#define os_handle_zero ((OS_Handle) zero_struct)
-internal B32 os_handle_match(OS_Handle a, OS_Handle b);
-
 no_return internal void os_abort(S32 exit_code);
 
 internal String8   os_data_from_file_path(Arena *arena, String8 path);
-internal B32       os_write_data_to_file_path(String8 path, String8 data);
-internal B32       os_write_data_list_to_file_path(String8 path, String8List list);
-internal B32       os_append_data_to_file_path(String8 path, String8 data);
-internal String8   os_string_from_file_range(Arena *arena, OS_Handle file, Rng1S64 range); // REVIEW: name better
+internal B64       os_write_data_to_file_path(String8 path, String8 data);
+internal B64       os_write_data_list_to_file_path(String8 path, String8List list);
+internal B64       os_append_data_to_file_path(String8 path, String8 data);
+internal String8   os_string_from_file_range(Arena *arena, OS_File file, Rng1S64 range); // REVIEW: name better
 
-internal OS_Handle      os_file_open(OS_AccessFlags flags, String8 path);
-internal void           os_file_close(OS_Handle file);
-internal S64            os_file_read(OS_Handle file, Rng1S64 rng, void *out_data);
-internal S64            os_file_write(OS_Handle file, Rng1S64 rng, void *data);
-internal FileProperties os_properties_from_file(OS_Handle file);
+internal OS_File      os_file_open(OS_AccessFlags flags, String8 path);
+internal void           os_file_close(OS_File file);
+internal S64            os_file_read(OS_File file, Rng1S64 rng, void *out_data);
+internal S64            os_file_write(OS_File file, Rng1S64 rng, void *data);
+internal FileProperties os_properties_from_file(OS_File file);
 internal B32            os_delete_file_at_path(String8 path);
 internal B32            os_remove_folder_at_path(String8 path);
 internal B32            os_copy_file_path(String8 dst, String8 src);
@@ -118,21 +114,21 @@ internal S64 os_now_microseconds(void);
 
 internal void os_set_thread_name(String8 name);
 
-internal OS_Handle os_thread_launch(OS_ThreadFunctionType *func, void *params);
-internal B32       os_thread_join(OS_Handle handle, S64 endt_us);
-internal void      os_thread_detach(OS_Handle handle);
+internal OS_Thread os_thread_launch(OS_ThreadFunctionType *func, void *params);
+internal B32       os_thread_join(OS_Thread handle, S64 endt_us);
+internal void      os_thread_detach(OS_Thread handle);
 
-internal OS_Handle os_mutex_alloc(void);
-internal void      os_mutex_release(OS_Handle mutex);
-internal void      os_mutex_take(OS_Handle mutex);
-internal void      os_mutex_drop(OS_Handle mutex);
+internal OS_Mutex os_mutex_alloc(void);
+internal void     os_mutex_release(OS_Mutex mutex);
+internal void     os_mutex_take(OS_Mutex mutex);
+internal void     os_mutex_drop(OS_Mutex mutex);
 
-internal OS_Handle os_rw_mutex_alloc(void);
-internal void      os_rw_mutex_release(OS_Handle rw_mutex);
-internal void      os_rw_mutex_take_r(OS_Handle mutex);
-internal void      os_rw_mutex_drop_r(OS_Handle mutex);
-internal void      os_rw_mutex_take_w(OS_Handle mutex);
-internal void      os_rw_mutex_drop_w(OS_Handle mutex);
+internal OS_RWMutex os_rw_mutex_alloc(void);
+internal void       os_rw_mutex_release(OS_RWMutex rw_mutex);
+internal void       os_rw_mutex_take_r(OS_RWMutex mutex);
+internal void       os_rw_mutex_drop_r(OS_RWMutex mutex);
+internal void       os_rw_mutex_take_w(OS_RWMutex mutex);
+internal void       os_rw_mutex_drop_w(OS_RWMutex mutex);
 
 #define OS_MutexScope(mutex) DeferLoop(os_mutex_take(mutex), os_mutex_drop(mutex))
 #define OS_MutexScopeR(mutex) DeferLoop(os_rw_mutex_take_r(mutex), os_rw_mutex_drop_r(mutex))
