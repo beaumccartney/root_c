@@ -136,7 +136,7 @@ os_file_open(OS_AccessFlags flags, String8 path)
 	scratch_end(scratch);
 	OS_Handle result = handle == INVALID_HANDLE_VALUE
 		? (OS_Handle)zero_struct
-		: (OS_Handle){.u[0] = (U64)handle};
+		: (OS_Handle){.bits = (U64)handle};
 	return result;
 }
 internal void
@@ -144,7 +144,7 @@ os_file_close(OS_Handle file)
 {
 	if (!os_handle_match(file, os_handle_zero))
 	{
-		HANDLE win_file = (HANDLE)file.u[0];
+		HANDLE win_file = (HANDLE)file.bits;
 		BOOL status     = CloseHandle(win_file);
 		Assert(status);
 	}
@@ -154,7 +154,7 @@ os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
-	HANDLE win_handle = (HANDLE)file.u[0];
+	HANDLE win_handle = (HANDLE)file.bits;
 	S64 read_bytes = 0,
 	    needed_bytes = dim_1s64(rng);
 	while (read_bytes < needed_bytes)
@@ -184,7 +184,7 @@ os_file_write(OS_Handle file, Rng1S64 rng, void *data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
 	if (os_handle_match(file, os_handle_zero)) return 0;
-	HANDLE win_handle    = (HANDLE)file.u[0];
+	HANDLE win_handle    = (HANDLE)file.bits;
 	S64 written_bytes    = 0,
 	    goal_write_bytes = dim_1u64(rng);
 	while (written_bytes < goal_write_bytes)
@@ -215,7 +215,7 @@ os_properties_from_file(OS_Handle file)
 	FileProperties result = zero_struct;
 	if (!os_handle_match(file, os_handle_zero))
 	{
-		HANDLE win_handle = (HANDLE)file.u[0];
+		HANDLE win_handle = (HANDLE)file.bits;
 		BY_HANDLE_FILE_INFORMATION info = zero_struct;
 		BOOL status = GetFileInformationByHandle(win_handle, &info);
 		if (status) // REVIEW(beau): assert this?

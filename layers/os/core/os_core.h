@@ -73,7 +73,7 @@ struct OS_FileInfo
 typedef struct OS_Handle OS_Handle;
 struct OS_Handle
 {
-	U64 u[1];
+	U64 bits;
 };
 
 typedef void OS_ThreadFunctionType(void *ptr);
