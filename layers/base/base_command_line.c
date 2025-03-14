@@ -93,7 +93,7 @@ internal CmdLine* cmd_line_from_args(Arena *arena, String8Array args)
 		{
 			option_name = str8_skip(*arg, 1);
 		}
-		else if (operating_system_from_context() == OperatingSystem_Windows &&
+		else if (g_os_from_context == OperatingSystem_Windows &&
 			str8_match(str8_prefix(*arg, 1), str8_lit("/"), 0) &&
 			arg->length > 1)
 		{

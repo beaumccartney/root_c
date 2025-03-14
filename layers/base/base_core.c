@@ -14,40 +14,34 @@ inline internal int MemoryCompare(const void *a, const void *b, S64 length)
 	return memcmp(a, b, (size_t)length);
 }
 
-internal OperatingSystem operating_system_from_context(void)
-{
-	OperatingSystem os = OperatingSystem_Null;
-	#if OS_WINDOWS
-		os = OperatingSystem_Windows;
-	#elif OS_MAC
-		os = OperatingSystem_Mac;
-	#elif OS_LINUX
-		os = OperatingSystem_Linux;
-	#endif
-	return os;
-}
-internal Arch arch_from_context(void)
-{
-	Arch arch = Arch_Null;
-	#if ARCH_X64
-		arch = Arch_x64;
-	#elif ARCH_ARM64
-		arch = Arch_arm64;
-	#endif
-	return arch;
-}
-internal Compiler compiler_from_context(void)
-{
-	Compiler compiler = Compiler_Null;
-	#if COMPILER_MSVC
-		compiler = Compiler_msvc;
-	#elif COMPILER_CLANG
-		compiler = Compiler_clang;
-	#elif COMPILER_GCC
-		compiler = Compiler_gcc;
-	#endif
-	return compiler;
-}
+const global OperatingSystem g_os_from_context =
+#if OS_WINDOWS
+	OperatingSystem_Windows
+#elif OS_MAC
+	OperatingSystem_Mac
+#elif OS_LINUX
+	OperatingSystem_Linux
+#endif
+;
+
+const global Arch g_arch_from_context =
+#if ARCH_X64
+	Arch_x64
+#elif ARCH_ARM64
+	Arch_arm64
+#endif
+;
+
+const global Compiler g_compiler_from_context =
+#if COMPILER_MSVC
+	Compiler_msvc
+#elif COMPILER_CLANG
+	Compiler_clang
+#elif COMPILER_GCC
+	Compiler_gcc
+#endif
+;
+
 internal U8
 safe_cast_u8(U64 x)
 {

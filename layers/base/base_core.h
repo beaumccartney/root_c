@@ -125,7 +125,6 @@ inline internal int   MemoryCompare(const void *a, const void *b, S64 length);
 #define MemoryRead(T,p,e)    ( ((p)+sizeof(T)<=(e))?(*(T*)(p)):(0) )
 #define MemoryConsume(T,p,e) ( ((p)+sizeof(T)<=(e))?((p)+=sizeof(T),*(T*)((p)-sizeof(T))):((p)=(e),0) )
 
-// TODO: platform_specific
 #if COMPILER_CLANG || COMPILER_GCC
 	#define Trap() __builtin_trap()
 #elif COMPILER_MSVC
@@ -331,10 +330,6 @@ typedef enum Compiler
 	Compiler_COUNT,
 }
 Compiler;
-
-internal OperatingSystem operating_system_from_context(void); // TODO: make a constant
-internal Arch arch_from_context(void);
-internal Compiler compiler_from_context(void);
 
 #define Unused(name) (void)(name)
 
