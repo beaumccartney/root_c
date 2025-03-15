@@ -222,6 +222,16 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 			event.modifiers |= OS_Modifier_Alt;
 		if (GetKeyState(VK_CAPITAL) & bit1)
 			event.modifiers |= OS_Modifier_CapsLock;
+
+		for (OS_WINDOWS_Window *gfxwindow = g_os_gfx_windows_state.first_window; gfxwindow; gfxwindow = gfxwindow->next)
+		{
+			if (gfxwindow->hwnd == window)
+			{
+				event.window = os_windows_handle_from_window(gfxwindow);
+				break;
+			}
+		}
+		Assert(event.window.bits);
 		OS_Event *pushed = os_eventlist_push_new(
 			g_os_gfx_windows_state.events_arena,
 			&g_os_gfx_windows_state.events,
@@ -236,31 +246,78 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 
 internal void os_gfx_init(void)
 {
+	g_os_mac_gfx_state.arena = arena_alloc(MB(32), MB(1));
 	g_os_gfx_windows_state.hInstance = GetModuleHandleW(0);
 	WNDCLASSW window_class = {
 		.style         = CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
 		.lpfnWndProc   = os_gfx_windows_window_callback,
-		.hInstance     = GetModuleHandle(0),
+		.hInstance     = g_os_gfx_windows_state.hInstance,
 		.lpszClassName = L"mywindowclass",
 	};
 	ATOM atom = RegisterClassW(&window_class);
 	Assert(atom);
+}
 
-	g_os_gfx_windows_state.window = CreateWindowExW(
-		0,
-		window_class.lpszClassName,
-		L"temp",
-		WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		window_class.hInstance,
-		0
+internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
+{
+	Assert(0 <= title.length);
+	Temp scratch = scratch_begin(0, 0);
+	OS_WINDOWS_Window *gfxwindow = 0;
+	if (g_os_gfx_windows_state.free_window)
+	{
+		gfxwindow = g_os_gfx_windows_state.free_window;
+		SLLStackPop(g_os_gfx_windows_state.free_window);
+	}
+	else
+	{
+		gfxwindow = push_array_no_zero(g_os_gfx_windows_state.arena, OS_WINDOWS_Window, 1);
+	}
+	Assert(gfxwindow);
+
+	String16 title16 = str16_from_8(scratch.arena, title);
+
+	*gfxwindow = (OS_WINDOWS_Window) {
+		.hwnd = CreateWindowExW(
+			0,
+			L"mywindowclass", // REVIEW: deduplicate?
+			title16.buffer,
+			WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+			CW_USEDEFAULT,
+			CW_USEDEFAULT,
+			resolution.x,
+			resolution.y,
+			0,
+			0,
+			g_os_gfx_windows_state.hInstance,
+			0
+		),
+	};
+	Assert(gfxwindow.hwnd);
+
+	DLLPushFront(
+		g_os_gfx_windows_state.first_window,
+		g_os_gfx_windows_state.last_window,
+		gfxwindow
 	);
-	Assert(g_os_gfx_windows_state.window);
+
+	scratch_end(scratch);
+
+	OS_Window result = os_windows_handle_from_window(gfxwindow);
+	return result;
+}
+internal void os_window_close(OS_Window window)
+{
+	OS_WINDOWS_Window *gfxwindow = os_windows_window_from_handle(window);
+	if (gfxwindow)
+	{
+		Assert(DestroyWindow(gfxwindow->hwnd));
+		DLLRemove(
+			g_os_gfx_windows_state.first_window,
+			g_os_gfx_windows_state.last_window,
+			gfxwindow
+		);
+		SLLStackPop(g_os_gfx_windows_state.free_window, gfxwindow);
+	}
 }
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
@@ -297,5 +354,16 @@ os_gfx_windows_rng2f32_from_rect(RECT rect)
 		.x1 = (F32)rect.right,
 		.y1 = (F32)rect.bottom,
 	};
+	return result;
+}
+
+inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS_Window *window)
+{
+	OS_Window result = { .bits = (U64)window };
+	return result;
+}
+inline internal OS_WINDOWS_Window *os_windows_window_from_handle(OS_Window handle)
+{
+	OS_WINDOWS_Window *result = (OS_WINDOWS_Window*)handle.bits;
 	return result;
 }
