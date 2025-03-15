@@ -43,6 +43,12 @@
 		4B49B8452D2215AB00967460 /* chibihash.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = chibihash.c; sourceTree = "<group>"; };
 		4B49B8472D2215AB00967460 /* stb_sprintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_sprintf.h; sourceTree = "<group>"; };
 		4B98542D2D39AA2200E8E876 /* leetcode.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = leetcode.c; sourceTree = "<group>"; };
+		4B9ED8582D8502AF00B40922 /* os_gfx.meta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_gfx.meta.h; sourceTree = "<group>"; };
+		4B9ED8592D8502AF00B40922 /* os_gfx.meta.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_gfx.meta.c; sourceTree = "<group>"; };
+		4B9ED85B2D8502AF00B40922 /* os_gfx_mac.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_gfx_mac.h; sourceTree = "<group>"; };
+		4B9ED85C2D8502AF00B40922 /* os_gfx_mac.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = os_gfx_mac.m; sourceTree = "<group>"; };
+		4B9ED85E2D8502AF00B40922 /* os_gfx_windows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_gfx_windows.h; sourceTree = "<group>"; };
+		4B9ED85F2D8502AF00B40922 /* os_gfx_windows.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = os_gfx_windows.c; sourceTree = "<group>"; };
 		4BBE66032D3CC54900C7DB7D /* metal.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = metal.c; sourceTree = "<group>"; };
 		4BBE66042D3CC54900C7DB7D /* scratch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = scratch.c; sourceTree = "<group>"; };
 		4BD032E22D6E676A00A83C41 /* metagen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = metagen.h; sourceTree = "<group>"; };
@@ -128,6 +134,9 @@
 		4B49B83D2D2215AB00967460 /* gfx */ = {
 			isa = PBXGroup;
 			children = (
+				4B9ED85A2D8502AF00B40922 /* generated */,
+				4B9ED85D2D8502AF00B40922 /* mac */,
+				4B9ED8602D8502AF00B40922 /* windows */,
 				4B49B83B2D2215AB00967460 /* os_gfx.h */,
 				4B49B83C2D2215AB00967460 /* os_gfx.c */,
 			);
@@ -190,6 +199,33 @@
 				4B49B8482D2215AB00967460 /* stb */,
 			);
 			path = thirdparty;
+			sourceTree = "<group>";
+		};
+		4B9ED85A2D8502AF00B40922 /* generated */ = {
+			isa = PBXGroup;
+			children = (
+				4B9ED8582D8502AF00B40922 /* os_gfx.meta.h */,
+				4B9ED8592D8502AF00B40922 /* os_gfx.meta.c */,
+			);
+			path = generated;
+			sourceTree = "<group>";
+		};
+		4B9ED85D2D8502AF00B40922 /* mac */ = {
+			isa = PBXGroup;
+			children = (
+				4B9ED85B2D8502AF00B40922 /* os_gfx_mac.h */,
+				4B9ED85C2D8502AF00B40922 /* os_gfx_mac.m */,
+			);
+			path = mac;
+			sourceTree = "<group>";
+		};
+		4B9ED8602D8502AF00B40922 /* windows */ = {
+			isa = PBXGroup;
+			children = (
+				4B9ED85E2D8502AF00B40922 /* os_gfx_windows.h */,
+				4B9ED85F2D8502AF00B40922 /* os_gfx_windows.c */,
+			);
+			path = windows;
 			sourceTree = "<group>";
 		};
 		4BDBC25A2D8205CC00F69BF6 /* d3d11 */ = {
