@@ -10,25 +10,34 @@
 
 // NOTE(beau): methods are callbacks for menu items - it was either this or add
 // methods to something at runtime
-@interface MyApp : NSApplication
+@interface OS_MAC_NSApplication : NSApplication
 - (void)quit_render_loop:(id) sender;
 @end
 
 // NOTE(beau): ignore keydown events so they can be caught in nextEventMatchingMask
-@interface MyWindow : NSWindow
+@interface OS_MAC_NSWindow : NSWindow
 - (void)keyDown:(NSEvent *) event;
 @end
 
-// NOTE(beau): the NSApplication object is stored in the global NSApp so no need
-// to store it here
+typedef struct OS_MAC_Window OS_MAC_Window;
+struct OS_MAC_Window
+{
+	OS_MAC_NSWindow *nswindow;
+	OS_MAC_Window *next, *prev;
+};
+
 typedef struct OS_MAC_GFX_State OS_MAC_GFX_State;
 struct OS_MAC_GFX_State
 {
-	MyWindow *window;
+	Arena *arena;
+	OS_MAC_Window *first_window, *last_window, *free_window;
 
 	// NOTE HACK(beau): should only be used from the event polling thread,
 	// by the event polling code
 	B8 private_command_q_should_quit_flag; // HACK(beau): this is terrible
 };
+
+internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow);
+internal NSString *os_mac_nsstring_from_str8(String8 string8);
 
 #endif // OS_GFX_MAC_H

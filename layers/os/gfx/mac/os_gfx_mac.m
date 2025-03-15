@@ -2,22 +2,23 @@
 	global OS_MAC_GFX_State g_os_mac_gfx_state = zero_struct;
 #endif
 
-@implementation MyApp : NSApplication
+@implementation OS_MAC_NSApplication : NSApplication
 - (void)quit_render_loop:(id) sender {
 	// HACK(beau): this is terrible
 	g_os_mac_gfx_state.private_command_q_should_quit_flag = 1;
 }
 @end
 
-@implementation MyWindow : NSWindow
+@implementation OS_MAC_NSWindow : NSWindow
 - (void)keyDown:(NSEvent *) event {}
 @end
 
 internal void os_gfx_init(void)
 {
-	[MyApp sharedApplication];
-	NSApp.activationPolicy = NSApplicationActivationPolicyRegular;
-	[NSApp finishLaunching];
+	g_os_mac_gfx_state.arena = arena_alloc(MB(32), MB(1));
+	[OS_MAC_NSApplication sharedApplication];
+	[OS_MAC_NSApplication sharedApplication].activationPolicy = NSApplicationActivationPolicyRegular;
+	[[OS_MAC_NSApplication sharedApplication] finishLaunching];
 
 	@autoreleasepool
 	{
@@ -30,29 +31,10 @@ internal void os_gfx_init(void)
 		[app_menu addItem: quit_item];
 		main_menu_app_item.submenu = app_menu;
 
-		NSApp.mainMenu = main_menu;
+		[OS_MAC_NSApplication sharedApplication].mainMenu = main_menu;
 	}
 
-	{
-		NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
-		NSSize window_size = {800, 600};
-		NSPoint window_origin = {
-			((screen_rect.size.width - window_size.width) / 2),
-			((screen_rect.size.height - window_size.height) / 2)
-		};
-		g_os_mac_gfx_state.window = [[MyWindow alloc] initWithContentRect:
-			(NSRect) {window_origin, window_size}
-			styleMask: NSWindowStyleMaskTitled
-			backing:NSBackingStoreBuffered
-			defer:NO ];
-
-		g_os_mac_gfx_state.window.title = @"Window title";
-		g_os_mac_gfx_state.window.isVisible = YES;
-	}
-	[NSApp activate];
-
-	g_os_mac_gfx_state.window.opaque = YES;
-	g_os_mac_gfx_state.window.backgroundColor = 0;
+	[[OS_MAC_NSApplication sharedApplication] activate];
 }
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
@@ -60,17 +42,18 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 	OS_EventList result = zero_struct;
 	@autoreleasepool
 	{
-		NSEvent *ns_event = [g_os_mac_gfx_state.window nextEventMatchingMask:NSEventMaskAny
+		NSEvent *ns_event = [[OS_MAC_NSApplication sharedApplication] nextEventMatchingMask:NSEventMaskAny
 			untilDate:[NSDate distantFuture]
 			inMode:NSDefaultRunLoopMode
 			dequeue:YES];
-		for (; ns_event != 0; ns_event = [g_os_mac_gfx_state.window
+		for (; ns_event != 0; ns_event = [[OS_MAC_NSApplication sharedApplication]
 				nextEventMatchingMask:NSEventMaskAny
 				untilDate:0
 				inMode:NSDefaultRunLoopMode
 				dequeue:YES])
 		{
 			NSEventType ns_event_type = ns_event.type;
+			OS_Event event = zero_struct;
 			switch (ns_event_type)
 			{
 				case NSEventTypeLeftMouseDown:
@@ -170,24 +153,58 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 					OS_Key os_key = os_mac_kvk_table[ns_event.keyCode];
 					if (os_key != OS_Key_NULL)
 					{
-						OS_Event *os_event = os_eventlist_push_new(
-							arena,
-							&result,
-							NSEventTypeKeyDown ? OS_EventKind_Press : OS_EventKind_Release
-						);
-						os_event->key = os_key;
-						NSEventModifierFlags ns_mods = ns_event.modifierFlags;
-						if (ns_mods & NSEventModifierFlagShift)
-							os_event->modifiers |= OS_Modifier_Shift;
-						if (ns_mods & NSEventModifierFlagControl)
-							os_event->modifiers |= OS_Modifier_Ctrl;
-						if (ns_mods & NSEventModifierFlagOption)
-							os_event->modifiers |= OS_Modifier_Alt;
+						event.kind = ns_event_type == NSEventTypeKeyDown ? OS_EventKind_Press : OS_EventKind_Release;
+						event.key = os_key;
 					}
 				} break;
 			}
 
-			[NSApp sendEvent:ns_event];
+			[[OS_MAC_NSApplication sharedApplication] sendEvent:ns_event];
+
+			if (event.kind != OS_EventKind_NULL)
+			{
+				{
+					NSEventModifierFlags ns_mods = ns_event.modifierFlags;
+					if (ns_mods & NSEventModifierFlagShift)
+						event.modifiers |= OS_Modifier_Shift;
+					if (ns_mods & NSEventModifierFlagControl)
+						event.modifiers |= OS_Modifier_Ctrl;
+					if (ns_mods & NSEventModifierFlagOption)
+						event.modifiers |= OS_Modifier_Alt;
+					if (ns_mods & NSEventModifierFlagCapsLock)
+						event.modifiers |= OS_Modifier_CapsLock;
+
+					NSUInteger ns_mouse = NSEvent.pressedMouseButtons;
+					if (ns_mouse & (1 << 0))
+						event.modifiers |= OS_Modifier_M1;
+					if (ns_mouse & (1 << 1))
+						event.modifiers |= OS_Modifier_M2;
+					if (ns_mouse & (1 << 2))
+						event.modifiers |= OS_Modifier_M3;
+					if (ns_mouse & (1 << 3))
+						event.modifiers |= OS_Modifier_M4;
+					if (ns_mouse & (1 << 4))
+						event.modifiers |= OS_Modifier_M5;
+				}
+
+				for (OS_MAC_Window *gfxwindow = g_os_mac_gfx_state.first_window; gfxwindow; gfxwindow = gfxwindow->next)
+				{
+					if (ns_event.window == gfxwindow->nswindow)
+					{
+						event.window = os_mac_handle_from_window(gfxwindow);
+						break;
+					}
+				}
+				Assert(event.window.bits);
+
+				OS_Event *pushed = os_eventlist_push_new(
+					arena,
+					&result,
+					OS_EventKind_NULL
+				);
+				*pushed = event;
+				Assert(pushed->kind != OS_EventKind_NULL);
+			}
 
 			// HACK(beau): this is terrible
 			if (g_os_mac_gfx_state.private_command_q_should_quit_flag)
@@ -198,5 +215,86 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 			}
 		}
 	}
+	return result;
+}
+
+internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
+{
+	Assert(0 <= resolution.x && 0 <= resolution.y);
+	OS_MAC_Window *gfxwindow = 0;
+	if (g_os_mac_gfx_state.free_window)
+	{
+		gfxwindow = g_os_mac_gfx_state.free_window;
+		SLLStackPop(g_os_mac_gfx_state.free_window);
+	}
+	else
+	{
+		gfxwindow = push_array_no_zero(g_os_mac_gfx_state.arena, OS_MAC_Window, 1);
+	}
+	Assert(gfxwindow);
+	NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
+	NSSize window_size = {
+		(CGFloat)resolution.x,
+		(CGFloat)resolution.y,
+	};
+	NSPoint window_origin = {
+		((screen_rect.size.width - window_size.width) / 2),
+		((screen_rect.size.height - window_size.height) / 2)
+	};
+	*gfxwindow = (OS_MAC_Window) {
+		.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:
+			(NSRect) {window_origin, window_size}
+			styleMask: NSWindowStyleMaskTitled
+			backing:NSBackingStoreBuffered
+			defer:NO],
+	};
+
+	gfxwindow->nswindow.title = os_mac_nsstring_from_str8(title);
+	gfxwindow->nswindow.isVisible = YES;
+
+	gfxwindow->nswindow.opaque = YES;
+	gfxwindow->nswindow.backgroundColor = 0;
+	gfxwindow->nswindow.releasedWhenClosed = false; // XXX REVIEW: how can I release a window when its closed?
+
+	DLLPushFront(
+		g_os_mac_gfx_state.first_window,
+		g_os_mac_gfx_state.last_window,
+		gfxwindow
+	);
+
+	OS_Window result = os_mac_handle_from_window(gfxwindow);
+	return result;
+}
+
+internal void os_window_close(OS_Window window)
+{
+	OS_MAC_Window *gfxwindow = (OS_MAC_Window*)window.bits;
+	if (gfxwindow)
+	{
+		gfxwindow->nswindow.releasedWhenClosed = true;
+		[gfxwindow->nswindow close];
+		DLLRemove(
+			g_os_mac_gfx_state.first_window,
+			g_os_mac_gfx_state.last_window,
+			gfxwindow
+		);
+		SLLStackPush(g_os_mac_gfx_state.free_window, gfxwindow);
+	}
+}
+
+internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow)
+{
+	OS_Window result = {
+		.bits = (U64)gfxwindow,
+	};
+	return result;
+}
+
+internal NSString *os_mac_nsstring_from_str8(String8 string8)
+{
+	Assert(0 <= string8.length);
+	NSString *result = [[NSString alloc] initWithBytes: string8.buffer // REVIEW: free the string on release?
+		length:(NSUInteger)string8.length
+		encoding:NSUTF8StringEncoding];
 	return result;
 }
