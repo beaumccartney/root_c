@@ -26,10 +26,17 @@ typedef enum
 	OS_EventKind_COUNT,
 } OS_EventKind;
 
+typedef struct OS_Window OS_Window;
+struct OS_Window
+{
+	U64 bits;
+};
+
 typedef struct OS_Event OS_Event;
 struct OS_Event
 {
 	S64 timestamp_us;
+	OS_Window window;
 	OS_EventKind kind;
 	OS_Modifiers modifiers;
 	OS_Key key;
@@ -52,6 +59,9 @@ struct OS_EventList
 };
 
 internal void os_gfx_init(void);
+
+internal OS_Window os_window_open(Vec2S32 resolution, String8 title);
+internal void      os_window_close(OS_Window window);
 
 internal OS_EventList os_gfx_get_events(Arena *arena);
 
