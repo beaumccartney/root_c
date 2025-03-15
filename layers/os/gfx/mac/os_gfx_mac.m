@@ -268,7 +268,7 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 
 internal void os_window_close(OS_Window window)
 {
-	OS_MAC_Window *gfxwindow = (OS_MAC_Window*)window.bits;
+	OS_MAC_Window *gfxwindow = os_mac_window_from_handle(window);
 	if (gfxwindow)
 	{
 		gfxwindow->nswindow.releasedWhenClosed = true;
@@ -282,11 +282,17 @@ internal void os_window_close(OS_Window window)
 	}
 }
 
-internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow)
+inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow)
 {
 	OS_Window result = {
 		.bits = (U64)gfxwindow,
 	};
+	return result;
+}
+
+inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle)
+{
+	OS_MAC_Window *result = (OS_MAC_Window*)handle.bits;
 	return result;
 }
 

@@ -37,7 +37,8 @@ struct OS_MAC_GFX_State
 	B8 private_command_q_should_quit_flag; // HACK(beau): this is terrible
 };
 
-internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow);
+inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow);
+inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle);
 internal NSString *os_mac_nsstring_from_str8(String8 string8);
 
 #endif // OS_GFX_MAC_H
