@@ -11,6 +11,7 @@ typedef struct OS_WINDOWS_Window OS_WINDOWS_Window;
 struct OS_WINDOWS_Window
 {
 	OS_WINDOWS_Window *next, *prev;
+	S64 generation;
 	HWND hwnd;
 };
 

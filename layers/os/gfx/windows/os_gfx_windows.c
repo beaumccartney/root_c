@@ -271,8 +271,8 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 	else
 	{
 		gfxwindow = push_array_no_zero(g_os_gfx_windows_state.arena, OS_WINDOWS_Window, 1);
+		gfxwindow->generation = 1; // zero generation is never a valid reference
 	}
-	Assert(gfxwindow);
 
 	String16 title16 = str16_from_8(scratch.arena, title);
 
@@ -291,6 +291,7 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 			g_os_gfx_windows_state.hInstance,
 			0
 		),
+		.generation = gfxwindow->generation;
 	};
 	Assert(gfxwindow.hwnd);
 
@@ -311,6 +312,7 @@ internal void os_window_close(OS_Window window)
 	if (gfxwindow)
 	{
 		Assert(DestroyWindow(gfxwindow->hwnd));
+		gfxwindow->generation++;
 		DLLRemove(
 			g_os_gfx_windows_state.first_window,
 			g_os_gfx_windows_state.last_window,
@@ -359,11 +361,13 @@ os_gfx_windows_rng2f32_from_rect(RECT rect)
 
 inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS_Window *window)
 {
-	OS_Window result = { .bits = (U64)window };
+	OS_Window result = { .bits = (U64)window, .generation = window->generation };
 	return result;
 }
 inline internal OS_WINDOWS_Window *os_windows_window_from_handle(OS_Window handle)
 {
 	OS_WINDOWS_Window *result = (OS_WINDOWS_Window*)handle.bits;
+	if (!result || result->generation != handle.generation)
+		result = 0;
 	return result;
 }

@@ -24,6 +24,7 @@ struct OS_MAC_Window
 {
 	OS_MAC_NSWindow *nswindow;
 	OS_MAC_Window *next, *prev;
+	S64 generation;
 };
 
 typedef struct OS_MAC_GFX_State OS_MAC_GFX_State;
@@ -36,6 +37,7 @@ struct OS_MAC_GFX_State
 	// by the event polling code
 	B8 private_command_q_should_quit_flag; // HACK(beau): this is terrible
 };
+global OS_MAC_GFX_State g_os_mac_gfx_state = zero_struct;
 
 inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow);
 inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle);

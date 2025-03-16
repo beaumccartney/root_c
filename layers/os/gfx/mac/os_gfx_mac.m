@@ -1,7 +1,3 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
-	global OS_MAC_GFX_State g_os_mac_gfx_state = zero_struct;
-#endif
-
 @implementation OS_MAC_NSApplication : NSApplication
 - (void)quit_render_loop:(id) sender {
 	// HACK(beau): this is terrible
@@ -187,15 +183,14 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 						event.modifiers |= OS_Modifier_M5;
 				}
 
-				for (OS_MAC_Window *gfxwindow = g_os_mac_gfx_state.first_window; gfxwindow; gfxwindow = gfxwindow->next)
+				for (OS_MAC_Window *macwindow = g_os_mac_gfx_state.first_window; macwindow; macwindow = macwindow->next)
 				{
-					if (ns_event.window == gfxwindow->nswindow)
+					if (ns_event.window == macwindow->nswindow)
 					{
-						event.window = os_mac_handle_from_window(gfxwindow);
+						event.window = os_mac_handle_from_window(macwindow);
 						break;
 					}
 				}
-				Assert(event.window.bits);
 
 				OS_Event *pushed = os_eventlist_push_new(
 					arena,
@@ -221,17 +216,17 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 {
 	Assert(0 <= resolution.x && 0 <= resolution.y);
-	OS_MAC_Window *gfxwindow = 0;
+	OS_MAC_Window *macwindow = 0;
 	if (g_os_mac_gfx_state.free_window)
 	{
-		gfxwindow = g_os_mac_gfx_state.free_window;
+		macwindow = g_os_mac_gfx_state.free_window;
 		SLLStackPop(g_os_mac_gfx_state.free_window);
 	}
 	else
 	{
-		gfxwindow = push_array_no_zero(g_os_mac_gfx_state.arena, OS_MAC_Window, 1);
+		macwindow = push_array_no_zero(g_os_mac_gfx_state.arena, OS_MAC_Window, 1);
+		macwindow->generation = 1; // zero generation is never valid
 	}
-	Assert(gfxwindow);
 	NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
 	NSSize window_size = {
 		(CGFloat)resolution.x,
@@ -241,51 +236,54 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 		((screen_rect.size.width - window_size.width) / 2),
 		((screen_rect.size.height - window_size.height) / 2)
 	};
-	*gfxwindow = (OS_MAC_Window) {
+	*macwindow = (OS_MAC_Window) {
 		.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:
 			(NSRect) {window_origin, window_size}
 			styleMask: NSWindowStyleMaskTitled
 			backing:NSBackingStoreBuffered
 			defer:NO],
+		.generation = macwindow->generation,
 	};
 
-	gfxwindow->nswindow.title = os_mac_nsstring_from_str8(title);
-	gfxwindow->nswindow.isVisible = YES;
+	macwindow->nswindow.title = os_mac_nsstring_from_str8(title);
+	macwindow->nswindow.isVisible = YES;
 
-	gfxwindow->nswindow.opaque = YES;
-	gfxwindow->nswindow.backgroundColor = 0;
-	gfxwindow->nswindow.releasedWhenClosed = false; // XXX REVIEW: how can I release a window when its closed?
+	macwindow->nswindow.opaque = YES;
+	macwindow->nswindow.backgroundColor = 0;
+	macwindow->nswindow.releasedWhenClosed = false; // XXX REVIEW: how can I release a window when its closed?
 
 	DLLPushFront(
 		g_os_mac_gfx_state.first_window,
 		g_os_mac_gfx_state.last_window,
-		gfxwindow
+		macwindow
 	);
 
-	OS_Window result = os_mac_handle_from_window(gfxwindow);
+	OS_Window result = os_mac_handle_from_window(macwindow);
 	return result;
 }
 
 internal void os_window_close(OS_Window window)
 {
-	OS_MAC_Window *gfxwindow = os_mac_window_from_handle(window);
-	if (gfxwindow)
+	OS_MAC_Window *macwindow = os_mac_window_from_handle(window);
+	if (macwindow)
 	{
-		gfxwindow->nswindow.releasedWhenClosed = true;
-		[gfxwindow->nswindow close];
+		macwindow->nswindow.releasedWhenClosed = true;
+		[macwindow->nswindow close];
+		macwindow->generation++;
 		DLLRemove(
 			g_os_mac_gfx_state.first_window,
 			g_os_mac_gfx_state.last_window,
-			gfxwindow
+			macwindow
 		);
-		SLLStackPush(g_os_mac_gfx_state.free_window, gfxwindow);
+		SLLStackPush(g_os_mac_gfx_state.free_window, macwindow);
 	}
 }
 
-inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow)
+inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *macwindow)
 {
 	OS_Window result = {
-		.bits = (U64)gfxwindow,
+		.bits = (U64)macwindow,
+		.generation = macwindow->generation,
 	};
 	return result;
 }
@@ -293,6 +291,8 @@ inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow)
 inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle)
 {
 	OS_MAC_Window *result = (OS_MAC_Window*)handle.bits;
+	if (!result || result->generation != handle.generation)
+		result = 0;
 	return result;
 }
 

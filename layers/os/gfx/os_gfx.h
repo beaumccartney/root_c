@@ -30,6 +30,7 @@ typedef struct OS_Window OS_Window;
 struct OS_Window
 {
 	U64 bits;
+	S64 generation;
 };
 
 typedef struct OS_Event OS_Event;
