@@ -36,8 +36,10 @@ internal OS_MAC_Entity *os_mac_entity_alloc(OS_MAC_EntityKind kind)
 internal void os_mac_entity_release(OS_MAC_Entity *entity)
 {
 	int status = pthread_mutex_lock(&os_mac_state.entity_mutex); Assert(status == 0);
+	Assert(status == 0);
 	SLLStackPush(os_mac_state.entity_free, entity);
 	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
+	Assert(status == 0);
 }
 
 internal void *os_vmem_reserve(S64 size)

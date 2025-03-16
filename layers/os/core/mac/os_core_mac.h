@@ -26,6 +26,7 @@ typedef enum
 }
 OS_MAC_EntityKind;
 
+// XXX REVIEW URGENT: generation? is ABA a problem?
 typedef struct OS_MAC_Entity OS_MAC_Entity;
 struct OS_MAC_Entity
 {
