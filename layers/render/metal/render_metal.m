@@ -1,22 +1,32 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
-	global R_METAL_State g_r_metal_state = zero_struct;
-#endif
-
 internal void r_init(void)
 {
-	g_r_metal_state.device    = MTLCreateSystemDefaultDevice();
-	g_r_metal_state.swapchain = CAMetalLayer.layer;
-
-	g_r_metal_state.swapchain.device          = g_r_metal_state.device;
-	g_r_metal_state.swapchain.pixelFormat     = MTLPixelFormatBGRA8Unorm_sRGB;
-	g_r_metal_state.swapchain.framebufferOnly = YES;
-	g_r_metal_state.swapchain.frame           = g_os_mac_gfx_state.window.frame;
-
-	{
-		NSView *view    = g_os_mac_gfx_state.window.contentView;
-		view.wantsLayer = YES;
-		view.layer      = g_r_metal_state.swapchain;
-	}
-
+	g_r_metal_state.device        = MTLCreateSystemDefaultDevice();
 	g_r_metal_state.command_queue = g_r_metal_state.device.newCommandQueue;
+}
+
+internal void r_window_equip(OS_Window os_window)
+{
+	OS_MAC_Window *macwindow                   = os_mac_window_from_handle(os_window);
+	macwindow->nswindow.contentView.wantsLayer = YES;
+	CAMetalLayer *metallayer                   = [CAMetalLayer layer];
+	macwindow->nswindow.contentView.layer      = metallayer;
+	metallayer.device                          = g_r_metal_state.device;
+	metallayer.pixelFormat                     = MTLPixelFormatBGRA8Unorm_sRGB;
+	metallayer.framebufferOnly                 = YES;
+	metallayer.frame                           = macwindow->nswindow.frame;
+}
+
+internal void r_window_unequip(OS_Window os_window)
+{
+	OS_MAC_Window *macwindow = os_mac_window_from_handle(os_window);
+	if (macwindow)
+	{
+		CAMetalLayer *layer = (CAMetalLayer*)macwindow->nswindow.contentView.layer;
+		if (layer)
+		{
+			[(CAMetalLayer*)macwindow->nswindow.contentView.layer release];
+			macwindow->nswindow.contentView.wantsLayer = NO;
+			macwindow->nswindow.contentView.layer      = 0;
+		}
+	}
 }
