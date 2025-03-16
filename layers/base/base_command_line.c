@@ -126,9 +126,8 @@ internal CmdLine* cmd_line_from_args(Arena *arena, String8Array args)
 		// insert option
 		// REVIEW(beau): what if the option is already populated?
 		CmdLineOpt *opt = cmd_line_opt_from_string(arena, result, option_name);
-		StringJoin joinparams = {.sep = str8_lit(",")};
 		opt->value_strings = str8_array_from_list(arena, option_args);
-		opt->value_string = str8_list_join(arena, option_args, &joinparams);
+		opt->value_string = str8_list_join(arena, option_args, &(StringJoin){.sep = str8_lit(",")});
 	}
 	// passthrough option loop, starts at where option loop left off
 	result->passthrough_inputs.count = one_past_last - arg;
