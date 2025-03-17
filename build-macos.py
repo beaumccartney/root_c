@@ -94,6 +94,7 @@ os.chdir("build")
 build_targets = options & {
     "metagen",
     "scratch",
+    "metal"
 }
 
 for target in build_targets:
