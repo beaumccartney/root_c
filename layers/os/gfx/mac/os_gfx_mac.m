@@ -1,12 +1,28 @@
 @implementation OS_MAC_NSApplication : NSApplication
 - (void)quit_render_loop:(id) sender {
-	// HACK(beau): this is terrible
-	g_os_mac_gfx_state.private_command_q_should_quit_flag = 1;
+	OS_Event *event = os_eventlist_push_new(
+		g_os_mac_gfx_state.events_arena,
+		&g_os_mac_gfx_state.events,
+		OS_EventKind_Quit
+	);
+	Unused(event);
 }
 @end
 
 @implementation OS_MAC_NSWindow : NSWindow
 - (void)keyDown:(NSEvent *) event {}
+- (BOOL) windowShouldClose:(OS_MAC_NSWindow *) sender
+{
+	OS_Event *event = os_eventlist_push_new(
+		g_os_mac_gfx_state.events_arena,
+		&g_os_mac_gfx_state.events,
+		OS_EventKind_WindowClose
+	);
+	event->window = os_mac_handle_from_nswindow(sender);
+	Assert(event->window.generation > 0);
+
+	return false;
+}
 @end
 
 internal void os_gfx_init(void)
@@ -34,7 +50,7 @@ internal void os_gfx_init(void)
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
 {
-	OS_EventList result = zero_struct;
+	g_os_mac_gfx_state.events_arena = arena;
 	@autoreleasepool
 	{
 		NSEvent *ns_event = [[OS_MAC_NSApplication sharedApplication] nextEventMatchingMask:NSEventMaskAny
@@ -182,32 +198,20 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 						event.modifiers |= OS_Modifier_M5;
 				}
 
-				if (ns_event.window)
-					for (OS_MAC_Window *w = g_os_mac_gfx_state.windows, *opl = g_os_mac_gfx_state.windows + ArrayCount(g_os_mac_gfx_state.windows); w < opl; w++)
-						if (ns_event.window == w->nswindow)
-						{
-							event.window = os_mac_handle_from_window(w);
-							break;
-						}
 
+				event.window = os_mac_handle_from_nswindow((OS_MAC_NSWindow *)ns_event.window);
 				OS_Event *pushed = os_eventlist_push_new(
 					arena,
-					&result,
+					&g_os_mac_gfx_state.events,
 					OS_EventKind_NULL
 				);
 				*pushed = event;
 				Assert(pushed->kind != OS_EventKind_NULL);
 			}
-
-			// HACK(beau): this is terrible
-			if (g_os_mac_gfx_state.private_command_q_should_quit_flag)
-			{
-				OS_Event *quitev = os_eventlist_push_new(arena, &result, OS_EventKind_Quit);
-				Unused(quitev);
-				g_os_mac_gfx_state.private_command_q_should_quit_flag = 0;
-			}
 		}
 	}
+	OS_EventList result = g_os_mac_gfx_state.events;
+	g_os_mac_gfx_state.events = (OS_EventList)zero_struct;
 	return result;
 }
 
@@ -246,7 +250,7 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 		*macwindow = (OS_MAC_Window) {
 			.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:
 				(NSRect) {window_origin, window_size}
-				styleMask: NSWindowStyleMaskTitled
+				styleMask: NSWindowStyleMaskTitled | NSWindowStyleMaskClosable
 				backing:NSBackingStoreBuffered
 				defer:NO],
 			.generation = macwindow->generation,
@@ -302,6 +306,26 @@ inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle)
 	OS_MAC_Window *result = &g_os_mac_gfx_state.windows[index];
 	if (!result->nswindow || result->generation != handle.generation)
 		result = 0;
+	return result;
+}
+internal OS_Window os_mac_handle_from_nswindow(OS_MAC_NSWindow *nswindow)
+{
+	OS_MAC_Window *macwindow = 0;
+
+	if (nswindow)
+	{
+		OS_MAC_Window *w = g_os_mac_gfx_state.windows, *opl = w + ArrayCount(g_os_mac_gfx_state.windows);
+		for (; w < opl; w++)
+		{
+			if (w->nswindow == nswindow)
+			{
+				macwindow = w;
+				break;
+			}
+		}
+		Assert(macwindow);
+	}
+	OS_Window result = os_mac_handle_from_window(macwindow);
 	return result;
 }
 

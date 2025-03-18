@@ -22,6 +22,7 @@ typedef enum
 	OS_EventKind_Press,
 	OS_EventKind_Release,
 	OS_EventKind_MouseMove,
+	OS_EventKind_WindowClose,
 	OS_EventKind_Quit,
 	OS_EventKind_COUNT,
 } OS_EventKind;
@@ -42,7 +43,6 @@ struct OS_Event
 	OS_Modifiers modifiers;
 	OS_Key key;
 	Vec2F32 pos;
-	Side side;
 };
 
 typedef struct OS_EventNode OS_EventNode;

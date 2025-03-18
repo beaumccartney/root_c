@@ -198,11 +198,10 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 		} break;
 		case WM_CLOSE:
 		{
-			NotImplemented; // REVIEW: if one window closing, find which one and stick it in the event
+			event.kind = OS_EventKind_WindowClose;
 		} break;
 		case WM_DESTROY:
 		{
-			NotImplemented; // REVIEW: what's it sent by? alt f4? should the entire application quit if this does?
 			event.kind = OS_EventKind_Quit;
 		} break;
 
