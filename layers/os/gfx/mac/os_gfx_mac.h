@@ -23,15 +23,16 @@ typedef struct OS_MAC_Window OS_MAC_Window;
 struct OS_MAC_Window
 {
 	OS_MAC_NSWindow *nswindow;
-	OS_MAC_Window *next, *prev;
-	S64 generation;
+	S64 generation, next_free_plus_one; // plus one to keep 0 free
 };
 
 typedef struct OS_MAC_GFX_State OS_MAC_GFX_State;
 struct OS_MAC_GFX_State
 {
-	Arena *arena;
-	OS_MAC_Window *first_window, *last_window, *free_window;
+	// windows pool
+	OS_MAC_Window windows[64];
+	S64 free_plus_one, // plus one to keep 0 free
+	   lowest_unused;
 
 	// NOTE HACK(beau): should only be used from the event polling thread,
 	// by the event polling code

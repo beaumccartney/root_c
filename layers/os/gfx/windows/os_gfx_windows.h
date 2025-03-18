@@ -10,16 +10,18 @@
 typedef struct OS_WINDOWS_Window OS_WINDOWS_Window;
 struct OS_WINDOWS_Window
 {
-	OS_WINDOWS_Window *next, *prev;
-	S64 generation;
+	S64 generation, next_free_plus_one;
 	HWND hwnd;
 };
 
 typedef struct OS_WINDOWS_GFX_State OS_WINDOWS_GFX_State;
 struct OS_WINDOWS_GFX_State
 {
-	Arena *arena;
-	OS_WINDOWS_Window *first_window, *last_window, *free_window;
+	// windows pool
+	OS_WINDOWS_Window windows[64];
+	S64 free_plus_one, // plus one to keep 0 free
+	   lowest_unused;
+
 	HINSTANCE hInstance;
 	Arena *events_arena;
 	OS_EventList events;

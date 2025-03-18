@@ -11,7 +11,6 @@
 
 internal void os_gfx_init(void)
 {
-	g_os_mac_gfx_state.arena = arena_alloc(MB(32), MB(1));
 	[OS_MAC_NSApplication sharedApplication];
 	[OS_MAC_NSApplication sharedApplication].activationPolicy = NSApplicationActivationPolicyRegular;
 	[[OS_MAC_NSApplication sharedApplication] finishLaunching];
@@ -183,14 +182,13 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 						event.modifiers |= OS_Modifier_M5;
 				}
 
-				for (OS_MAC_Window *macwindow = g_os_mac_gfx_state.first_window; macwindow; macwindow = macwindow->next)
-				{
-					if (ns_event.window == macwindow->nswindow)
-					{
-						event.window = os_mac_handle_from_window(macwindow);
-						break;
-					}
-				}
+				if (ns_event.window)
+					for (OS_MAC_Window *w = g_os_mac_gfx_state.windows, *opl = g_os_mac_gfx_state.windows + ArrayCount(g_os_mac_gfx_state.windows); w < opl; w++)
+						if (ns_event.window == w->nswindow)
+						{
+							event.window = os_mac_handle_from_window(w);
+							break;
+						}
 
 				OS_Event *pushed = os_eventlist_push_new(
 					arena,
@@ -215,48 +213,52 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 {
-	Assert(0 <= resolution.x && 0 <= resolution.y);
+	Assert(0 < title.length && 0 <= resolution.x && 0 <= resolution.y);
+
 	OS_MAC_Window *macwindow = 0;
-	if (g_os_mac_gfx_state.free_window)
+
+	if (0 < g_os_mac_gfx_state.free_plus_one && g_os_mac_gfx_state.free_plus_one < ArrayCount(g_os_mac_gfx_state.windows))
 	{
-		macwindow = g_os_mac_gfx_state.free_window;
-		SLLStackPop(g_os_mac_gfx_state.free_window);
+		macwindow = &g_os_mac_gfx_state.windows[g_os_mac_gfx_state.free_plus_one - 1];
+		Assert(macwindow->generation > 0);
 	}
-	else
+	else if (0 <= g_os_mac_gfx_state.lowest_unused && g_os_mac_gfx_state.lowest_unused < ArrayCount(g_os_mac_gfx_state.windows))
 	{
-		macwindow = push_array_no_zero(g_os_mac_gfx_state.arena, OS_MAC_Window, 1);
-		macwindow->generation = 1; // zero generation is never valid
+		macwindow = &g_os_mac_gfx_state.windows[g_os_mac_gfx_state.lowest_unused++];
+		Assert(macwindow->generation == 0);
+		macwindow->generation = 1;
 	}
-	NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
-	NSSize window_size = {
-		(CGFloat)resolution.x,
-		(CGFloat)resolution.y,
-	};
-	NSPoint window_origin = {
-		((screen_rect.size.width - window_size.width) / 2),
-		((screen_rect.size.height - window_size.height) / 2)
-	};
-	*macwindow = (OS_MAC_Window) {
-		.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:
-			(NSRect) {window_origin, window_size}
-			styleMask: NSWindowStyleMaskTitled
-			backing:NSBackingStoreBuffered
-			defer:NO],
-		.generation = macwindow->generation,
-	};
 
-	macwindow->nswindow.title = os_mac_nsstring_from_str8(title);
-	macwindow->nswindow.isVisible = YES;
+	if (macwindow)
+	{
+		Assert(!macwindow->nswindow);
+		g_os_mac_gfx_state.free_plus_one = macwindow->next_free_plus_one;
 
-	macwindow->nswindow.opaque = YES;
-	macwindow->nswindow.backgroundColor = 0;
-	macwindow->nswindow.releasedWhenClosed = false; // XXX REVIEW: how can I release a window when its closed?
+		NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
+		NSSize window_size = {
+			(CGFloat)resolution.x,
+			(CGFloat)resolution.y,
+		};
+		NSPoint window_origin = { // REVIEW:
+			((screen_rect.size.width - window_size.width)   / 2),
+			((screen_rect.size.height - window_size.height) / 2)
+		};
+		*macwindow = (OS_MAC_Window) {
+			.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:
+				(NSRect) {window_origin, window_size}
+				styleMask: NSWindowStyleMaskTitled
+				backing:NSBackingStoreBuffered
+				defer:NO],
+			.generation = macwindow->generation,
+		};
 
-	DLLPushFront(
-		g_os_mac_gfx_state.first_window,
-		g_os_mac_gfx_state.last_window,
-		macwindow
-	);
+		macwindow->nswindow.title = os_mac_nsstring_from_str8(title);
+		macwindow->nswindow.isVisible = YES;
+
+		macwindow->nswindow.opaque = YES;
+		macwindow->nswindow.backgroundColor = 0;
+		macwindow->nswindow.releasedWhenClosed = false; // XXX REVIEW: how can I release a window when its closed?
+	}
 
 	OS_Window result = os_mac_handle_from_window(macwindow);
 	return result;
@@ -265,33 +267,40 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 internal void os_window_close(OS_Window window)
 {
 	OS_MAC_Window *macwindow = os_mac_window_from_handle(window);
-	if (macwindow)
+	if (macwindow && macwindow->nswindow)
 	{
-		macwindow->nswindow.releasedWhenClosed = true;
 		[macwindow->nswindow close];
-		macwindow->generation++;
-		DLLRemove(
-			g_os_mac_gfx_state.first_window,
-			g_os_mac_gfx_state.last_window,
-			macwindow
-		);
-		SLLStackPush(g_os_mac_gfx_state.free_window, macwindow);
+		[macwindow->nswindow release];
+		*macwindow = (OS_MAC_Window) {
+			.generation         = macwindow->generation + 1,
+			.next_free_plus_one = g_os_mac_gfx_state.free_plus_one,
+		};
+		g_os_mac_gfx_state.free_plus_one = (S64)window.bits + 1;
 	}
 }
 
 inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *macwindow)
 {
-	OS_Window result = {
-		.bits = (U64)macwindow,
-		.generation = macwindow->generation,
-	};
+	OS_Window result = zero_struct;
+	if (macwindow)
+	{
+		S64 index = macwindow - g_os_mac_gfx_state.windows;
+		Assert(0 <= index && index < ArrayCount(g_os_mac_gfx_state.windows));
+		if (macwindow->nswindow)
+		{
+			result.bits       = (U64)index;
+			result.generation = macwindow->generation;
+		}
+	}
 	return result;
 }
 
 inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle)
 {
-	OS_MAC_Window *result = (OS_MAC_Window*)handle.bits;
-	if (!result || result->generation != handle.generation)
+	S64 index = (S64)handle.bits;
+	Assert(0 <= index && index < ArrayCount(g_os_mac_gfx_state.windows));
+	OS_MAC_Window *result = &g_os_mac_gfx_state.windows[index];
+	if (!result->nswindow || result->generation != handle.generation)
 		result = 0;
 	return result;
 }

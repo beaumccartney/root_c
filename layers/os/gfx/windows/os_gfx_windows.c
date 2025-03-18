@@ -223,15 +223,18 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 		if (GetKeyState(VK_CAPITAL) & bit1)
 			event.modifiers |= OS_Modifier_CapsLock;
 
-		for (OS_WINDOWS_Window *gfxwindow = g_os_gfx_windows_state.first_window; gfxwindow; gfxwindow = gfxwindow->next)
+		if (window)
 		{
-			if (gfxwindow->hwnd == window)
+			for (S64 i = 0; i < ArrayCount(g_os_gfx_windows_state.windows); i++)
 			{
-				event.window = os_windows_handle_from_window(gfxwindow);
-				break;
+				OS_WINDOWS_Window *gfxwindow = &g_os_gfx_windows_state.windows[i];
+				if (gfxwindow->hwnd == window)
+				{
+					event.window = os_windows_handle_from_window(gfxwindow);
+					break;
+				}
 			}
 		}
-		Assert(event.window.bits);
 		OS_Event *pushed = os_eventlist_push_new(
 			g_os_gfx_windows_state.events_arena,
 			&g_os_gfx_windows_state.events,
@@ -246,7 +249,6 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 
 internal void os_gfx_init(void)
 {
-	g_os_mac_gfx_state.arena = arena_alloc(MB(32), MB(1));
 	g_os_gfx_windows_state.hInstance = GetModuleHandleW(0);
 	WNDCLASSW window_class = {
 		.style         = CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
@@ -260,46 +262,49 @@ internal void os_gfx_init(void)
 
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 {
-	Assert(0 <= title.length);
+	Assert(0 < title.length && 0 <= resolution.x && 0 <= resolution.y);
 	Temp scratch = scratch_begin(0, 0);
 	OS_WINDOWS_Window *gfxwindow = 0;
-	if (g_os_gfx_windows_state.free_window)
+
+	if (0 < g_os_gfx_windows_state.free_plus_one && g_os_gfx_windows_state.free_plus_one < ArrayCount(g_os_gfx_windows_state.windows))
 	{
-		gfxwindow = g_os_gfx_windows_state.free_window;
-		SLLStackPop(g_os_gfx_windows_state.free_window);
+		gfxwindow = &g_os_gfx_windows_state.windows[g_os_gfx_windows_state.free_plus_one - 1];
+		Assert(gfxwindow->generation > 0);
 	}
-	else
+	else if (0 <= g_os_gfx_windows_state.lowest_unused && g_os_gfx_windows_state.lowest_unused < ArrayCount(g_os_gfx_windows_state.windows))
 	{
-		gfxwindow = push_array_no_zero(g_os_gfx_windows_state.arena, OS_WINDOWS_Window, 1);
-		gfxwindow->generation = 1; // zero generation is never a valid reference
+		gfxwindow = &g_os_gfx_windows_state.windows[g_os_gfx_windows_state.lowest_unused++];
+		Assert(gfxwindow->generation == 0);
+		gfxwindow->generation = 1;
 	}
 
-	String16 title16 = str16_from_8(scratch.arena, title);
 
-	*gfxwindow = (OS_WINDOWS_Window) {
-		.hwnd = CreateWindowExW(
-			0,
-			L"mywindowclass", // REVIEW: deduplicate?
-			title16.buffer,
-			WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			resolution.x,
-			resolution.y,
-			0,
-			0,
-			g_os_gfx_windows_state.hInstance,
-			0
-		),
-		.generation = gfxwindow->generation;
-	};
-	Assert(gfxwindow.hwnd);
+	if (gfxwindow)
+	{
+		Assert(!gfxwindow->hwnd);
+		g_os_gfx_windows_state.free_plus_one = gfxwindow->next_free_plus_one;
 
-	DLLPushFront(
-		g_os_gfx_windows_state.first_window,
-		g_os_gfx_windows_state.last_window,
-		gfxwindow
-	);
+		String16 title16 = str16_from_8(scratch.arena, title);
+
+		*gfxwindow = (OS_WINDOWS_Window) {
+			.hwnd = CreateWindowExW(
+				0,
+				L"mywindowclass", // REVIEW: deduplicate?
+				title16.buffer,
+				WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+				CW_USEDEFAULT,
+				CW_USEDEFAULT,
+				resolution.x,
+				resolution.y,
+				0,
+				0,
+				g_os_gfx_windows_state.hInstance,
+				0
+			),
+			.generation = gfxwindow->generation;
+		};
+		Assert(gfxwindow.hwnd);
+	}
 
 	scratch_end(scratch);
 
@@ -309,16 +314,15 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 internal void os_window_close(OS_Window window)
 {
 	OS_WINDOWS_Window *gfxwindow = os_windows_window_from_handle(window);
-	if (gfxwindow)
+	NotImplented; // REVIEW: existence test i.e. can HWND be zero
+	if (gfxwindow && gfxwindow->hwnd)
 	{
 		Assert(DestroyWindow(gfxwindow->hwnd));
-		gfxwindow->generation++;
-		DLLRemove(
-			g_os_gfx_windows_state.first_window,
-			g_os_gfx_windows_state.last_window,
-			gfxwindow
-		);
-		SLLStackPop(g_os_gfx_windows_state.free_window, gfxwindow);
+		*gfxwindow = (OS_WINDOWS_Window) {
+			.generation = gfxwindow->generation + 1,
+			.next_free_plus_one = g_os_gfx_windows_state.free_plus_one,
+		};
+		g_os_gfx_windows_state.free_plus_one = (S64)window.bits + 1;
 	}
 }
 
@@ -361,13 +365,27 @@ os_gfx_windows_rng2f32_from_rect(RECT rect)
 
 inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS_Window *window)
 {
-	OS_Window result = { .bits = (U64)window, .generation = window->generation };
+	OS_Window result = zero_struct;
+	if (window)
+	{
+		S64 index = window - g_os_gfx_windows_state.windows;
+		Assert(0 <= index && index < ArrayCount(g_os_gfx_windows_state.windows));
+		NotImplemented; // REVIEW: existence test
+		if (window->hwnd)
+		{
+			result.bits       = (U64)index;
+			result.generation = window->generation;
+		}
+	}
 	return result;
 }
 inline internal OS_WINDOWS_Window *os_windows_window_from_handle(OS_Window handle)
 {
-	OS_WINDOWS_Window *result = (OS_WINDOWS_Window*)handle.bits;
-	if (!result || result->generation != handle.generation)
+	S64 index = (S64)handle.bits;
+	Assert(0 <= index && index < ArrayCount(g_os_gfx_windows_state.windows));
+	OS_WINDOWS_Window *result = &g_os_gfx_windows_state.windows[index];
+	NotImplemented;
+	if (!result->hwnd || result->generation != handle.generation)
 		result = 0;
 	return result;
 }
