@@ -22,7 +22,7 @@ struct OS_State
 	} process_info;
 };
 
-global OS_State g_os_state = zero_struct; // REVIEW: other compile units? perhaps extern and !BUILD_SUPPLEMENTARY_UNIT decl in os_core.c file
+global OS_State g_os_state = zero_struct;
 
 typedef U32 OS_AccessFlags;
 enum

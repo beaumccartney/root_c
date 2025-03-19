@@ -1,6 +1,4 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
 thread_local TCTX* tctx_thread_local = 0;
-#endif
 
 internal void tctx_init_and_equip(TCTX *tctx)
 {

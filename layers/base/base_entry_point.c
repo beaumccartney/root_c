@@ -1,4 +1,3 @@
-#if BUILD_ENTRY_DEFINING_UNIT
 internal void main_thread_base_entry_point(String8Array cmdline_args)
 {
 	set_thread_name(str8_lit("[main thread]"));
@@ -18,7 +17,6 @@ internal void main_thread_base_entry_point(String8Array cmdline_args)
 	entry_point();
 	scratch_end(scratch);
 }
-#endif
 
 internal void thread_base_entry_point(void (*entry_point)(void *params), void *params)
 {

@@ -1,22 +1,19 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
-	#if COMPILER_MSVC
-		#pragma warning (push, 0)
-        #elif COMPILER_CLANG
-		#pragma clang diagnostic push
-		#pragma clang diagnostic ignored "-Weverything"
-	#endif
+#if COMPILER_MSVC
+	#pragma warning (push, 0)
+#elif COMPILER_CLANG
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Weverything"
+#endif
 
-	#define STB_SPRINTF_IMPLEMENTATION
-	#define STB_SPRINTF_STATIC
-	#include "stb/stb_sprintf.h"
+#define STB_SPRINTF_IMPLEMENTATION
+#define STB_SPRINTF_STATIC
+#include "stb/stb_sprintf.h"
 
-	#if COMPILER_MSVC
-		#pragma warning (pop)
-        #elif COMPILER_CLANG
-		#pragma clang diagnostic pop
-	#endif
-
-#endif // !BUILD_SUPPLEMENTARY_UNIT
+#if COMPILER_MSVC
+	#pragma warning (pop)
+#elif COMPILER_CLANG
+	#pragma clang diagnostic pop
+#endif
 
 /* REVIEW(beau): I believe there's a simple mask check for is_lower or
  * is_upper. If I find good code for them isn't being generated on all
