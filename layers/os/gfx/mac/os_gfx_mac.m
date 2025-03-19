@@ -25,7 +25,7 @@
 }
 @end
 
-internal void os_gfx_init(void)
+internal OS_GFX_InitReceipt os_gfx_init(void)
 {
 	[OS_MAC_NSApplication sharedApplication];
 	[OS_MAC_NSApplication sharedApplication].activationPolicy = NSApplicationActivationPolicyRegular;
@@ -46,6 +46,8 @@ internal void os_gfx_init(void)
 	}
 
 	[[OS_MAC_NSApplication sharedApplication] activate];
+
+	return (OS_GFX_InitReceipt) {};
 }
 
 internal OS_EventList os_gfx_get_events(Arena *arena)

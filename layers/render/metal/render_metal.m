@@ -1,7 +1,9 @@
-internal void r_init(void)
+internal R_InitReceipt r_init(OS_GFX_InitReceipt gfxinit)
 {
 	g_r_metal_state.device        = MTLCreateSystemDefaultDevice();
 	g_r_metal_state.command_queue = g_r_metal_state.device.newCommandQueue;
+
+	return (R_InitReceipt) {};
 }
 
 internal void r_window_equip(OS_Window os_window)

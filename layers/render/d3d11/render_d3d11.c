@@ -1,4 +1,4 @@
-internal void r_init(void)
+internal R_InitReceipt r_init(OS_GFX_InitReceipt gfxinit)
 {
 	D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 	DXGI_SWAP_CHAIN_DESC swapchaindesc = {
@@ -39,4 +39,6 @@ internal void r_init(void)
 	ID3D11Texture2D *framebuffer;
 
 	IDXGISwapChain_GetBuffer(swapchain, 0, &IID_ID3D11Texture2D, &framebuffer);
+
+	return (R_InitReceipt) {};
 }

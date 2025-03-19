@@ -7,11 +7,12 @@ internal void main_thread_base_entry_point(String8Array cmdline_args)
 	g_cmdline = cmd_line_from_args(scratch.arena, cmdline_args);
 
 	#ifdef OS_GFX_H
-	os_gfx_init();
+	OS_GFX_InitReceipt gfx_receipt = os_gfx_init();
 	#endif
 
 	#ifdef RENDER_H
-	r_init();
+	R_InitReceipt r_receipt = r_init(gfx_receipt);
+	Unused(r_receipt);
 	#endif
 
 	entry_point();

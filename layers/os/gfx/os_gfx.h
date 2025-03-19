@@ -59,7 +59,10 @@ struct OS_EventList
 	U64 count;
 };
 
-internal void os_gfx_init(void);
+// typesafety for other layers
+typedef struct OS_GFX_InitReceipt {} OS_GFX_InitReceipt;
+
+internal OS_GFX_InitReceipt os_gfx_init(void);
 
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title);
 internal void      os_window_close(OS_Window window);

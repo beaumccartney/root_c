@@ -250,7 +250,7 @@ os_gfx_windows_window_callback(HWND window, UINT message, WPARAM wparam, LPARAM 
 	return result;
 }
 
-internal void os_gfx_init(void)
+internal OS_GFX_InitReceipt os_gfx_init(void)
 {
 	g_os_gfx_windows_state.hInstance = GetModuleHandleW(0);
 	WNDCLASSW window_class = {
@@ -261,6 +261,8 @@ internal void os_gfx_init(void)
 	};
 	ATOM atom = RegisterClassW(&window_class);
 	Assert(atom);
+
+	return (OS_GFX_InitReceipt) {};
 }
 
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title)

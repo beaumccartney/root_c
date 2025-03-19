@@ -1,4 +1,4 @@
-internal void r_init(void)
+internal R_InitReceipt r_init(OS_GFX_InitReceipt gfxinit)
 {
 	g_r_opengl_windows_state.hdc = GetDC(g_os_gfx_windows_state.window);
 	PIXELFORMATDESCRIPTOR desiredpixelformat = {
@@ -29,4 +29,6 @@ internal void r_init(void)
 
 	HGLRC openglrc = wglCreateContext(g_r_opengl_windows_state.hdc);
 	Assert(wglMakeCurrent(g_r_opengl_windows_state.hdc, openglrc));
+
+	return (R_InitReceipt) {};
 }
