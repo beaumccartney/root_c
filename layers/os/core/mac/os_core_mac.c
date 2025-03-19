@@ -9,10 +9,7 @@ internal FileProperties os_mac_file_properties_from_stat(struct stat *s)
 internal void *os_mac_thread_entry_point(void *os_mac_entity)
 {
 	OS_MAC_Entity *entity = (OS_MAC_Entity *)os_mac_entity;
-	TCTX tctx;
-	tctx_init_and_equip(&tctx);
-	entity->thread.func(entity->thread.params);
-	tctx_release();
+	thread_base_entry_point(entity->thread.func, entity->thread.params);
 	return 0;
 }
 
