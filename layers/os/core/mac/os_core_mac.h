@@ -52,6 +52,8 @@ struct OS_MAC_State
 	Arena *entity_arena;
 	OS_MAC_Entity *entity_free;
 };
+global OS_MAC_State g_os_mac_state = zero_struct;
+
 
 typedef struct OS_MAC_FileIter OS_MAC_FileIter;
 struct OS_MAC_FileIter { FTS *fts; };

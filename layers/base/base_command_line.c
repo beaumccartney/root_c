@@ -1,7 +1,3 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
-	global CmdLine *g_cmdline = 0;
-#endif
-
 internal U64
 cmd_line_hash_from_string(String8 string)
 {

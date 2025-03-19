@@ -23,6 +23,8 @@ struct CmdLine
 	S16 options[CMD_LINE_OPT_COUNT], // indices of option_table in insertion order
 	    opt_count; // number of options
 };
+global CmdLine *g_cmdline = 0;
+
 StaticAssert(CMD_LINE_LOG2_OPT_COUNT < 16, cmd_line_keep_16_ix_size);
 
 internal U64          cmd_line_hash_from_string(String8 string);

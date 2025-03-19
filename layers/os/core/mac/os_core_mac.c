@@ -1,7 +1,3 @@
-#if !BUILD_SUPPLEMENTARY_UNIT
-	global OS_MAC_State os_mac_state = zero_struct;
-#endif
-
 internal FileProperties os_mac_file_properties_from_stat(struct stat *s)
 {
 	FileProperties result = zero_struct;
@@ -22,23 +18,23 @@ internal void *os_mac_thread_entry_point(void *os_mac_entity)
 
 internal OS_MAC_Entity *os_mac_entity_alloc(OS_MAC_EntityKind kind)
 {
-	int status = pthread_mutex_lock(&os_mac_state.entity_mutex); Assert(status == 0);
-	OS_MAC_Entity *result = os_mac_state.entity_free;
+	int status = pthread_mutex_lock(&g_os_mac_state.entity_mutex); Assert(status == 0);
+	OS_MAC_Entity *result = g_os_mac_state.entity_free;
 	if (result)
 		SLLStackPop(result);
 	else
-		result = push_array_no_zero(os_mac_state.entity_arena, OS_MAC_Entity, 1);
+		result = push_array_no_zero(g_os_mac_state.entity_arena, OS_MAC_Entity, 1);
 	MemoryZeroStruct(result);
 	result->kind = kind;
-	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
+	status = pthread_mutex_unlock(&g_os_mac_state.entity_mutex); Assert(status == 0);
 	return result;
 }
 internal void os_mac_entity_release(OS_MAC_Entity *entity)
 {
-	int status = pthread_mutex_lock(&os_mac_state.entity_mutex); Assert(status == 0);
+	int status = pthread_mutex_lock(&g_os_mac_state.entity_mutex); Assert(status == 0);
 	Assert(status == 0);
-	SLLStackPush(os_mac_state.entity_free, entity);
-	status = pthread_mutex_unlock(&os_mac_state.entity_mutex); Assert(status == 0);
+	SLLStackPush(g_os_mac_state.entity_free, entity);
+	status = pthread_mutex_unlock(&g_os_mac_state.entity_mutex); Assert(status == 0);
 	Assert(status == 0);
 }
 
@@ -491,8 +487,8 @@ int main(int argc, char *argv[])
 	}
 
 	{
-		os_mac_state.entity_arena = arena_default;
-		int status = pthread_mutex_init(&os_mac_state.entity_mutex, 0);
+		g_os_mac_state.entity_arena = arena_default;
+		int status = pthread_mutex_init(&g_os_mac_state.entity_mutex, 0);
 		AssertAlways(status == 0);
 	}
 
@@ -510,10 +506,10 @@ int main(int argc, char *argv[])
 	tctx_release();
 
 	{
-		int status = pthread_mutex_destroy(&os_mac_state.entity_mutex);
+		int status = pthread_mutex_destroy(&g_os_mac_state.entity_mutex);
 		Assert(status == 0);
 		// XXX(beau): do something with leaked entities?
-		arena_release(os_mac_state.entity_arena);
+		arena_release(g_os_mac_state.entity_arena);
 	}
 	return 0;
 }
