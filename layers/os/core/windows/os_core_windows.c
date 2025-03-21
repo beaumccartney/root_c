@@ -317,7 +317,7 @@ os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
 	{
 		result = push_array(arena, OS_FileIter, 1);
 		OS_WINDOWS_FileIter *windows_iter = (OS_WINDOWS_FileIter *)result->memory;
-		windows_iter->search_dirs_arena = arena_default;
+		windows_iter->search_dirs_arena = arena_default();
 		result->flags = flags;
 
 		Temp scratch = scratch_begin(&arena, 1);

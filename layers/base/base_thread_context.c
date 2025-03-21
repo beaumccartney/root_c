@@ -5,7 +5,7 @@ internal void tctx_init_and_equip(TCTX *tctx)
 	MemoryZeroStruct(tctx);
 	for (S64 i = 0; i < ArrayCount(tctx->arenas); i++)
 	{
-		tctx->arenas[i] = arena_default;
+		tctx->arenas[i] = arena_default();
 	}
 	tctx_thread_local = tctx;
 }

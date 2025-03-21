@@ -17,8 +17,8 @@
 // REVIEW XXX: enforce ordering of prints to stdout and stderr relative to each other? fflush()
 internal void entry_point(void)
 {
-	Arena *iter_arena = arena_default,
-	      *work_arena = arena_default;
+	Arena *iter_arena = arena_default(),
+	      *work_arena = arena_default();
 
 	// <project root>/build/.. i.e. project root
 	String8 project_root = str8_chop_last_slash(g_os_state.process_info.exe_folder);

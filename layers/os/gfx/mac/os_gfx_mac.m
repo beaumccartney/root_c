@@ -246,8 +246,8 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 			(CGFloat)resolution.y,
 		};
 		NSPoint window_origin = { // REVIEW:
-			((screen_rect.size.width - window_size.width)   / 2),
-			((screen_rect.size.height - window_size.height) / 2)
+			(screen_rect.size.width - window_size.width)   / 2,
+			(screen_rect.size.height - window_size.height) / 2
 		};
 		*macwindow = (OS_MAC_Window) {
 			.nswindow = [[OS_MAC_NSWindow alloc] initWithContentRect:

@@ -2,7 +2,7 @@ thread_local Log *t_log_active = 0;
 
 internal Log *log_alloc(void)
 {
-	Arena * arena = arena_default;
+	Arena * arena = arena_default();
 	Log *log = push_array(arena, Log, 1);
 	log->arena = arena;
 	return log;

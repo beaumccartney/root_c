@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
 {
 	{
 		g_os_state.system_info.page_size = (S64)vm_page_size;
-		g_os_state.arena = arena_default;
+		g_os_state.arena = arena_default();
 		g_os_state.process_info.initial_working_directory = os_get_current_folder(g_os_state.arena);
 		{
 			char temp = 0, *exe_buf = &temp;
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 	}
 
 	{
-		g_os_mac_state.entity_arena = arena_default;
+		g_os_mac_state.entity_arena = arena_default();
 		int status = pthread_mutex_init(&g_os_mac_state.entity_mutex, 0);
 		AssertAlways(status == 0);
 	}

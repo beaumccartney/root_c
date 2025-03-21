@@ -30,7 +30,7 @@ global S64 g_arena_default_reserve_size = MB(64);
 global S64 g_arena_default_commit_size  = KB(64);
 
 internal Arena *arena_alloc(S64 min_reserve, S64 min_commit);
-#define arena_default arena_alloc(g_arena_default_reserve_size, g_arena_default_commit_size)
+#define arena_default() arena_alloc(g_arena_default_reserve_size, g_arena_default_commit_size)
 internal void arena_release(Arena * arena);
 
 internal void *arena_push(Arena *arena, S64 size, S64 alignment);
