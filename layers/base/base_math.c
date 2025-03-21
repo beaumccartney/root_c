@@ -82,6 +82,19 @@ internal Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m)
 	return result;
 }
 
+internal Vec3S32 vec_3s32(S32 x, S32 y, S32 z)         {return (Vec3S32){x, y, z};}
+internal Vec3S32 splat_3s32(S32 e)                     {return (Vec3S32){e, e, e};}
+internal Vec3S32 add_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x+b.x, a.y+b.y, a.z+b.z};}
+internal Vec3S32 sub_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x-b.x, a.y-b.y, a.z-b.z};}
+internal Vec3S32 mul_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x*b.x, a.y*b.y, a.z*b.z};}
+internal Vec3S32 div_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x/b.x, a.y/b.y, a.z/b.z};}
+internal Vec3S32 scale_3s32(Vec3S32 v, S32 s)          {return (Vec3S32){v.x*s,   v.y*s,   v.z*s  };}
+internal S32 dot_3s32(Vec3S32 a, Vec3S32 b)            {return a.x*b.x + a.y*b.y + a.z*b.z;}
+internal S32 length_squared_3s32(Vec3S32 v)            {return v.x*v.x + v.y*v.y + v.z*v.z;}
+internal S32 length_3s32(Vec3S32 v)                    {return (S32)sqrt_f64((F64)length_squared_3s32(v));}
+internal Vec3S32 normalize_3s32(Vec3S32 v)             {return scale_3s32(v, 1/length_3s32(v));}
+internal Vec3S32 mix_3s32(Vec3S32 a, Vec3S32 b, F32 t) {return (Vec3S32){(S32)mix_1f32(a.x, b.x, t), (S32)mix_1f32(a.y, b.y, t), (S32)mix_1f32(a.z, b.z, t)};}
+
 internal Vec4F32 vec_4f32(F32 x, F32 y, F32 z, F32 w)  {return (Vec4F32){x, y, z, w};}
 internal Vec4F32 splat_4f32(F32 e)                     {return (Vec4F32){e, e, e, e};}
 internal Vec4F32 add_4f32(Vec4F32 a, Vec4F32 b)        {return (Vec4F32){a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w};}
