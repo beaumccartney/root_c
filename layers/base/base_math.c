@@ -10,8 +10,6 @@ internal F64 mix_1f64(F64 a, F64 b, F64 t)
 	return a + (b - a) * Clamp(0., t, 1.);
 }
 
-internal Vec2F32 vec_2f32(F32 x, F32 y)                {return (Vec2F32){x, y};}
-internal Vec2F32 splat_2f32(F32 e)                     {return (Vec2F32){e, e};}
 internal Vec2F32 add_2f32(Vec2F32 a, Vec2F32 b)        {return (Vec2F32){a.x+b.x, a.y+b.y};}
 internal Vec2F32 sub_2f32(Vec2F32 a, Vec2F32 b)        {return (Vec2F32){a.x-b.x, a.y-b.y};}
 internal Vec2F32 mul_2f32(Vec2F32 a, Vec2F32 b)        {return (Vec2F32){a.x*b.x, a.y*b.y};}
@@ -23,8 +21,6 @@ internal F32 length_2f32(Vec2F32 v)                    {return sqrt_f32(length_s
 internal Vec2F32 normalize_2f32(Vec2F32 v)             {return scale_2f32(v, 1.f/length_2f32(v));}
 internal Vec2F32 mix_2f32(Vec2F32 a, Vec2F32 b, F32 t) {return (Vec2F32){mix_1f32(a.x, b.x, t), mix_1f32(a.y, b.y, t)};}
 
-internal Vec2S32 vec_2s32(S32 x, S32 y)                {return (Vec2S32){x, y};}
-internal Vec2S32 splat_2s32(S32 e)                     {return (Vec2S32){e, e};}
 internal Vec2S32 add_2s32(Vec2S32 a, Vec2S32 b)        {return (Vec2S32){a.x+b.x, a.y+b.y};}
 internal Vec2S32 sub_2s32(Vec2S32 a, Vec2S32 b)        {return (Vec2S32){a.x-b.x, a.y-b.y};}
 internal Vec2S32 mul_2s32(Vec2S32 a, Vec2S32 b)        {return (Vec2S32){a.x*b.x, a.y*b.y};}
@@ -36,8 +32,6 @@ internal S32 length_2s32(Vec2S32 v)                    {return (S32)sqrt_f64((F6
 internal Vec2S32 normalize_2s32(Vec2S32 v)             {return scale_2s32(v, 1/length_2s32(v));}
 internal Vec2S32 mix_2s32(Vec2S32 a, Vec2S32 b, F32 t) {return (Vec2S32){(S32)mix_1f32((F32)a.x, (F32)b.x, t), (S32)mix_1f32((F32)a.y, (F32)b.y, t)};}
 
-internal Vec2S64 vec_2s64(S64 x, S64 y)                {return (Vec2S64){x, y};}
-internal Vec2S64 splat_2s64(S64 e)                     {return (Vec2S64){e, e};}
 internal Vec2S64 add_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x+b.x, a.y+b.y};}
 internal Vec2S64 sub_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x-b.x, a.y-b.y};}
 internal Vec2S64 mul_2s64(Vec2S64 a, Vec2S64 b)        {return (Vec2S64){a.x*b.x, a.y*b.y};}
@@ -49,8 +43,6 @@ internal S64 length_2s64(Vec2S64 v)                    {return (S64)sqrt_f64((F6
 internal Vec2S64 normalize_2s64(Vec2S64 v)             {return scale_2s64(v, 1/length_2s64(v));}
 internal Vec2S64 mix_2s64(Vec2S64 a, Vec2S64 b, F32 t) {return (Vec2S64){(S64)mix_1f32((F32)a.x, (F32)b.x, t), (S64)mix_1f32((F32)a.y, (F32)b.y, t)};}
 
-internal Vec2U64 vec_2u64(U64 x, U64 y)                {return (Vec2U64){x, y};}
-internal Vec2U64 splat_2u64(U64 e)                     {return (Vec2U64){e, e};}
 internal Vec2U64 add_2u64(Vec2U64 a, Vec2U64 b)        {return (Vec2U64){a.x+b.x, a.y+b.y};}
 internal Vec2U64 sub_2u64(Vec2U64 a, Vec2U64 b)        {return (Vec2U64){a.x-b.x, a.y-b.y};}
 internal Vec2U64 mul_2u64(Vec2U64 a, Vec2U64 b)        {return (Vec2U64){a.x*b.x, a.y*b.y};}
@@ -62,8 +54,6 @@ internal U64 length_2u64(Vec2U64 v)                    {return (U64)sqrt_f64((F6
 internal Vec2U64 normalize_2u64(Vec2U64 v)             {return scale_2u64(v, 1/length_2u64(v));}
 internal Vec2U64 mix_2u64(Vec2U64 a, Vec2U64 b, F32 t) {return (Vec2U64){(U64)mix_1f32((F32)a.x, (F32)b.x, t), (U64)mix_1f32((F32)a.y, (F32)b.y, t)};}
 
-internal Vec3F32 vec_3f32(F32 x, F32 y, F32 z)         {return (Vec3F32){x, y, z};}
-internal Vec3F32 splat_3f32(F32 e)                     {return (Vec3F32){e, e, e};}
 internal Vec3F32 add_3f32(Vec3F32 a, Vec3F32 b)        {return (Vec3F32){a.x+b.x, a.y+b.y, a.z+b.z};}
 internal Vec3F32 sub_3f32(Vec3F32 a, Vec3F32 b)        {return (Vec3F32){a.x-b.x, a.y-b.y, a.z-b.z};}
 internal Vec3F32 mul_3f32(Vec3F32 a, Vec3F32 b)        {return (Vec3F32){a.x*b.x, a.y*b.y, a.z*b.z};}
@@ -82,8 +72,6 @@ internal Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m)
 	return result;
 }
 
-internal Vec3S32 vec_3s32(S32 x, S32 y, S32 z)         {return (Vec3S32){x, y, z};}
-internal Vec3S32 splat_3s32(S32 e)                     {return (Vec3S32){e, e, e};}
 internal Vec3S32 add_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x+b.x, a.y+b.y, a.z+b.z};}
 internal Vec3S32 sub_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x-b.x, a.y-b.y, a.z-b.z};}
 internal Vec3S32 mul_3s32(Vec3S32 a, Vec3S32 b)        {return (Vec3S32){a.x*b.x, a.y*b.y, a.z*b.z};}
@@ -95,8 +83,6 @@ internal S32 length_3s32(Vec3S32 v)                    {return (S32)sqrt_f64((F6
 internal Vec3S32 normalize_3s32(Vec3S32 v)             {return scale_3s32(v, 1/length_3s32(v));}
 internal Vec3S32 mix_3s32(Vec3S32 a, Vec3S32 b, F32 t) {return (Vec3S32){(S32)mix_1f32(a.x, b.x, t), (S32)mix_1f32(a.y, b.y, t), (S32)mix_1f32(a.z, b.z, t)};}
 
-internal Vec4F32 vec_4f32(F32 x, F32 y, F32 z, F32 w)  {return (Vec4F32){x, y, z, w};}
-internal Vec4F32 splat_4f32(F32 e)                     {return (Vec4F32){e, e, e, e};}
 internal Vec4F32 add_4f32(Vec4F32 a, Vec4F32 b)        {return (Vec4F32){a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w};}
 internal Vec4F32 sub_4f32(Vec4F32 a, Vec4F32 b)        {return (Vec4F32){a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w};}
 internal Vec4F32 mul_4f32(Vec4F32 a, Vec4F32 b)        {return (Vec4F32){a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w};}

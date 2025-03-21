@@ -216,8 +216,8 @@ internal F32 mix_1f32(F32 a, F32 b, F32 t);
 internal F64 mix_1f64(F64 a, F64 b, F64 t);
 
 #define v2f32(x, y) vec_2f32((x), (y))
-internal Vec2F32 vec_2f32(F32 x, F32 y);
-internal Vec2F32 splat_2f32(F32 e);
+#define vec_2f32(x, y) ((Vec2F32){(x), (y)})
+#define splat_2f32(e) vec_2f32((e), (e))
 internal Vec2F32 add_2f32(Vec2F32 a, Vec2F32 b);
 internal Vec2F32 sub_2f32(Vec2F32 a, Vec2F32 b);
 internal Vec2F32 mul_2f32(Vec2F32 a, Vec2F32 b);
@@ -230,8 +230,8 @@ internal Vec2F32 normalize_2f32(Vec2F32 v);
 internal Vec2F32 mix_2f32(Vec2F32 a, Vec2F32 b, F32 t);
 
 #define v2s32(x, y) vec_2s32((x), (y))
-internal Vec2S32 vec_2s32(S32 x, S32 y);
-internal Vec2S32 splat_2s32(S32 e);
+#define vec_2s32(x, y) ((Vec2S32){(x), (y)})
+#define splat_2s32(e) vec_2s32((e), (e))
 internal Vec2S32 add_2s32(Vec2S32 a, Vec2S32 b);
 internal Vec2S32 sub_2s32(Vec2S32 a, Vec2S32 b);
 internal Vec2S32 mul_2s32(Vec2S32 a, Vec2S32 b);
@@ -244,8 +244,8 @@ internal Vec2S32 normalize_2s32(Vec2S32 v);
 internal Vec2S32 mix_2s32(Vec2S32 a, Vec2S32 b, F32 t);
 
 #define v2s64(x, y) vec_2s64((x), (y))
-internal Vec2S64 vec_2s64(S64 x, S64 y);
-internal Vec2S64 splat_2s64(S64 e);
+#define vec_2s64(x, y) ((Vec2S64){(x), (y)})
+#define splat_2s64(e) vec_2s64((e), (e))
 internal Vec2S64 add_2s64(Vec2S64 a, Vec2S64 b);
 internal Vec2S64 sub_2s64(Vec2S64 a, Vec2S64 b);
 internal Vec2S64 mul_2s64(Vec2S64 a, Vec2S64 b);
@@ -258,8 +258,8 @@ internal Vec2S64 normalize_2s64(Vec2S64 v);
 internal Vec2S64 mix_2s64(Vec2S64 a, Vec2S64 b, F32 t);
 
 #define v2u64(x, y) vec_2u64((x), (y))
-internal Vec2U64 vec_2u64(U64 x, U64 y);
-internal Vec2U64 splat_2u64(U64 e);
+#define vec_2u64(x, y) ((Vec2U64){(x), (y)})
+#define splat_2u64(e) vec_2u64((e), (e))
 internal Vec2U64 add_2u64(Vec2U64 a, Vec2U64 b);
 internal Vec2U64 sub_2u64(Vec2U64 a, Vec2U64 b);
 internal Vec2U64 mul_2u64(Vec2U64 a, Vec2U64 b);
@@ -272,8 +272,8 @@ internal Vec2U64 normalize_2u64(Vec2U64 v);
 internal Vec2U64 mix_2u64(Vec2U64 a, Vec2U64 b, F32 t);
 
 #define v3f32(x, y, z) vec_3f32((x), (y), (z))
-internal Vec3F32 vec_3f32(F32 x, F32 y, F32 z);
-internal Vec3F32 splat_3f32(F32 e);
+#define vec_3f32(x, y, z) ((Vec3F32){(x), (y), (z)})
+#define splat_3f32(e) vec_3f32((e), (e), (e))
 internal Vec3F32 add_3f32(Vec3F32 a, Vec3F32 b);
 internal Vec3F32 sub_3f32(Vec3F32 a, Vec3F32 b);
 internal Vec3F32 mul_3f32(Vec3F32 a, Vec3F32 b);
@@ -288,8 +288,8 @@ internal Vec3F32 cross_3f32(Vec3F32 a, Vec3F32 b);
 internal Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m);
 
 #define v3s32(x, y, z) vec_3s32((x), (y), (z))
-internal Vec3S32 vec_3s32(S32 x, S32 y, S32 z);
-internal Vec3S32 splat_3s32(S32 e);
+#define vec_3s32(x, y, z) ((Vec3S32){(x), (y), (z)})
+#define splat_3s32(e) vec_3s32((e), (e), (e))
 internal Vec3S32 add_3s32(Vec3S32 a, Vec3S32 b);
 internal Vec3S32 sub_3s32(Vec3S32 a, Vec3S32 b);
 internal Vec3S32 mul_3s32(Vec3S32 a, Vec3S32 b);
@@ -302,8 +302,8 @@ internal Vec3S32 normalize_3s32(Vec3S32 v);
 internal Vec3S32 mix_3s32(Vec3S32 a, Vec3S32 b, F32 t);
 
 #define v4f32(x, y, z, w) vec_4f32((x), (y), (z), (w))
-internal Vec4F32 vec_4f32(F32 x, F32 y, F32 z, F32 w);
-internal Vec4F32 splat_4f32(F32 e);
+#define vec_4f32(x, y, z, w) ((Vec4F32){(x), (y), (z), (w)})
+#define splat_4f32(e) vec_4f32((e), (e), (e), (e))
 internal Vec4F32 add_4f32(Vec4F32 a, Vec4F32 b);
 internal Vec4F32 sub_4f32(Vec4F32 a, Vec4F32 b);
 internal Vec4F32 mul_4f32(Vec4F32 a, Vec4F32 b);
