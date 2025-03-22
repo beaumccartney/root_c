@@ -1,3 +1,6 @@
+// REVIEW(beau):
+// - epsilon for comparisons
+// - check for division by zero
 #include <math.h>
 
 internal F32 mix_1f32(F32 a, F32 b, F32 t)
@@ -263,6 +266,137 @@ internal Mat4x4F32 mul_4x4f32(Mat4x4F32 a, Mat4x4F32 b)
 	};
 	return result;
 }
+
+internal void check_quatf32(QuatF32 q)
+{
+	F32 len = length_quatf32(q),
+	    min_len  = 1 - epsilon_f32,
+	    max_len  = 1 + epsilon_f32;
+	Assert(min_len < len && len < max_len);
+}
+internal QuatF32 quat_from_vecf32(Vec4F32 v)
+{
+	QuatF32 result = {
+		.ijk = v.xyz,
+		.r   = v.w,
+	};
+	return result;
+}
+internal QuatF32 quat_from_axis_angle_f32(Vec3F32 axis, F32 turns)
+{
+	F32 half_turns = 0.5f * turns;
+	QuatF32 result = {
+		.ijk = scale_3f32(axis, sin_f32(half_turns) / length_3f32(axis)),
+		.r   = cos_f32(half_turns),
+	};
+	return result;
+}
+
+internal QuatF32 conj_quatf32(QuatF32 q)
+{
+	QuatF32 result = {
+		.i = -q.i,
+		.j = -q.j,
+		.k = -q.k,
+		.r =  q.r,
+	};
+	return result;
+}
+internal QuatF32 add_quatf32(QuatF32 a, QuatF32 b)
+{
+	QuatF32 result = quat_from_vecf32(add_4f32(a.v, b.v));
+	return result;
+}
+internal QuatF32 sub_quatf32(QuatF32 a, QuatF32 b)
+{
+	QuatF32 result = quat_from_vecf32(sub_4f32(a.v, b.v));
+	return result;
+}
+internal QuatF32 scale_quatf32(QuatF32 q, F32 s)
+{
+	QuatF32 result = quat_from_vecf32(scale_4f32(q.v, s));
+	return result;
+}
+internal QuatF32 mul_quatf32(QuatF32 a, QuatF32 b)
+{
+	QuatF32 result = {
+		.i = a.r*b.i + a.i*b.r + a.j*b.k - a.k*b.j,
+		.j = a.r*b.j + a.j*b.r + a.k*b.i - a.i*b.k,
+		.k = a.r*b.k + a.k*b.r + a.i*b.j - a.j*b.i,
+		.r = a.r*b.r - a.i*b.i - a.j*b.j - a.k*b.k,
+	};
+	return result;
+}
+internal F32 dot_quatf32(QuatF32 a, QuatF32 b)
+{
+	F32 result = dot_4f32(a.v, b.v);
+	return result;
+}
+internal F32 length_squared_quatf32(QuatF32 q)
+{
+	F32 result = length_squared_4f32(q.v);
+	return result;
+}
+internal F32 length_quatf32(QuatF32 q)
+{
+	F32 result = sqrt_f32(length_squared_quatf32(q));
+	return result;
+}
+internal QuatF32 inverse_quatf32(QuatF32 q)
+{
+	F32 length_squared = length_squared_quatf32(q);
+	QuatF32 conj       = conj_quatf32(q),
+		result     = scale_quatf32(conj, 1.f/length_squared);
+	return result;
+}
+internal QuatF32 normalize_quatf32(QuatF32 q)
+{
+	F32 length     = length_quatf32(q);
+	QuatF32 result = scale_quatf32(q, 1.f/length);
+	return result;
+}
+internal QuatF32 nlerp_quatf32(QuatF32 a, QuatF32 b, F32 t)
+{
+	check_quatf32(a); // REVIEW: normalize?
+	check_quatf32(b); // REVIEW: normalize?
+	Vec4F32 interpolated = mix_4f32(a.v, b.v, t);
+	QuatF32 temp         = quat_from_vecf32(interpolated),
+		result       = normalize_quatf32(temp);
+	return result;
+}
+internal QuatF32 slerp_quatf32(QuatF32 a, QuatF32 b, F32 t)
+{
+	check_quatf32(a); // REVIEW: normalize?
+	check_quatf32(b); // REVIEW: normalize?
+	F32 cos_angle = dot_quatf32(a, b);
+	QuatF32 result;
+	if (cos_angle < 0)
+	{
+		b = scale_quatf32(b, -1.f);
+		cos_angle = -cos_angle;
+	}
+	if (cos_angle > 1 - epsilon_f32)
+	{
+		result = nlerp_quatf32(a, b, t);
+	}
+	else
+	{
+		F32 angle          = acos_f32(cos_angle),
+		    sin_angle      = sin_f32(angle),
+		    factor_a       = sin_f32((1.f-t) * angle) / sin_angle,
+		    factor_b       = sin_f32((    t) * angle) / sin_angle;
+
+		Vec4F32 vec_a      = scale_4f32(a.v, factor_a),
+			vec_b      = scale_4f32(b.v, factor_b),
+			vec_result = add_4f32(vec_a, vec_b);
+
+		result             = quat_from_vecf32(vec_result);
+	}
+	return result;
+}
+// internal Mat4x4F32 mat4x4_from_quatf32(QuatF32 q)
+// {
+// }
 
 internal Rng1F32 rng_1f32(F32 min, F32 max)          {if (min > max) Swap(F32, min, max); return (Rng1F32){min, max};}
 internal Rng1F32 shift_1f32(Rng1F32 r, F32 x)        {return (Rng1F32){r.min+x, r.min+x};}

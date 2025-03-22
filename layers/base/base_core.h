@@ -348,6 +348,8 @@ Compiler;
 #define min_S16 INT16_MIN
 #define min_S8  INT8_MIN
 
+#define epsilon_f32 1.192092896e-07f
+
 #define bitmask1  0x00000001u
 #define bitmask2  0x00000003u
 #define bitmask3  0x00000007u

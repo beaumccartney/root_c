@@ -1,4 +1,6 @@
-// REVIEW(beau): use <simd/*.h> on macos?
+// REVIEW(beau):
+//  use <simd/*.h> on macos?
+//  vector slerp
 #ifndef BASE_MATH_H
 #define BASE_MATH_H
 
@@ -105,16 +107,21 @@ union Mat4x4F32
 	F32 v[4][4];
 };
 
-// REVIEW: typedef to Vec4F32?
+// TODO: complex
+
 typedef union QuatF32 QuatF32;
 union QuatF32
 {
-	Vec4F32 xyzw;
-	struct { Vec2F32 xy, zw;     };
-	struct { Vec3F32 xyz; F32 w; };
-	struct { F32 x; Vec3F32 yzw; };
-	struct { F32 _x, y, z, _w;   };
-	F32 v[4];
+	struct
+	{
+		union
+		{
+			struct { F32 i, j, k; };
+			Vec3F32 ijk;
+		};
+		F32 r;
+	};
+	Vec4F32 v;
 };
 
 typedef union Rng1F32 Rng1F32;
@@ -208,6 +215,9 @@ union Rng3F32
 #define sin_f32(v)    sinf(radians_from_turns_f32(v))
 #define cos_f32(v)    cosf(radians_from_turns_f32(v))
 #define tan_f32(v)    tanf(radians_from_turns_f32(v))
+#define asin_f32(x)   turns_from_radians_f32(asinf(x))
+#define acos_f32(x)   turns_from_radians_f32(acosf(x))
+#define atan_f32(x)   turns_from_radians_f32(atanf(x))
 
 #define sqrt_f64(v)   sqrt(v)
 #define mod_f64(a, b) fmod((a), (b))
@@ -353,17 +363,21 @@ internal Mat4x4F32 make_look_at_4x4f32(Vec3F32 eye, Vec3F32 center, Vec3F32 up);
 internal Mat4x4F32 make_rotate_4x4f32(Vec3F32 axis, F32 turns);
 internal Mat4x4F32 derotate_4x4f32(Mat4x4F32 mat);
 
-// REVIEW: macros for just using vec4 operations?
-internal QuatF32 make_quat_f32(F32 x, F32 y, F32 z, F32 w);
+internal void check_quatf32(QuatF32 q);
+internal QuatF32 quat_from_vecf32(Vec4F32 v);
 internal QuatF32 quat_from_axis_angle_f32(Vec3F32 axis, F32 turns);
-
+internal QuatF32 conj_quatf32(QuatF32 q);
 internal QuatF32 add_quatf32(QuatF32 a, QuatF32 b);
 internal QuatF32 sub_quatf32(QuatF32 a, QuatF32 b);
+internal QuatF32 scale_quatf32(QuatF32 q, F32 s);
 internal QuatF32 mul_quatf32(QuatF32 a, QuatF32 b);
-internal QuatF32 scale_quatf32(QuatF32 a, F32 scale);
-internal QuatF32 normalize_quatf32(QuatF32 q);
-internal QuatF32 mix_quatf32(QuatF32 a, QuatF32 b, F32 t);
 internal F32 dot_quatf32(QuatF32 a, QuatF32 b);
+internal F32 length_squared_quatf32(QuatF32 q);
+internal F32 length_quatf32(QuatF32 q);
+internal QuatF32 inverse_quatf32(QuatF32 q);
+internal QuatF32 normalize_quatf32(QuatF32 q);
+internal QuatF32 nlerp_quatf32(QuatF32 a, QuatF32 b, F32 t);
+internal QuatF32 slerp_quatf32(QuatF32 a, QuatF32 b, F32 t);
 internal Mat4x4F32 mat4x4_from_quatf32(QuatF32 q);
 
 #define r1f32(min, max) rng_1f32((min), (max))
