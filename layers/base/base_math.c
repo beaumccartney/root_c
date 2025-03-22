@@ -67,8 +67,13 @@ internal Vec3F32 mix_3f32(Vec3F32 a, Vec3F32 b, F32 t) {return (Vec3F32){mix_1f3
 internal Vec3F32 cross_3f32(Vec3F32 a, Vec3F32 b)      {return (Vec3F32){a.y*b.z - b.y*a.z, a.z*b.x - b.z*a.x, a.x*b.y - b.x*a.y};}
 internal Vec3F32 transform_3f32(Vec3F32 v, Mat3x3F32 m)
 {
-	NotImplemented
-	Vec3F32 result = zero_struct;
+	Vec3F32 result = {
+		.v = {
+			m.x0*v.x + m.x1*v.y + m.x2*v.z,
+			m.y0*v.x + m.y1*v.y + m.y2*v.z,
+			m.z0*v.x + m.z1*v.y + m.z2*v.z,
+		},
+	};
 	return result;
 }
 
@@ -95,13 +100,169 @@ internal Vec4F32 normalize_4f32(Vec4F32 v)             {return scale_4f32(v, 1.f
 internal Vec4F32 mix_4f32(Vec4F32 a, Vec4F32 b, F32 t) {return (Vec4F32){mix_1f32(a.x, b.x, t), mix_1f32(a.y, b.y, t), mix_1f32(a.z, b.z, t), mix_1f32(a.w, b.w, t)};}
 internal Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m)
 {
-	NotImplemented
-	Vec4F32 result = zero_struct;
+	Vec4F32 result = {
+		.v = {
+			m.x0*v.x + m.x1*v.y + m.x2*v.z + m.x3*v.w,
+			m.y0*v.x + m.y1*v.y + m.y2*v.z + m.y3*v.w,
+			m.z0*v.x + m.z1*v.y + m.z2*v.z + m.z3*v.w,
+			m.w0*v.x + m.w1*v.y + m.w2*v.z + m.w3*v.w,
+		},
+	};
 	return result;
 }
 
 // TODO(beau): matrix and quaternion ops
 //    layout of the matrices? need to consider simd and gfx api layout. perhaps some macro to determine the layout. would be sad
+internal Mat3x3F32 transpose_3x3f32(Mat3x3F32 m)
+{
+	Mat3x3F32 result = {
+		.v = {
+			m.v[0][0], m.v[1][0], m.v[2][0],
+			m.v[0][1], m.v[1][1], m.v[2][1],
+			m.v[0][2], m.v[1][2], m.v[2][2],
+		},
+	};
+	return result;
+}
+internal Mat3x3F32 make_translate_3x3f32(Vec2F32 delta)
+{
+	Mat3x3F32 result = {
+		.x0 = 1.f,
+		.y1 = 1.f,
+		.z2 = 1.f,
+		.x2 = delta.x,
+		.y2 = delta.y,
+	};
+	return result;
+}
+internal Mat3x3F32 make_scale_3x3f32(Vec2F32 scale)
+{
+	Mat3x3F32 result = {
+		.x0 = scale.x,
+		.y1 = scale.y,
+		.z2 = 1.f,
+	};
+	return result;
+}
+internal Mat3x3F32 scale_3x3f32(Mat3x3F32 m, F32 scale)
+{
+	Mat3x3F32 result = {
+		.v = {
+			m.v[0][0] * scale,
+			m.v[0][1] * scale,
+			m.v[0][2] * scale,
+			m.v[1][0] * scale,
+			m.v[1][1] * scale,
+			m.v[1][2] * scale,
+			m.v[2][0] * scale,
+			m.v[2][1] * scale,
+			m.v[2][2] * scale,
+		},
+	};
+	return result;
+}
+internal Mat3x3F32 mul_3x3f32(Mat3x3F32 a, Mat3x3F32 b)
+{
+	Mat3x3F32 result = {
+		.x0 = a.x0*b.x0 + a.x1*b.y0 + a.x2*b.z0,
+		.x1 = a.x0*b.x1 + a.x1*b.y1 + a.x2*b.z1,
+		.x2 = a.x0*b.x2 + a.x1*b.y2 + a.x2*b.z2,
+
+		.y0 = a.y0*b.x0 + a.y1*b.y0 + a.y2*b.z0,
+		.y1 = a.y0*b.x1 + a.y1*b.y1 + a.y2*b.z1,
+		.y2 = a.y0*b.x2 + a.y1*b.y2 + a.y2*b.z2,
+
+		.z0 = a.z0*b.x0 + a.z1*b.y0 + a.z2*b.z0,
+		.z1 = a.z0*b.x1 + a.z1*b.y1 + a.z2*b.z1,
+		.z2 = a.z0*b.x2 + a.z1*b.y2 + a.z2*b.z2,
+	};
+	return result;
+}
+
+internal Mat4x4F32 transpose_4x4f32(Mat4x4F32 m)
+{
+	Mat4x4F32 result = {
+		.v = {
+			m.v[0][0], m.v[1][0], m.v[2][0], m.v[3][0],
+			m.v[0][1], m.v[1][1], m.v[2][1], m.v[3][1],
+			m.v[0][2], m.v[1][2], m.v[2][2], m.v[3][2],
+			m.v[0][3], m.v[1][3], m.v[2][3], m.v[3][3],
+		},
+	};
+	return result;
+}
+internal Mat4x4F32 make_translate_4x4f32(Vec3F32 delta)
+{
+	Mat4x4F32 result = {
+		.x0 = 1.f,
+		.y1 = 1.f,
+		.z2 = 1.f,
+		.w3 = 1.f,
+		.x3 = delta.x,
+		.y3 = delta.y,
+		.z3 = delta.z,
+	};
+	return result;
+}
+internal Mat4x4F32 make_scale_4x4f32(Vec3F32 scale)
+{
+	Mat4x4F32 result = {
+		.x0 = scale.x,
+		.y1 = scale.y,
+		.z2 = scale.z,
+		.w3 = 1.f,
+	};
+	return result;
+}
+internal Mat4x4F32 scale_4x4f32(Mat4x4F32 m, F32 scale)
+{
+	Mat4x4F32 result = {
+		.v = {
+			m.v[0][0] * scale,
+			m.v[0][1] * scale,
+			m.v[0][2] * scale,
+			m.v[0][3] * scale,
+			m.v[1][0] * scale,
+			m.v[1][1] * scale,
+			m.v[1][2] * scale,
+			m.v[1][3] * scale,
+			m.v[2][0] * scale,
+			m.v[2][1] * scale,
+			m.v[2][2] * scale,
+			m.v[2][3] * scale,
+			m.v[3][0] * scale,
+			m.v[3][1] * scale,
+			m.v[3][2] * scale,
+			m.v[3][3] * scale,
+		},
+	};
+	return result;
+}
+internal Mat4x4F32 mul_4x4f32(Mat4x4F32 a, Mat4x4F32 b)
+{
+	Mat4x4F32 result = {
+		.x0 = a.x0*b.x0 + a.x1*b.y0 + a.x2*b.z0 + a.x3*b.w0,
+		.x1 = a.x0*b.x1 + a.x1*b.y1 + a.x2*b.z1 + a.x3*b.w1,
+		.x2 = a.x0*b.x2 + a.x1*b.y2 + a.x2*b.z2 + a.x3*b.w2,
+		.x3 = a.x0*b.x3 + a.x1*b.y3 + a.x2*b.z3 + a.x3*b.w3,
+
+		.y0 = a.y0*b.x0 + a.y1*b.y0 + a.y2*b.z0 + a.y3*b.w0,
+		.y1 = a.y0*b.x1 + a.y1*b.y1 + a.y2*b.z1 + a.y3*b.w1,
+		.y2 = a.y0*b.x2 + a.y1*b.y2 + a.y2*b.z2 + a.y3*b.w2,
+		.y3 = a.y0*b.x3 + a.y1*b.y3 + a.y2*b.z3 + a.y3*b.w3,
+
+		.z0 = a.z0*b.x0 + a.z1*b.y0 + a.z2*b.z0 + a.z3*b.w0,
+		.z1 = a.z0*b.x1 + a.z1*b.y1 + a.z2*b.z1 + a.z3*b.w1,
+		.z2 = a.z0*b.x2 + a.z1*b.y2 + a.z2*b.z2 + a.z3*b.w2,
+		.z3 = a.z0*b.x3 + a.z1*b.y3 + a.z2*b.z3 + a.z3*b.w3,
+
+		.w0 = a.w0*b.x0 + a.w1*b.y0 + a.w2*b.z0 + a.w3*b.w0,
+		.w1 = a.w0*b.x1 + a.w1*b.y1 + a.w2*b.z1 + a.w3*b.w1,
+		.w2 = a.w0*b.x2 + a.w1*b.y2 + a.w2*b.z2 + a.w3*b.w2,
+		.w3 = a.w0*b.x3 + a.w1*b.y3 + a.w2*b.z3 + a.w3*b.w3,
+	};
+	return result;
+}
 
 internal Rng1F32 rng_1f32(F32 min, F32 max)          {if (min > max) Swap(F32, min, max); return (Rng1F32){min, max};}
 internal Rng1F32 shift_1f32(Rng1F32 r, F32 x)        {return (Rng1F32){r.min+x, r.min+x};}

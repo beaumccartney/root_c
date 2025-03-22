@@ -80,18 +80,32 @@ union Vec4F32
 	F32 v[4];
 };
 
-typedef struct Mat3x3F32 Mat3x3F32;
-struct Mat3x3F32
+typedef union Mat3x3F32 Mat3x3F32;
+union Mat3x3F32
 {
+	struct
+	{
+		F32 x0, x1, x2,
+		    y0, y1, y2,
+		    z0, z1, z2;
+	};
 	F32 v[3][3];
 };
 
-typedef struct Mat4x4F32 Mat4x4F32;
-struct Mat4x4F32
+typedef union Mat4x4F32 Mat4x4F32;
+union Mat4x4F32
 {
+	struct
+	{
+		F32 x0, x1, x2, x3,
+		    y0, y1, y2, y3,
+		    z0, z1, z2, z3,
+		    w0, w1, w2, w3;
+	};
 	F32 v[4][4];
 };
 
+// REVIEW: typedef to Vec4F32?
 typedef union QuatF32 QuatF32;
 union QuatF32
 {
@@ -316,25 +330,30 @@ internal Vec4F32 normalize_4f32(Vec4F32 v);
 internal Vec4F32 mix_4f32(Vec4F32 a, Vec4F32 b, F32 t);
 internal Vec4F32 transform_4f32(Vec4F32 v, Mat4x4F32 m);
 
-internal Mat3x3F32 mat_3x3f32(F32 diagonal);
+#define mat_3x3f32(diagonal) ((Mat3x3F32){.v[0][0] = diagonal, .v[1][1] = diagonal, .v[2][2] = diagonal})
+internal Mat3x3F32 transpose_3x3f32(Mat3x3F32 m);
 internal Mat3x3F32 make_translate_3x3f32(Vec2F32 delta);
 internal Mat3x3F32 make_scale_3x3f32(Vec2F32 scale);
-internal Mat3x3F32 mul_3x3f32(Mat3x3F32 a, Mat3x3F32 b);
 internal Mat3x3F32 scale_3x3f32(Mat3x3F32 m, F32 scale);
+internal Mat3x3F32 mul_3x3f32(Mat3x3F32 a, Mat3x3F32 b);
+internal F32 det_3x3f32(Mat3x3F32 m);
 internal Mat3x3F32 inverse_3x3f32(Mat3x3F32 m);
 
-internal Mat4x4F32 mat_4x4f32(F32 diagonal);
+#define mat_4x4f32(diagonal) ((Mat4x4F32){.v[0][0] = diagonal, .v[1][1] = diagonal, .v[2][2] = diagonal, .v[3][3] = diagonal})
+internal Mat4x4F32 transpose_4x4f32(Mat4x4F32 m);
 internal Mat4x4F32 make_translate_4x4f32(Vec3F32 delta);
 internal Mat4x4F32 make_scale_4x4f32(Vec3F32 scale);
+internal Mat4x4F32 scale_4x4f32(Mat4x4F32 m, F32 scale);
+internal Mat4x4F32 mul_4x4f32(Mat4x4F32 a, Mat4x4F32 b);
+internal F32 det_4x4f32(Mat4x4F32 m);
+internal Mat4x4F32 inverse_4x4f32(Mat4x4F32 m);
 internal Mat4x4F32 make_perspective_4x4f32(F32 fov, F32 aspect_ratio, F32 near_z, F32 far_z);
 internal Mat4x4F32 make_orthographic_4x4f32(F32 left, F32 right, F32 bottom, F32 top, F32 near_z, F32 far_z);
 internal Mat4x4F32 make_look_at_4x4f32(Vec3F32 eye, Vec3F32 center, Vec3F32 up);
 internal Mat4x4F32 make_rotate_4x4f32(Vec3F32 axis, F32 turns);
-internal Mat4x4F32 mul_4x4f32(Mat4x4F32 a, Mat4x4F32 b);
-internal Mat4x4F32 scale_4x4f32(Mat4x4F32 m, F32 scale);
-internal Mat4x4F32 inverse_4x4f32(Mat4x4F32 m);
 internal Mat4x4F32 derotate_4x4f32(Mat4x4F32 mat);
 
+// REVIEW: macros for just using vec4 operations?
 internal QuatF32 make_quat_f32(F32 x, F32 y, F32 z, F32 w);
 internal QuatF32 quat_from_axis_angle_f32(Vec3F32 axis, F32 turns);
 
