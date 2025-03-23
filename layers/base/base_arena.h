@@ -44,7 +44,7 @@ internal void temp_end(Temp temp);
 
 #define push_array_no_zero_aligned(a, T, c, align) (T *)arena_push((a), (S64)sizeof(T)*(c), (align))
 #define push_array_aligned(a, T, c, align) (T *)MemoryZero(push_array_no_zero_aligned(a, T, c, align), (S64)sizeof(T)*(c))
-#define push_array_no_zero(a, T, c) push_array_no_zero_aligned(a, T, c, Max(8, AlignOf(T)))
+#define push_array_no_zero(a, T, c) push_array_no_zero_aligned(a, T, c, AlignOf(T))
 #define push_array(a, T, c) push_array_aligned(a, T, c, Max(8, AlignOf(T)))
 
 #endif // BASE_ARENA
