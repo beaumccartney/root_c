@@ -331,7 +331,7 @@ internal void os_window_close(OS_Window window)
 	}
 }
 
-internal OS_EventList os_gfx_get_events(Arena *arena)
+internal OS_EventList os_get_events(Arena *arena)
 {
 	g_os_gfx_windows_state.events_arena = arena;
 

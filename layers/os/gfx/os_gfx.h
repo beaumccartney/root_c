@@ -67,7 +67,7 @@ internal OS_GFX_InitReceipt os_gfx_init(void);
 internal OS_Window os_window_open(Vec2S32 resolution, String8 title);
 internal void      os_window_close(OS_Window window);
 
-internal OS_EventList os_gfx_get_events(Arena *arena);
+internal OS_EventList os_get_events(Arena *arena);
 
 internal OS_Event* os_eventlist_push_new(Arena *arena, OS_EventList *list, OS_EventKind kind);
 

@@ -50,7 +50,7 @@ internal OS_GFX_InitReceipt os_gfx_init(void)
 	return (OS_GFX_InitReceipt) {};
 }
 
-internal OS_EventList os_gfx_get_events(Arena *arena)
+internal OS_EventList os_get_events(Arena *arena)
 {
 	g_os_gfx_mac_state.events_arena = arena;
 	@autoreleasepool
