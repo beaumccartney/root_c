@@ -507,6 +507,7 @@ int main(int argc, char *argv[])
 		Assert(status == 0);
 		// XXX(beau): do something with leaked entities?
 		arena_release(g_os_mac_state.entity_arena);
+		arena_release(g_os_state.arena);
 	}
 	return 0;
 }
