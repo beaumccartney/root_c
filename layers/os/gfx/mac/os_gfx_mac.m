@@ -1,8 +1,8 @@
 @implementation OS_MAC_NSApplication : NSApplication
 - (void)quit_render_loop:(id) sender {
 	OS_Event *event = os_eventlist_push_new(
-		g_os_mac_gfx_state.events_arena,
-		&g_os_mac_gfx_state.events,
+		g_os_gfx_mac_state.events_arena,
+		&g_os_gfx_mac_state.events,
 		OS_EventKind_Quit
 	);
 	Unused(event);
@@ -14,8 +14,8 @@
 - (BOOL) windowShouldClose:(OS_MAC_NSWindow *) sender
 {
 	OS_Event *event = os_eventlist_push_new(
-		g_os_mac_gfx_state.events_arena,
-		&g_os_mac_gfx_state.events,
+		g_os_gfx_mac_state.events_arena,
+		&g_os_gfx_mac_state.events,
 		OS_EventKind_WindowClose
 	);
 	event->window = os_mac_handle_from_nswindow(sender);
@@ -52,7 +52,7 @@ internal OS_GFX_InitReceipt os_gfx_init(void)
 
 internal OS_EventList os_gfx_get_events(Arena *arena)
 {
-	g_os_mac_gfx_state.events_arena = arena;
+	g_os_gfx_mac_state.events_arena = arena;
 	@autoreleasepool
 	{
 		NSEvent *ns_event = [[OS_MAC_NSApplication sharedApplication] nextEventMatchingMask:NSEventMaskAny
@@ -204,7 +204,7 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 				event.window = os_mac_handle_from_nswindow((OS_MAC_NSWindow *)ns_event.window);
 				OS_Event *pushed = os_eventlist_push_new(
 					arena,
-					&g_os_mac_gfx_state.events,
+					&g_os_gfx_mac_state.events,
 					OS_EventKind_NULL
 				);
 				*pushed = event;
@@ -212,8 +212,8 @@ internal OS_EventList os_gfx_get_events(Arena *arena)
 			}
 		}
 	}
-	OS_EventList result = g_os_mac_gfx_state.events;
-	g_os_mac_gfx_state.events = (OS_EventList)zero_struct;
+	OS_EventList result = g_os_gfx_mac_state.events;
+	g_os_gfx_mac_state.events = (OS_EventList)zero_struct;
 	return result;
 }
 
@@ -223,14 +223,14 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 
 	OS_MAC_Window *macwindow = 0;
 
-	if (0 < g_os_mac_gfx_state.free_plus_one && g_os_mac_gfx_state.free_plus_one < ArrayCount(g_os_mac_gfx_state.windows))
+	if (0 < g_os_gfx_mac_state.free_plus_one && g_os_gfx_mac_state.free_plus_one < ArrayCount(g_os_gfx_mac_state.windows))
 	{
-		macwindow = &g_os_mac_gfx_state.windows[g_os_mac_gfx_state.free_plus_one - 1];
+		macwindow = &g_os_gfx_mac_state.windows[g_os_gfx_mac_state.free_plus_one - 1];
 		Assert(macwindow->generation > 0);
 	}
-	else if (0 <= g_os_mac_gfx_state.lowest_unused && g_os_mac_gfx_state.lowest_unused < ArrayCount(g_os_mac_gfx_state.windows))
+	else if (0 <= g_os_gfx_mac_state.lowest_unused && g_os_gfx_mac_state.lowest_unused < ArrayCount(g_os_gfx_mac_state.windows))
 	{
-		macwindow = &g_os_mac_gfx_state.windows[g_os_mac_gfx_state.lowest_unused++];
+		macwindow = &g_os_gfx_mac_state.windows[g_os_gfx_mac_state.lowest_unused++];
 		Assert(macwindow->generation == 0);
 		macwindow->generation = 1;
 	}
@@ -238,7 +238,7 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 	if (macwindow)
 	{
 		Assert(!macwindow->nswindow);
-		g_os_mac_gfx_state.free_plus_one = macwindow->next_free_plus_one;
+		g_os_gfx_mac_state.free_plus_one = macwindow->next_free_plus_one;
 
 		NSRect screen_rect = NSScreen.mainScreen.visibleFrame;
 		NSSize window_size = {
@@ -279,9 +279,9 @@ internal void os_window_close(OS_Window window)
 		[macwindow->nswindow release];
 		*macwindow = (OS_MAC_Window) {
 			.generation         = macwindow->generation + 1,
-			.next_free_plus_one = g_os_mac_gfx_state.free_plus_one,
+			.next_free_plus_one = g_os_gfx_mac_state.free_plus_one,
 		};
-		g_os_mac_gfx_state.free_plus_one = (S64)window.bits + 1;
+		g_os_gfx_mac_state.free_plus_one = (S64)window.bits + 1;
 	}
 }
 
@@ -290,8 +290,8 @@ inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *macwindow)
 	OS_Window result = zero_struct;
 	if (macwindow)
 	{
-		S64 index = macwindow - g_os_mac_gfx_state.windows;
-		Assert(0 <= index && index < ArrayCount(g_os_mac_gfx_state.windows));
+		S64 index = macwindow - g_os_gfx_mac_state.windows;
+		Assert(0 <= index && index < ArrayCount(g_os_gfx_mac_state.windows));
 		if (macwindow->nswindow)
 		{
 			result.bits       = (U64)index;
@@ -304,8 +304,8 @@ inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *macwindow)
 inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle)
 {
 	S64 index = (S64)handle.bits;
-	Assert(0 <= index && index < ArrayCount(g_os_mac_gfx_state.windows));
-	OS_MAC_Window *result = &g_os_mac_gfx_state.windows[index];
+	Assert(0 <= index && index < ArrayCount(g_os_gfx_mac_state.windows));
+	OS_MAC_Window *result = &g_os_gfx_mac_state.windows[index];
 	if (!result->nswindow || result->generation != handle.generation)
 		result = 0;
 	return result;
@@ -316,7 +316,7 @@ internal OS_Window os_mac_handle_from_nswindow(OS_MAC_NSWindow *nswindow)
 
 	if (nswindow)
 	{
-		OS_MAC_Window *w = g_os_mac_gfx_state.windows, *opl = w + ArrayCount(g_os_mac_gfx_state.windows);
+		OS_MAC_Window *w = g_os_gfx_mac_state.windows, *opl = w + ArrayCount(g_os_gfx_mac_state.windows);
 		for (; w < opl; w++)
 		{
 			if (w->nswindow == nswindow)

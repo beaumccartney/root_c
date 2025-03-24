@@ -27,8 +27,8 @@ struct OS_MAC_Window
 	S64 generation, next_free_plus_one; // plus one to keep 0 free
 };
 
-typedef struct OS_MAC_GFX_State OS_MAC_GFX_State;
-struct OS_MAC_GFX_State
+typedef struct OS_GFX_MAC_State OS_GFX_MAC_State;
+struct OS_GFX_MAC_State
 {
 	// windows pool
 	OS_MAC_Window windows[64];
@@ -38,7 +38,7 @@ struct OS_MAC_GFX_State
 	Arena *events_arena;
 	OS_EventList events;
 };
-global OS_MAC_GFX_State g_os_mac_gfx_state = zero_struct;
+global OS_GFX_MAC_State g_os_gfx_mac_state = zero_struct;
 
 inline internal OS_Window os_mac_handle_from_window(OS_MAC_Window *gfxwindow);
 inline internal OS_MAC_Window *os_mac_window_from_handle(OS_Window handle);

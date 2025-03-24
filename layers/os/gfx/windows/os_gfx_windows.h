@@ -14,8 +14,8 @@ struct OS_WINDOWS_Window
 	HWND hwnd;
 };
 
-typedef struct OS_WINDOWS_GFX_State OS_WINDOWS_GFX_State;
-struct OS_WINDOWS_GFX_State
+typedef struct OS_GFX_WINDOWS_State OS_GFX_WINDOWS_State;
+struct OS_GFX_WINDOWS_State
 {
 	// windows pool
 	OS_WINDOWS_Window windows[64];
@@ -27,7 +27,7 @@ struct OS_WINDOWS_GFX_State
 	OS_EventList events;
 };
 
-global OS_WINDOWS_GFX_State g_os_gfx_windows_state = zero_struct;
+global OS_GFX_WINDOWS_State g_os_gfx_windows_state = zero_struct;
 
 internal Rng2
 os_gfx_windows_rng2f32_from_rect(RECT rect);
