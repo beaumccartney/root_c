@@ -319,7 +319,6 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 internal void os_window_close(OS_Window window)
 {
 	OS_WINDOWS_Window *gfxwindow = os_windows_window_from_handle(window);
-	NotImplented; // REVIEW: existence test i.e. can HWND be zero
 	if (gfxwindow && gfxwindow->hwnd)
 	{
 		Assert(DestroyWindow(gfxwindow->hwnd));
@@ -375,7 +374,6 @@ inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS_Window *windo
 	{
 		S64 index = window - g_os_gfx_windows_state.windows;
 		Assert(0 <= index && index < ArrayCount(g_os_gfx_windows_state.windows));
-		NotImplemented; // REVIEW: existence test
 		if (window->hwnd)
 		{
 			result.bits       = (U64)index;
@@ -389,7 +387,6 @@ inline internal OS_WINDOWS_Window *os_windows_window_from_handle(OS_Window handl
 	S64 index = (S64)handle.bits;
 	Assert(0 <= index && index < ArrayCount(g_os_gfx_windows_state.windows));
 	OS_WINDOWS_Window *result = &g_os_gfx_windows_state.windows[index];
-	NotImplemented;
 	if (!result->hwnd || result->generation != handle.generation)
 		result = 0;
 	return result;
