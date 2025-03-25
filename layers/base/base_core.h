@@ -147,7 +147,7 @@ inline internal int   MemoryCompare(const void *a, const void *b, S64 length);
 	#endif
 #endif // BUILD_DEBUG
 
-#define AssertAlways(x) if(!(x)) {Trap();}
+#define AssertAlways(x) do{if(!(x)) {Trap();}}while(0)
 #if BUILD_DEBUG
 	#define Assert(x) AssertAlways(x)
 #else
