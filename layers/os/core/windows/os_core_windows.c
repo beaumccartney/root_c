@@ -516,6 +516,7 @@ internal void windows_entry_point_caller(int argc, WCHAR *wargv[])
 
 // TODO(beau): wide char versions
 #if OS_FEATURE_GRAPHICAL
+#include <stdlib.h> // __argc, __wargv
 int WINAPI wWinMain
 (HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
