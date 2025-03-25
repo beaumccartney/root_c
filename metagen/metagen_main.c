@@ -141,7 +141,7 @@ internal void entry_point(void)
 					// XXX: remove dependency on stdio
 					String8 gen_info = str8_lit("/* GENERATED */\n\n");
 					// write header file
-					FILE *fd = fopen((char *)gen_file.buffer, "w");
+					FILE *fd = fopen((char *)gen_file.buffer, "wb");
 					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), (size_t)gen_info.length, fd);
 					String8 include_guard = push_str8f(
 						work_arena,
@@ -160,7 +160,7 @@ internal void entry_point(void)
 					Assert(!fclose(fd));
 
 					gen_file.buffer[gen_file.length - 1] = 'c'; // XXX
-					fd = fopen((char *)gen_file.buffer, "w");
+					fd = fopen((char *)gen_file.buffer, "wb");
 					fwrite(gen_info.buffer, sizeof(*gen_info.buffer), (size_t)gen_info.length, fd);
 					fwrite(generated.c_file.buffer, sizeof(*generated.c_file.buffer), (size_t)generated.c_file.length, fd);
 					Assert(!fclose(fd));
