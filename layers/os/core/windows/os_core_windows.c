@@ -104,7 +104,7 @@ no_return internal void os_abort(S32 exit_code)
 	ExitProcess(exit_code);
 }
 
-internal OS_Handle
+internal OS_File
 os_file_open(OS_AccessFlags flags, String8 path)
 {
 	Assert(0 <= path.length);
@@ -134,15 +134,15 @@ os_file_open(OS_AccessFlags flags, String8 path)
 		0 // template file
 	);
 	scratch_end(scratch);
-	OS_Handle result = handle == INVALID_HANDLE_VALUE
-		? (OS_Handle)zero_struct
-		: (OS_Handle){.bits = (U64)handle};
+	OS_File result = handle == INVALID_HANDLE_VALUE
+		? (OS_File)zero_struct
+		: (OS_File){.bits = (U64)handle};
 	return result;
 }
 internal void
-os_file_close(OS_Handle file)
+os_file_close(OS_File file)
 {
-	if (!os_handle_match(file, os_handle_zero))
+	if (file.bits)
 	{
 		HANDLE win_file = (HANDLE)file.bits;
 		BOOL status     = CloseHandle(win_file);
@@ -150,10 +150,10 @@ os_file_close(OS_Handle file)
 	}
 }
 internal S64
-os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
+os_file_read(OS_File file, Rng1S64 rng, void *out_data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
-	if (os_handle_match(file, os_handle_zero)) return 0;
+	if (!file.bits) return 0;
 	HANDLE win_handle = (HANDLE)file.bits;
 	S64 read_bytes = 0,
 	    needed_bytes = dim_1s64(rng);
@@ -180,18 +180,18 @@ os_file_read(OS_Handle file, Rng1S64 rng, void *out_data)
 	return read_bytes;
 }
 internal S64
-os_file_write(OS_Handle file, Rng1S64 rng, void *data)
+os_file_write(OS_File file, Rng1S64 rng, void *data)
 {
 	Assert(0 <= rng.min && rng.min <= rng.max);
-	if (os_handle_match(file, os_handle_zero)) return 0;
+	if (!file.bits) return 0;
 	HANDLE win_handle    = (HANDLE)file.bits;
 	S64 written_bytes    = 0,
-	    goal_write_bytes = dim_1u64(rng);
+	    goal_write_bytes = dim_1s64(rng);
 	while (written_bytes < goal_write_bytes)
 	{
 		void *src               = (U8 *)data + written_bytes;
 		S64 start_pos           = rng.min + written_bytes;
-		DWORD bytes_to_write    = u32_from_u64_saturate(goal_write_bytes - written_bytes),
+		DWORD bytes_to_write    = u32_from_u64_saturate((U64)goal_write_bytes - (U64)written_bytes),
 		      written_this_time = 0;
 		OVERLAPPED overlapped = {
 			.Offset     = (start_pos      ) & 0xFFFFFFFF,
@@ -210,10 +210,10 @@ os_file_write(OS_Handle file, Rng1S64 rng, void *data)
 	return written_bytes;
 }
 internal FileProperties
-os_properties_from_file(OS_Handle file)
+os_properties_from_file(OS_File file)
 {
 	FileProperties result = zero_struct;
-	if (!os_handle_match(file, os_handle_zero))
+	if (file.bits)
 	{
 		HANDLE win_handle = (HANDLE)file.bits;
 		BY_HANDLE_FILE_INFORMATION info = zero_struct;
