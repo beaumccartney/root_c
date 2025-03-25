@@ -306,9 +306,9 @@ internal OS_Window os_window_open(Vec2S32 resolution, String8 title)
 				g_os_gfx_windows_state.hInstance,
 				0
 			),
-			.generation = gfxwindow->generation;
+			.generation = gfxwindow->generation,
 		};
-		Assert(gfxwindow.hwnd);
+		Assert(gfxwindow->hwnd);
 	}
 
 	scratch_end(scratch);

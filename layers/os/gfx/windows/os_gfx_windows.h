@@ -32,7 +32,7 @@ global OS_GFX_WINDOWS_State g_os_gfx_windows_state = zero_struct;
 internal Rng2
 os_gfx_windows_rng2f32_from_rect(RECT rect);
 
-inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS Window *window);
+inline internal OS_Window os_windows_handle_from_window(OS_WINDOWS_Window *window);
 inline internal OS_WINDOWS_Window *os_windows_window_from_handle(OS_Window handle);
 
 #endif // OS_GFX_WINDOWS_H
