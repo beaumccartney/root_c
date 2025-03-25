@@ -60,7 +60,7 @@ struct OS_EventList
 };
 
 // typesafety for other layers
-typedef struct OS_GFX_InitReceipt {} OS_GFX_InitReceipt;
+typedef struct { Byte ignoreme; } OS_GFX_InitReceipt;
 
 internal OS_GFX_InitReceipt os_gfx_init(void);
 

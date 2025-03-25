@@ -66,7 +66,7 @@ typedef struct R_AttachmentsDesc
 {
 } R_AttachmentsDesc;
 
-typedef struct R_InitReceipt {} R_InitReceipt;
+typedef struct { Byte ignoreme; } R_InitReceipt;
 
 internal R_InitReceipt r_init(OS_GFX_InitReceipt gfx_init);
 
